@@ -1,0 +1,15 @@
+# env & secrets
+.env
+.env.local
+
+# build output / caches
+.next
+out
+dist
+
+# dependencies
+node_modules
+
+# misc
+.vercel
+.DS_Store
