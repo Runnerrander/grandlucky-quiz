@@ -1,5 +1,4 @@
-// TEMP STUB just to verify front-end wiring.
-// After we confirm it works, we'll switch back to the Supabase version.
+// pages/api/saveRegistration.js  (TEMP STUB)
 export default async function handler(req, res) {
   const session_id =
     (req.query.session_id || (req.body && req.body.session_id) || "").toString();
