@@ -1,217 +1,258 @@
 // pages/success.js
-import Head from "next/head";
-import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState, useCallback } from "react";
-
-const BG = "/BG-sikeres fizetes-grafikaval.png"; // decorative dark bg (plane+camera)
-const LS_USERNAME = "gl_username";
-const LS_SESSION = "gl_session_id";
+import { useEffect, useState } from "react";
 
 export default function Success() {
   const router = useRouter();
   const { session_id } = router.query;
 
-  const [lang, setLang] = useState("hu");
+  const [lang, setLang] = useState("hu"); // default HU
   const [loading, setLoading] = useState(true);
-  const [creds, setCreds] = useState({ username: "", password: "" });
   const [err, setErr] = useState("");
+  const [creds, setCreds] = useState({ username: "", password: "" });
 
-  // copy
-  const t = useMemo(
-    () => ({
-      hu: {
-        switchLang: "ANGOL",
-        title: "Sikeres fizetés",
-        lead: "Köszönjük a regisztrációt!",
-        sublead: "Belépési adatok",
-        save: "FELHASZNÁLÓNÉV ÉS JELSZÓ MENTÉSE",
-        print: "FELHASZNÁLÓNÉV ÉS JELSZÓ NYOMTATÁSA",
-        // updated HU text:
-        done: "ELMENTETTEM VAGY KINYOMTATTAM AZ ADATOKAT — KÉSZEN ÁLLOK A KVÍZRE",
-        note: "Kérjük, a felhasználónevet és jelszót tartsd biztonságos helyen.",
-      },
-      en: {
-        switchLang: "MAGYAR",
-        title: "Payment Successful",
-        lead: "Thank you for registering!",
-        sublead: "Sign-in details",
-        save: "SAVE USERNAME & PASSWORD",
-        print: "PRINT USERNAME & PASSWORD",
-        // updated EN text (exact phrase you asked for):
-        done: "I saved or printed the credentials I'm ready to start the trivia",
-        note: "Please keep your username and password in a safe place.",
-      },
-    }),
-    []
-  )[lang];
-
-  // fetch/create credentials once
   useEffect(() => {
     if (!session_id) return;
-    let ignore = false;
 
-    (async () => {
+    async function go() {
+      setLoading(true);
+      setErr("");
       try {
-        setLoading(true);
-        setErr("");
-        const res = await fetch("/api/saveRegistration", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId: session_id }),
-        });
-        const json = await res.json();
-        if (!res.ok || !json?.success) {
-          throw new Error(json?.error || "Failed to save registration");
-        }
-        if (!ignore) setCreds(json.data || {});
-      } catch (e) {
-        if (!ignore) setErr(e.message || "Error");
-      } finally {
-        if (!ignore) setLoading(false);
-      }
-    })();
+        // Always use GET with query param; works for both stub and real API
+        const url = `/api/saveRegistration?session_id=${encodeURIComponent(
+          String(session_id)
+        )}`;
 
-    return () => {
-      ignore = true;
-    };
+        const res = await fetch(url, { method: "GET" });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => "");
+          throw new Error(`API ${res.status}: ${text || "not ok"}`);
+        }
+
+        // Parse JSON safely
+        let data;
+        try {
+          data = await res.json();
+        } catch (e) {
+          throw new Error("Bad JSON from API");
+        }
+
+        const username =
+          data?.username || data?.user || data?.name || ""; // accept variations just in case
+        const password =
+          data?.password || data?.pass || data?.pwd || "";
+
+        if (!username || !password) {
+          throw new Error("Missing username/password fields");
+        }
+
+        setCreds({ username, password });
+
+        // Persist locally for convenience
+        try {
+          localStorage.setItem("gl_username", username);
+          localStorage.setItem("gl_session_id", String(session_id));
+        } catch {}
+
+      } catch (e) {
+        setErr(e?.message || "Failed to save registration");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    go();
   }, [session_id]);
 
-  // download as text file
-  const onSave = useCallback(() => {
-    const ts = new Date().toISOString().slice(0, 19).replace("T", " ");
-    const text = `GrandLuckyTravel\n\nUsername: ${creds.username}\nPassword: ${creds.password}\nSaved at: ${ts}\n`;
-    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "grandluckytravel-credentials.txt";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }, [creds]);
-
-  // open simple printable window
-  const onPrint = useCallback(() => {
-    const ts = new Date().toLocaleString();
-    const w = window.open("", "_blank");
-    if (!w) return; // popup blocked
-    w.document.write(`<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Credentials</title>
-<style>
-  body{font-family:Arial,Helvetica,sans-serif; padding:24px;}
-  .card{max-width:520px; margin:0 auto; border:1px solid #ddd; border-radius:10px; padding:22px;}
-  h1{margin:0 0 10px; font-size:22px;}
-  p{margin:6px 0; font-size:16px;}
-  hr{margin:14px 0;}
-</style>
-</head>
-<body>
-  <div class="card">
-    <h1>GrandLuckyTravel — Credentials</h1>
-    <p><strong>Username:</strong> ${creds.username}</p>
-    <p><strong>Password:</strong> ${creds.password}</p>
-    <hr>
-    <p>Printed: ${ts}</p>
-  </div>
-  <script>window.print();</script>
-</body>
-</html>`);
-    w.document.close();
-  }, [creds]);
-
-  // Go straight to Trivia (auto-start) with username
-  const onDone = useCallback(() => {
-    if (!creds?.username) return;
+  // Simple Save / Print helpers
+  const handleSave = () => {
     try {
-      localStorage.setItem(LS_USERNAME, creds.username);
-      if (session_id) localStorage.setItem(LS_SESSION, String(session_id));
+      const blob = new Blob(
+        [
+          `GrandLucky Travel Credentials\n\nUsername: ${creds.username}\nPassword: ${creds.password}\nSession: ${session_id}\n`,
+        ],
+        { type: "text/plain;charset=utf-8" }
+      );
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `grandlucky-credentials-${creds.username}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch {}
-    router.replace(`/trivia?auto=1&u=${encodeURIComponent(creds.username)}`);
-  }, [creds?.username, router, session_id]);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // Copy buttons
+  const copy = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert(lang === "hu" ? "Vágólapra másolva." : "Copied to clipboard.");
+    } catch {}
+  };
+
+  // --- UI (keep dark theme + HU default labels) ---
+  const t = {
+    hu: {
+      title: "Sikeres fizetés",
+      thanks: "Köszönjük a regisztrációt!",
+      loading: "Adatok mentése…",
+      failed: "Sikertelen mentés",
+      username: "Felhasználónév",
+      password: "Jelszó",
+      copy: "Másolás",
+      save: "Mentés",
+      print: "Nyomtatás",
+      ready: "Elmentettem / kinyomtattam, mehetünk tovább",
+    },
+    en: {
+      title: "Payment Successful",
+      thanks: "Thank you for registering!",
+      loading: "Saving your data…",
+      failed: "Failed to save registration",
+      username: "Username",
+      password: "Password",
+      copy: "Copy",
+      save: "Save",
+      print: "Print",
+      ready: "I saved/printed — continue",
+    },
+  }[lang];
 
   return (
-    <main className="screen">
-      <Head>
-        <title>Success — GrandLuckyTravel</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&display=swap"
-        />
-      </Head>
-
-      <button className="lang" onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}>
-        {t.switchLang}
-      </button>
-
-      <div className="wrap">
-        <h1 className="title">{t.title}</h1>
-        <h2 className="lead">{t.lead}</h2>
-
-        {err ? (
-          <p className="error">{err}</p>
-        ) : (
-          <>
-            <h3 className="sublead">{t.sublead}</h3>
-            <p><strong>Felhasználónév / Username:</strong> {loading ? "…" : creds.username}</p>
-            <p><strong>Jelszó / Password:</strong> {loading ? "…" : creds.password}</p>
-            <p className="note">{t.note}</p>
-
-            <div className="buttons">
-              <button className="btn" onClick={onSave} disabled={loading || !creds.username}>
-                {t.save}
-              </button>
-              <button className="btn" onClick={onPrint} disabled={loading || !creds.username}>
-                {t.print}
-              </button>
-              <button className="btn" onClick={onDone} disabled={loading || !creds.username}>
-                {t.done}
-              </button>
-            </div>
-          </>
-        )}
+    <div style={{ minHeight: "100vh", background: "#1f1f1f", color: "white", padding: "48px 20px" }}>
+      {/* Language toggle (top-right) */}
+      <div style={{ position: "fixed", top: 16, right: 16 }}>
+        <button
+          onClick={() => setLang((l) => (l === "hu" ? "en" : "hu"))}
+          style={{
+            background: "#2a2a2a",
+            borderRadius: 24,
+            padding: "8px 14px",
+            border: "1px solid #444",
+            color: "white",
+            cursor: "pointer",
+          }}
+          aria-label="language-toggle"
+        >
+          {lang === "hu" ? "ANGOL" : "MAGYAR"}
+        </button>
       </div>
 
-      <style jsx>{`
-        :global(:root){
-          --fg:#fff; --muted:rgba(255,255,255,.86);
-          --yellow:#faaf3b; --yellow-border:#e49b28;
-          --chip:#f6f6f6; --chip-text:#1e1e1e; --shadow:0 12px 28px rgba(0,0,0,.32);
-        }
-        .screen{
-          height:100svh; overflow:auto; color:var(--fg);
-          font-family:Montserrat,system-ui,sans-serif;
-          background:#2f2f2f url(${JSON.stringify(BG)}) center/cover no-repeat;
-          padding-top:clamp(70px,10vh,120px);
-        }
-        .lang{
-          position:fixed; top:clamp(14px,2vw,22px); right:clamp(14px,2vw,22px);
-          padding:12px 22px; border-radius:999px; font-weight:900; border:0;
-          background:var(--chip); color:var(--chip-text); box-shadow:var(--shadow); cursor:pointer; z-index:2;
-        }
-        .wrap{ max-width:760px; margin-left:clamp(24px,6vw,80px); margin-right:24px; text-shadow:0 1px 0 rgba(0,0,0,.45); }
-        .title{ margin:0 0 6px; font-size:clamp(34px,4.6vw,56px); font-weight:900; }
-        .lead{ margin:0 0 16px; font-size:clamp(18px,2.2vw,24px); font-weight:800; color:var(--muted); }
-        .sublead{ margin:8px 0 4px; font-size:clamp(16px,2vw,20px); font-weight:800; }
-        .note{ color:var(--muted); margin:10px 0 18px; }
-        .error{ color:#ffd2d2; background:#8a2f2f; padding:10px 12px; border-radius:8px; display:inline-block; }
-        .buttons{ display:flex; gap:12px; flex-wrap:wrap; margin-top:10px; }
-        .btn{
-          display:inline-flex; align-items:center; justify-content:center;
-          padding:14px 20px; border-radius:999px; font-weight:900; text-transform:uppercase;
-          color:#222; background:var(--yellow); border:3px solid var(--yellow-border);
-          text-decoration:none; box-shadow:var(--shadow), inset 0 2px 0 rgba(255,255,255,.65);
-          transition:transform .2s, box-shadow .2s; cursor:pointer;
-        }
-        .btn:hover:not([disabled]){ transform:translateY(-2px); box-shadow:0 22px 36px rgba(0,0,0,.46), inset 0 2px 0 rgba(255,255,255,.7); }
-        .btn[disabled]{ opacity:.6; cursor:not-allowed; }
-        @media (max-width:900px){ .wrap{ margin-left:clamp(16px,5vw,28px); } }
-      `}</style>
-    </main>
+      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+        <h1 style={{ fontSize: 48, marginBottom: 8, fontWeight: 800 }}>{t.title}</h1>
+        <p style={{ fontSize: 22, marginBottom: 28 }}>{t.thanks}</p>
+
+        {loading && (
+          <div style={{ padding: 12, background: "#333", display: "inline-block", borderRadius: 8 }}>
+            {t.loading}
+          </div>
+        )}
+
+        {!loading && err && (
+          <div
+            style={{
+              display: "inline-block",
+              background: "#7a1f1f",
+              color: "white",
+              padding: "10px 14px",
+              borderRadius: 8,
+              marginBottom: 20,
+            }}
+          >
+            {t.failed}: {err}
+          </div>
+        )}
+
+        {!loading && !err && (
+          <div
+            style={{
+              display: "grid",
+              gap: 16,
+              marginTop: 8,
+              maxWidth: 560,
+            }}
+          >
+            <div style={{ display: "grid", gap: 8 }}>
+              <label style={{ opacity: 0.9 }}>{t.username}</label>
+              <div
+                style={{
+                  background: "#2a2a2a",
+                  border: "1px solid #444",
+                  borderRadius: 10,
+                  padding: "12px 14px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span style={{ fontSize: 22, fontWeight: 700 }}>{creds.username}</span>
+                <button onClick={() => copy(creds.username)} style={btnSm}>
+                  {t.copy}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gap: 8 }}>
+              <label style={{ opacity: 0.9 }}>{t.password}</label>
+              <div
+                style={{
+                  background: "#2a2a2a",
+                  border: "1px solid #444",
+                  borderRadius: 10,
+                  padding: "12px 14px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <span style={{ fontSize: 22, fontWeight: 700 }}>{creds.password}</span>
+                <button onClick={() => copy(creds.password)} style={btnSm}>
+                  {t.copy}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+              <button onClick={handleSave} style={btnPrimary}>{t.save}</button>
+              <button onClick={handlePrint} style={btnGhost}>{t.print}</button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
+
+// Small inline styles for buttons
+const btnPrimary = {
+  background: "#faaf3b",
+  color: "#1a1a1a",
+  border: "none",
+  borderRadius: 12,
+  padding: "10px 16px",
+  fontWeight: 700,
+  cursor: "pointer",
+};
+const btnGhost = {
+  background: "transparent",
+  color: "white",
+  border: "1px solid #666",
+  borderRadius: 12,
+  padding: "10px 16px",
+  fontWeight: 600,
+  cursor: "pointer",
+};
+const btnSm = {
+  background: "#444",
+  color: "white",
+  border: "1px solid #666",
+  borderRadius: 10,
+  padding: "8px 12px",
+  fontWeight: 600,
+  cursor: "pointer",
+};
