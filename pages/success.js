@@ -2,15 +2,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 
-// Change this if your quiz route is different:
-const QUIZ_PATH = "/trivia";
-
 export default function SuccessPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [creds, setCreds] = useState(null); // { username, password }
   const [error, setError] = useState("");
+  const [ack, setAck] = useState(false); // user has saved or printed
 
   // --- helpers ------------------------------------------------------
 
@@ -90,6 +88,7 @@ export default function SuccessPage() {
 
   const handlePrint = () => {
     try {
+      setAck(true); // mark as acknowledged
       window.print();
     } catch {
       setError("A nyomtatás nem indítható.");
@@ -113,24 +112,20 @@ export default function SuccessPage() {
         URL.revokeObjectURL(url);
         a.remove();
       }, 0);
+
+      setAck(true); // mark as acknowledged
     } catch {
       setError("Nem sikerült menteni a fájlt.");
     }
   };
 
-  // NEW: “I saved/printed — start the quiz”
   const handleStartQuiz = () => {
-    const sid =
-      router?.query?.session_id ||
-      (typeof window !== "undefined"
-        ? new URLSearchParams(window.location.search).get("session_id")
-        : "");
-
-    if (!sid) {
-      setError("Hiányzik a session_id, nem indítható a kvíz.");
+    if (!ack) {
+      setError("Előbb mentsd vagy nyomtasd ki a belépési adatokat!");
       return;
     }
-    router.push(`${QUIZ_PATH}?session_id=${encodeURIComponent(sid)}`);
+    // ⬇️ Adjust this route if your quiz lives elsewhere (e.g. '/quiz')
+    router.push("/trivia");
   };
 
   useEffect(() => {
@@ -212,6 +207,12 @@ export default function SuccessPage() {
     fontWeight: 600,
   };
 
+  const btnDisabled = {
+    ...btnPrimary,
+    opacity: 0.5,
+    cursor: "not-allowed",
+  };
+
   const btnGhost = {
     background: "transparent",
     border: "1px solid #666",
@@ -272,8 +273,14 @@ export default function SuccessPage() {
               <button onClick={handleSave} style={btnPrimary}>
                 Mentés
               </button>
-              {/* NEW button */}
-              <button onClick={handleStartQuiz} style={btnPrimary}>
+              <button
+                onClick={handleStartQuiz}
+                style={ack ? btnPrimary : btnDisabled}
+                disabled={!ack}
+                title={
+                  ack ? "Indulhat a kvíz" : "Előbb mentsd vagy nyomtasd ki az adatokat"
+                }
+              >
                 Kvíz indítása
               </button>
               <button onClick={() => router.push("/")} style={btnGhost}>
