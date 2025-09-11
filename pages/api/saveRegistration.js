@@ -1,64 +1,96 @@
 // pages/api/saveRegistration.js
-import { createClient } from "@supabase/supabase-js";
+// Verifies a Stripe Checkout Session (paid), then upserts a row in Supabase.
+// Still supports dev "PING…" session_ids for quick testing.
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE;
+const Stripe = require("stripe");
+const { createClient } = require("@supabase/supabase-js");
 
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
+const stripeSecret = process.env.STRIPE_SECRET_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE;
+
+const supabase =
+  supabaseUrl && supabaseKey
+    ? createClient(supabaseUrl, supabaseKey)
+    : null;
 
 export default async function handler(req, res) {
   try {
     if (req.method !== "GET") {
-      res.setHeader("Allow", "GET");
       return res.status(405).json({ error: "Method not allowed" });
     }
 
     const session_id =
-      (req.query && req.query.session_id && String(req.query.session_id)) || "";
-    if (!session_id.trim()) {
+      (req.query.session_id || (req.body && req.body.session_id) || "").toString();
+
+    if (!session_id) {
       return res.status(400).json({ error: "Missing session_id" });
     }
 
-    // Use last 4 alphanumeric chars (digits if available) for pretty creds
-    const tail =
-      (session_id.match(/[0-9]{2,}$/)?.[0] ??
-        session_id.slice(-4).replace(/[^A-Za-z0-9]/g, ""))
-        .toUpperCase() || "TEST";
-
-    const username = `GL-${tail}`;
-    const password = `PASS-${tail}`;
-
-    // 1) If already saved, return existing creds (idempotent)
-    const { data: existing, error: selErr } = await supabase
-      .from("registrations")
-      .select("username,password")
-      .eq("session_id", session_id)
-      .maybeSingle();
-
-    if (selErr) throw selErr;
-
-    if (existing) {
+    // DEV shortcut: allow PING* ids to keep your current test flow working.
+    if (/^PING/i.test(session_id)) {
+      const tail = session_id.slice(-4).toUpperCase();
       return res.status(200).json({
         ok: true,
-        username: existing.username,
-        password: existing.password,
+        username: `GL-${tail}`,
+        password: `PASS-${tail}`,
       });
     }
 
-    // 2) Insert new row
-    const { error: insErr } = await supabase.from("registrations").insert({
-      session_id,
-      username,
-      password,
-      status: "pending",
-    });
-    if (insErr) throw insErr;
+    // Basic env checks
+    if (!stripeSecret) {
+      return res.status(500).json({ error: "Server misconfigured: STRIPE_SECRET_KEY missing" });
+    }
+    if (!supabase) {
+      return res.status(500).json({ error: "Server misconfigured: Supabase env vars missing" });
+    }
+
+    // Sanity check: Stripe session id format
+    if (!/^cs_(test|live)_[A-Za-z0-9]+/.test(session_id)) {
+      return res.status(400).json({ error: "Invalid session_id format" });
+    }
+
+    const stripe = new Stripe(stripeSecret);
+    let session;
+    try {
+      session = await stripe.checkout.sessions.retrieve(session_id, {
+        expand: ["payment_intent", "line_items"],
+      });
+    } catch (err) {
+      return res.status(400).json({ error: `Stripe retrieve failed: ${err.message}` });
+    }
+
+    // Require successful payment
+    if (session.payment_status !== "paid") {
+      return res.status(400).json({ error: "Session not paid yet" });
+    }
+
+    // Generate simple credentials (replace with your real logic if desired)
+    const tail = session_id.slice(-4).toUpperCase();
+    const username = `GL-${tail}`;
+    const password = `PASS-${tail}`;
+
+    // Upsert row keyed by unique session_id
+    const { data, error } = await supabase
+      .from("registrations")
+      .upsert(
+        {
+          session_id,
+          username,
+          password,
+          status: "active",
+        },
+        { onConflict: "session_id" }
+      )
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
 
     return res.status(200).json({ ok: true, username, password });
   } catch (err) {
-    const msg =
-      err?.message ||
-      (typeof err === "string" ? err : "Unexpected server error");
-    return res.status(500).json({ error: msg });
+    return res.status(500).json({ error: err.message || "Unknown server error" });
   }
 }
