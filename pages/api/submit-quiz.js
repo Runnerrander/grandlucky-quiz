@@ -1,61 +1,79 @@
 // pages/api/submit-quiz.js
-import { createClient } from '@supabase/supabase-js';
+// Stores the quiz result automatically into public.trivia_submissions.
+// Accepts POST JSON: { username, ms, correct=5, round_id }
+// Also supports GET ?username=&ms= for quick manual testing.
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceRole = process.env.SUPABASE_SERVICE_ROLE;
+
+const supabase =
+  supabaseUrl && serviceRole ? createClient(supabaseUrl, serviceRole) : null;
+
+function bad(res, code, error) {
+  return res.status(code).json({ ok: false, error });
+}
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
-
   try {
-    const {
-      username,
-      round_id,
-      correct_count,
-      total_time_ms,
-      total_questions,
-      answers,
-    } = req.body || {};
-
-    if (!username || !round_id) {
-      return res.status(400).json({ error: 'missing username or round_id' });
+    if (!supabase) {
+      return bad(res, 500, "Server misconfigured: Supabase env vars missing");
     }
 
-    // Default total_questions so DB NOT NULL is always satisfied
-    const tq =
-      Number.isFinite(Number(total_questions)) && Number(total_questions) > 0
-        ? Number(total_questions)
-        : 5;
-
-    const payload = {
-      username,
-      round_id,
-      correct_count: Number(correct_count) || 0,
-      total_time_ms: Number(total_time_ms) || 0,
-      total_questions: tq,
-      // let DB default handle this, but if provided use it
-      answers: Array.isArray(answers) ? answers : undefined,
-    };
-
-    // Upsert to handle the unique (round_id, username) constraint gracefully
-    const { data, error } = await supabase
-      .from('trivia_submissions')
-      .upsert(payload, { onConflict: 'round_id,username' })
-      .select('id')
-      .single();
-
-    if (error) {
-      return res.status(500).json({ error: error.message });
+    // Allow quick GET testing in the browser:
+    if (req.method === "GET") {
+      const { username = "", ms = "0", round_id = "", correct = "5" } =
+        req.query || {};
+      return insertRow(res, {
+        username: String(username).trim(),
+        ms: Number(ms) || 0,
+        correct: Number(correct) || 5,
+        round_id: round_id ? String(round_id) : null,
+      });
     }
 
-    return res.status(200).json({ ok: true, id: data?.id ?? null });
-  } catch (err) {
-    console.error('submit-quiz error:', err);
-    return res.status(500).json({ error: 'server_error' });
+    if (req.method !== "POST") {
+      res.setHeader("Allow", "POST, GET");
+      return bad(res, 405, "Method not allowed");
+    }
+
+    const body = req.body || {};
+    const username = typeof body.username === "string" ? body.username.trim() : "";
+    const ms = Number(body.ms);
+    const correct = Number(body.correct ?? 5);
+    const round_id =
+      typeof body.round_id === "string" && body.round_id.trim()
+        ? body.round_id.trim()
+        : null;
+
+    if (!username) return bad(res, 400, "username required");
+    if (!Number.isFinite(ms) || ms < 0) return bad(res, 400, "ms must be >= 0");
+    if (!Number.isFinite(correct)) return bad(res, 400, "correct must be a number");
+
+    return insertRow(res, { username, ms, correct, round_id });
+  } catch (e) {
+    return bad(res, 500, e?.message || "Unknown server error");
   }
+}
+
+async function insertRow(res, { username, ms, correct, round_id }) {
+  // IMPORTANT: column names below assume your existing table shape.
+  // If your time column is named differently (e.g. `elapsed_ms`),
+  // change `time_ms` to match your table.
+  const row = {
+    username,
+    time_ms: ms,     // <- change to `elapsed_ms` if that's your column name
+    correct,
+    round_id,
+  };
+
+  const { data, error } = await supabase
+    .from("trivia_submissions")
+    .insert(row)
+    .select()
+    .maybeSingle();
+
+  if (error) return bad(res, 500, error.message);
+  return res.status(200).json({ ok: true, data });
 }
