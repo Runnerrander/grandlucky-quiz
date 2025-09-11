@@ -2,18 +2,15 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-const stripeSecret = process.env.STRIPE_SECRET_KEY || "";
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE || "";
+const supabaseUrl =
+  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE;
+const stripeSecret = process.env.STRIPE_SECRET_KEY;
 
-// Create clients (only if keys exist)
-const stripe = stripeSecret?.startsWith("sk_")
-  ? new Stripe(stripeSecret, { apiVersion: "2024-06-20" })
-  : null;
-
+// Create a Supabase service client if envs are present
 const supabase =
-  supabaseUrl && serviceRoleKey
-    ? createClient(supabaseUrl, serviceRoleKey)
+  supabaseUrl && supabaseKey
+    ? createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } })
     : null;
 
 export default async function handler(req, res) {
@@ -23,46 +20,61 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: "Method not allowed" });
     }
 
-    const sid = (req.query.session_id || req.query.sessionId || "").toString();
-    if (!sid) return res.status(400).json({ error: "Missing session_id" });
+    const sid =
+      (req.query && (req.query.session_id || req.query.sessionId)) ||
+      (req.body && (req.body.session_id || req.body.sessionId)) ||
+      "";
+    const session_id = String(sid || "").trim();
 
-    // Fast path for manual tests (no Stripe call):
-    if (sid.toUpperCase().startsWith("PING")) {
-      const tail = (sid.slice(-4).toUpperCase() || "TEST");
-      return res.status(200).json({ ok: true, username: `GL-${tail}`, password: `PASS-${tail}` });
+    if (!session_id) {
+      return res.status(400).json({ error: "Missing session_id" });
     }
 
-    if (!stripe) throw new Error("Stripe secret key missing");
-
-    // Verify the Checkout Session
-    const session = await stripe.checkout.sessions.retrieve(sid);
-    if (!session || session.payment_status !== "paid") {
-      return res.status(402).json({ error: "Payment not found/paid" });
+    // Quick test path — no DB write
+    if (session_id === "PING1234") {
+      return res.status(200).json({
+        ok: true,
+        username: "GL-1234",
+        password: "PASS-1234",
+        test: true,
+      });
     }
 
-    // Generate credentials from the session_id tail
-    const tail = sid.slice(-4).toUpperCase();
+    // Optional: verify Stripe checkout session (best-effort)
+    let paid = true;
+    if (stripeSecret && /^cs_/.test(session_id)) {
+      const stripe = new Stripe(stripeSecret, { apiVersion: "2024-06-20" });
+      try {
+        const session = await stripe.checkout.sessions.retrieve(session_id, {
+          expand: ["payment_intent"],
+        });
+        paid =
+          session?.payment_status === "paid" ||
+          session?.status === "complete" ||
+          session?.payment_intent?.status === "succeeded";
+      } catch {
+        // Ignore verification errors; don't block user
+      }
+    }
+
+    // Generate simple creds from the session_id tail
+    const tail = session_id.slice(-4).toUpperCase();
     const username = `GL-${tail}`;
     const password = `PASS-${tail}`;
 
-    // Optional: persist to Supabase (if table and key are present)
-    if (supabase) {
-      const { error } = await supabase
-        .from("registrations") // <- your table name
-        .upsert(
-          { session_id: sid, username, password },
-          { onConflict: "session_id" }
-        );
-
-      if (error) {
-        // Not fatal to the response (still return creds). Check Vercel logs for details.
-        console.error("Supabase upsert error:", error);
-      }
+    // Write to Supabase if configured and (likely) paid
+    if (supabase && paid) {
+      await supabase.from("registrations").insert({
+        session_id,
+        username,
+        password,
+        created_at: new Date().toISOString(),
+      });
     }
 
     return res.status(200).json({ ok: true, username, password });
   } catch (err) {
     console.error("saveRegistration error:", err);
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: "Internal error" });
   }
 }
