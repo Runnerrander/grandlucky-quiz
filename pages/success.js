@@ -2,6 +2,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 
+// Change this if your quiz route is different:
+const QUIZ_PATH = "/trivia";
+
 export default function SuccessPage() {
   const router = useRouter();
 
@@ -113,6 +116,21 @@ export default function SuccessPage() {
     } catch {
       setError("Nem sikerült menteni a fájlt.");
     }
+  };
+
+  // NEW: “I saved/printed — start the quiz”
+  const handleStartQuiz = () => {
+    const sid =
+      router?.query?.session_id ||
+      (typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("session_id")
+        : "");
+
+    if (!sid) {
+      setError("Hiányzik a session_id, nem indítható a kvíz.");
+      return;
+    }
+    router.push(`${QUIZ_PATH}?session_id=${encodeURIComponent(sid)}`);
   };
 
   useEffect(() => {
@@ -253,6 +271,10 @@ export default function SuccessPage() {
               </button>
               <button onClick={handleSave} style={btnPrimary}>
                 Mentés
+              </button>
+              {/* NEW button */}
+              <button onClick={handleStartQuiz} style={btnPrimary}>
+                Kvíz indítása
               </button>
               <button onClick={() => router.push("/")} style={btnGhost}>
                 Vissza
