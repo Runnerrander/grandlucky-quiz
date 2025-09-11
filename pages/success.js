@@ -26,11 +26,10 @@ export default function SuccessPage() {
 
   const fetchCreds = async (sid) => {
     // Build absolute URL so it works in all environments
-    const origin =
-      typeof window === "undefined" ? "" : window.location.origin;
+    const origin = typeof window === "undefined" ? "" : window.location.origin;
 
-    // NOTE: calling saveRegistration2 (the stub you created)
-    const url = `${origin}/api/saveRegistration2?session_id=${encodeURIComponent(
+    // ✅ Use the real endpoint now
+    const url = `${origin}/api/saveRegistration?session_id=${encodeURIComponent(
       sid
     )}`;
 
@@ -94,7 +93,7 @@ export default function SuccessPage() {
     }
   };
 
-  // NEW: Save credentials to a local .txt file
+  // Save credentials to a local .txt file
   const handleSave = () => {
     try {
       const text = `Felhasználónév: ${creds?.username}\nJelszó: ${creds?.password}\n`;
@@ -173,7 +172,8 @@ export default function SuccessPage() {
     border: "1px solid #333",
     borderRadius: 8,
     padding: "8px 12px",
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+    fontFamily:
+      "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
   };
 
   const btns = {
