@@ -8,7 +8,6 @@ export default function SuccessPage() {
   const [loading, setLoading] = useState(true);
   const [creds, setCreds] = useState(null); // { username, password }
   const [error, setError] = useState("");
-  const [ack, setAck] = useState(false); // user has saved or printed
 
   // --- helpers ------------------------------------------------------
 
@@ -29,7 +28,7 @@ export default function SuccessPage() {
     // Build absolute URL so it works in all environments
     const origin = typeof window === "undefined" ? "" : window.location.origin;
 
-    // ✅ Use the real endpoint now
+    // Use the real endpoint
     const url = `${origin}/api/saveRegistration?session_id=${encodeURIComponent(
       sid
     )}`;
@@ -48,7 +47,6 @@ export default function SuccessPage() {
     try {
       data = JSON.parse(text);
     } catch {
-      // If API returned raw text for some reason
       throw new Error("A válasz nem érvényes JSON.");
     }
 
@@ -77,6 +75,11 @@ export default function SuccessPage() {
 
       const c = await fetchCreds(sid);
       setCreds(c);
+      // convenience: remember for the quiz page
+      try {
+        localStorage.setItem("gl_username", c.username);
+        localStorage.setItem("gl_session_id", String(sid));
+      } catch {}
     } catch (e) {
       setError(
         e?.message || "Ismeretlen hiba történt a hitelesítő adatok lekérésekor."
@@ -88,7 +91,6 @@ export default function SuccessPage() {
 
   const handlePrint = () => {
     try {
-      setAck(true); // mark as acknowledged
       window.print();
     } catch {
       setError("A nyomtatás nem indítható.");
@@ -112,20 +114,15 @@ export default function SuccessPage() {
         URL.revokeObjectURL(url);
         a.remove();
       }, 0);
-
-      setAck(true); // mark as acknowledged
     } catch {
       setError("Nem sikerült menteni a fájlt.");
     }
   };
 
+  // NEW: go straight to the trivia after user confirms they saved/printed
   const handleStartQuiz = () => {
-    if (!ack) {
-      setError("Előbb mentsd vagy nyomtasd ki a belépési adatokat!");
-      return;
-    }
-    // ⬇️ Adjust this route if your quiz lives elsewhere (e.g. '/quiz')
-    router.push("/trivia");
+    if (!creds?.username) return;
+    router.replace(`/trivia?auto=1&u=${encodeURIComponent(creds.username)}`);
   };
 
   useEffect(() => {
@@ -207,12 +204,6 @@ export default function SuccessPage() {
     fontWeight: 600,
   };
 
-  const btnDisabled = {
-    ...btnPrimary,
-    opacity: 0.5,
-    cursor: "not-allowed",
-  };
-
   const btnGhost = {
     background: "transparent",
     border: "1px solid #666",
@@ -220,6 +211,16 @@ export default function SuccessPage() {
     padding: "10px 14px",
     borderRadius: 8,
     cursor: "pointer",
+  };
+
+  const btnAccent = {
+    background: "#26d07c",
+    border: "1px solid #1db46a",
+    color: "#082f1d",
+    padding: "10px 14px",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontWeight: 700,
   };
 
   const errBox = {
@@ -273,14 +274,8 @@ export default function SuccessPage() {
               <button onClick={handleSave} style={btnPrimary}>
                 Mentés
               </button>
-              <button
-                onClick={handleStartQuiz}
-                style={ack ? btnPrimary : btnDisabled}
-                disabled={!ack}
-                title={
-                  ack ? "Indulhat a kvíz" : "Előbb mentsd vagy nyomtasd ki az adatokat"
-                }
-              >
+              {/* The missing button */}
+              <button onClick={handleStartQuiz} style={btnAccent}>
                 Kvíz indítása
               </button>
               <button onClick={() => router.push("/")} style={btnGhost}>
