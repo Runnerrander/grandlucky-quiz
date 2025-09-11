@@ -1,218 +1,207 @@
 // pages/final.js
-import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
+import { useEffect, useMemo, useState } from "react";
 
 export default function Final() {
   const router = useRouter();
-  const { username = "", ms = "", correct = "", round_id = "", lang } = router.query;
+  const { username = "", ms = "", round_id = "", lang: rawLang } = router.query;
+  const lang = rawLang === "en" ? "en" : "hu";
 
-  // language
-  const [curLang, setCurLang] = useState(
-    (typeof lang === "string" && (lang === "en" || lang === "hu")) ? lang : "hu"
+  const T = useMemo(
+    () =>
+      ({
+        hu: {
+          title: "Kvíz sikeresen befejezve!",
+          blurb:
+            "Gratulálunk, teljesítetted a kvízt. Reméljük, találkozunk a döntőben!",
+          labels: {
+            username: "Felhasználónév:",
+            correct: "Helyes válaszok:",
+            elapsed: "Eltelt idő:",
+          },
+          save: "Eredmény mentése",
+          print: "Eredmény nyomtatása",
+          back: "Vissza a főoldalra",
+          saved: "Eredmény mentve.",
+          saveFailed: "Mentés sikertelen. Kérlek próbáld újra. (DB)",
+          english: "English",
+          hungarian: "Magyar",
+        },
+        en: {
+          title: "Quiz completed successfully!",
+          blurb:
+            "Congrats, you’ve finished the quiz. We hope to see you in the finals!",
+          labels: {
+            username: "Username:",
+            correct: "Correct answers:",
+            elapsed: "Elapsed time:",
+          },
+          save: "Save result",
+          print: "Print result",
+          back: "Back to homepage",
+          saved: "Result saved.",
+          saveFailed: "Save failed. Please try again. (DB)",
+          english: "English",
+          hungarian: "Hungarian",
+        },
+      })[lang],
+    [lang]
   );
 
-  // i18n text (JS-only, no TS syntax)
-  const T = useMemo(() => {
-    const dict = {
-      hu: {
-        title: "Kvíz sikeresen befejezve!",
-        blurb1: "Gratulálunk, teljesítetted a kvízt.",
-        blurb2: "Reméljük, találkozunk a döntőben!",
-        username: "Felhasználónév:",
-        answers: "Helyes válaszok:",
-        time: "Eltelt idő:",
-        save: "Eredmény mentése",
-        print: "Eredmény nyomtatása",
-        back: "Vissza a főoldalra",
-        saved: "Eredmény mentve.",
-        saveFailed: "Mentés sikertelen. Kérlek próbáld újra. (DB)",
-        en: "English",
-        hu: "Magyar",
-        msSuffix: " ms",
-      },
-      en: {
-        title: "Quiz successfully completed!",
-        blurb1: "Congrats, you finished the quiz.",
-        blurb2: "We hope to see you in the finals!",
-        username: "Username:",
-        answers: "Correct answers:",
-        time: "Elapsed time:",
-        save: "Save result",
-        print: "Print result",
-        back: "Back to home",
-        saved: "Result saved.",
-        saveFailed: "Save failed. Please try again. (DB)",
-        en: "English",
-        hu: "Hungarian",
-        msSuffix: " ms",
-      },
-    };
-    return dict[curLang];
-  }, [curLang]);
-
-  // parsed values
-  const correctNum = useMemo(() => Number(correct) || 0, [correct]);
-  const msNum = useMemo(() => Number(ms) || 0, [ms]);
-
+  const msNum = Number(ms) || 0;
+  const correct = 5; // always 5 at this screen
   const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState("");
-  const [savedOnce, setSavedOnce] = useState(false);
+  const [saveError, setSaveError] = useState(false);
 
-  // keep URL in sync when toggling language (shallow replace)
+  // Auto-save to Supabase via our API (POST)
   useEffect(() => {
-    if (!router.isReady) return;
-    const params = new URLSearchParams({ ...router.query, lang: curLang });
-    router.replace(`/final?${params.toString()}`, undefined, { shallow: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [curLang, router.isReady]);
+    if (!username || !ms) return;
+    let mounted = true;
 
-  // autosave once if perfect score (5/5)
-  useEffect(() => {
-    if (!router.isReady) return;
-    if (savedOnce) return;
-    if (correctNum === 5 && username) {
-      (async () => {
-        const ok = await saveResult();
-        if (ok) setSavedOnce(true);
-      })();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router.isReady, correctNum, username]);
-
-  async function saveResult() {
-    try {
-      setSaving(true);
-      setToast("");
-      const res = await fetch("/api/saveResult", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+    (async () => {
+      try {
+        setSaving(true);
+        setSaveError(false);
+        const body = {
           username,
           ms: msNum,
-          correct: correctNum,
-          round_id: round_id || "final-round",
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok || data.error) {
-        setToast(T.saveFailed);
-        return false;
+          correct,
+          round_id: typeof round_id === "string" ? round_id : "",
+        };
+        const res = await fetch("/api/saveResult", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || json.error) throw new Error(json.error || "DB");
+      } catch (e) {
+        if (mounted) setSaveError(true);
+      } finally {
+        if (mounted) setSaving(false);
       }
-      setToast(T.saved);
-      return true;
-    } catch (e) {
-      setToast(T.saveFailed);
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  }
+    })();
 
-  function onPrint() {
-    window.print();
-  }
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [username, msNum, round_id]);
+
+  const onSaveToDevice = () => {
+    const lines = [
+      `${T.labels.username} ${username}`,
+      `${T.labels.correct} ${correct} / 5`,
+      `${T.labels.elapsed} ${msNum} ms`,
+    ];
+    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `result-${username || "player"}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const onPrint = () => window.print();
+
+  const toggleLang = () => {
+    const next = lang === "hu" ? "en" : "hu";
+    router.replace(
+      { pathname: router.pathname, query: { ...router.query, lang: next } },
+      undefined,
+      { shallow: true }
+    );
+  };
 
   return (
-    <div className="page">
-      {/* language toggle */}
-      <div className="lang-switch">
-        <button
-          className={`pill ${curLang === "hu" ? "active" : ""}`}
-          onClick={() => setCurLang("hu")}
-        >
-          HU
-        </button>
-        <button
-          className={`pill ${curLang === "en" ? "active" : ""}`}
-          onClick={() => setCurLang("en")}
-        >
-          EN
-        </button>
-      </div>
+    <main className="page">
+      <button className="lang" onClick={toggleLang}>
+        {lang === "hu" ? T.english : T.hungarian}
+      </button>
 
-      {/* content without dark plate */}
-      <main className="content">
+      <div className="center">
         <h1 className="title">{T.title}</h1>
-        <p className="sub">{T.blurb1}<br />{T.blurb2}</p>
+        <p className="blurb">{T.blurb}</p>
 
         <div className="rows">
-          <Row label={T.username} value={String(username)} />
-          <Row label={T.answers} value={`${correctNum} / 5`} />
-          <Row label={T.time} value={`${msNum}${T.msSuffix}`} />
-          {/* Round/Forduló intentionally hidden */}
+          <Row label={T.labels.username} value={username || "—"} />
+          <Row label={T.labels.correct} value={`${correct} / 5`} />
+          <Row label={T.labels.elapsed} value={`${msNum} ms`} />
+          {/* Intentionally no “Forduló / round” row */}
         </div>
 
-        <div className="btns">
-          <button className="btn btn-primary" onClick={saveResult} disabled={saving}>
+        <div className="actions">
+          <button className="btn primary" onClick={onSaveToDevice}>
             {T.save}
           </button>
-          <button className="btn btn-primary" onClick={onPrint}>
+          <button className="btn primary" onClick={onPrint}>
             {T.print}
           </button>
-          <a className="btn btn-secondary" href="/">
+          <a className="btn outline" href="/">
             {T.back}
           </a>
         </div>
 
-        {toast ? <div className="toast">{toast}</div> : null}
-      </main>
+        {saveError && (
+          <div className="toast error">{T.saveFailed}</div>
+        )}
+        {!saveError && saving && (
+          <div className="toast">{/* silent saving… */}</div>
+        )}
+      </div>
 
       <style jsx>{`
         .page {
           position: relative;
           min-height: 100vh;
           background: url("/bg-final.jpg") center/cover no-repeat fixed;
+          color: #fff;
         }
-        .lang-switch {
+        .lang {
           position: fixed;
-          top: 18px;
-          right: 18px;
-          display: flex;
-          gap: 8px;
-          z-index: 10;
-        }
-        .pill {
-          border: none;
-          padding: 6px 10px;
+          right: 16px;
+          top: 16px;
+          padding: 8px 14px;
           border-radius: 999px;
-          background: rgba(255,255,255,0.85);
-          color: #111;
-          font-weight: 600;
+          border: none;
+          background: rgba(0, 0, 0, 0.55);
+          color: #fff;
           cursor: pointer;
+          font-weight: 600;
+          backdrop-filter: blur(4px);
         }
-        .pill.active {
-          background: #111;
-          color: #fff;
-        }
-        .content {
-          max-width: 820px;
+        .center {
+          max-width: 860px;
           margin: 0 auto;
-          padding: 120px 24px 64px;
-          color: #fff;
-          text-shadow: 0 2px 10px rgba(0,0,0,0.7);
+          padding: 96px 16px 40px;
+          text-align: left;
         }
         .title {
           font-size: 40px;
-          line-height: 1.1;
-          margin: 0 0 8px 0;
-          font-weight: 800;
+          line-height: 1.15;
+          margin: 0 0 10px;
+          text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
         }
-        .sub {
-          margin: 0 0 24px 0;
+        .blurb {
+          margin: 0 0 24px;
           font-size: 16px;
           opacity: 0.95;
+          text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
         }
         .rows {
           display: grid;
           gap: 10px;
-          margin: 18px 0 26px 0;
+          margin-bottom: 22px;
         }
         .row {
           display: grid;
-          grid-template-columns: 180px 1fr;
+          grid-template-columns: auto 1fr;
           gap: 12px;
-          align-items: center;
+          align-items: baseline;
           font-size: 16px;
+          text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
         }
         .label {
           opacity: 0.9;
@@ -220,49 +209,51 @@ export default function Final() {
         .value {
           font-weight: 700;
         }
-        .btns {
+        .actions {
           display: flex;
           flex-wrap: wrap;
           gap: 12px;
+          margin-top: 10px;
         }
         .btn {
-          appearance: none;
-          border: none;
+          padding: 10px 16px;
           border-radius: 10px;
-          padding: 12px 16px;
-          font-weight: 800;
+          font-weight: 700;
           cursor: pointer;
-          text-decoration: none;
+          border: 0;
         }
-        .btn-primary {
-          background: #f6a623; /* warm amber */
+        .btn.primary {
+          background: linear-gradient(180deg, #ffb237, #f09a0b);
           color: #111;
         }
-        .btn-primary:hover {
-          background: #e49711;
-        }
-        .btn-secondary {
-          background: rgba(255,255,255,0.9);
-          color: #111;
-        }
-        .btn-secondary:hover {
-          background: #fff;
+        .btn.outline {
+          background: transparent;
+          border: 2px solid #ffd07a;
+          color: #ffd07a;
         }
         .toast {
-          margin-top: 16px;
+          margin-top: 14px;
           display: inline-block;
-          background: rgba(0,0,0,0.6);
-          padding: 10px 12px;
+          padding: 8px 12px;
           border-radius: 8px;
-          font-size: 14px;
+          background: rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(3px);
+          font-weight: 600;
+        }
+        .toast.error {
+          background: rgba(160, 12, 12, 0.7);
         }
 
-        @media (max-width: 600px) {
-          .title { font-size: 30px; }
-          .row { grid-template-columns: 1fr; }
+        @media (max-width: 640px) {
+          .center {
+            padding-top: 72px;
+          }
+          .title {
+            font-size: 28px;
+          }
         }
       `}</style>
-    </div>
+    </main>
   );
 }
 
@@ -273,16 +264,13 @@ function Row({ label, value }) {
       <div className="value">{value}</div>
       <style jsx>{`
         .row {
-          display: contents;
+          display: grid;
+          grid-template-columns: auto 1fr;
+          gap: 12px;
+          align-items: baseline;
         }
         .label {
-          grid-column: 1 / 2;
-        }
-        .value {
-          grid-column: 2 / 3;
-        }
-        @media (max-width: 600px) {
-          .label, .value { grid-column: 1 / -1; }
+          min-width: 140px;
         }
       `}</style>
     </div>
