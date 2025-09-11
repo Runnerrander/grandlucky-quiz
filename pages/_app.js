@@ -14,7 +14,10 @@ export default function MyApp({ Component, pageProps }) {
 
       <Component {...pageProps} />
 
-      {/* Global CSS: ensure CTAs are visible/tappable; keep slide-4 fixes */}
+      {/* Global CSS:
+         - keep CTAs above text
+         - fix Slide 4 on mobile: scroll text, sticky CTA
+      */}
       <style jsx global>{`
         /* Keep interactive elements above text overlays */
         button,
@@ -76,18 +79,36 @@ export default function MyApp({ Component, pageProps }) {
             padding: 12px 14px;
           }
 
-          /* --- SPECIFIC: SLIDE 4 SAFEGUARDS --- */
+          /* ---------- SLIDE 4: make text scroll, keep CTA visible ---------- */
+
+          /* Make slide 4 a column layout that can dedicate space for scrollable text */
+          .slide-4,
+          [data-slide="4"],
+          .slides > *:nth-child(4) {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+          }
+
+          /* The text block becomes a scrollable area with padding at bottom
+             so the sticky CTA doesn't overlap it */
           .slide-4 .slide-copy,
           [data-slide="4"] .slide-copy,
           .slides > *:nth-child(4) .slide-copy,
           .slide-4 .copy,
           [data-slide="4"] .copy,
-          .slides > *:nth-child(4) .copy {
-            /* Make room for the CTA row so text doesn't sit on top of buttons */
-            margin-bottom: 120px !important;
+          .slides > *:nth-child(4) .copy,
+          .slide-4 .text-block,
+          [data-slide="4"] .text-block,
+          .slides > *:nth-child(4) .text-block {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 140px; /* space for CTA */
+            margin-bottom: 0 !important; /* override prior bottom margins */
           }
 
-          /* Keep the CTA/buttons visible and stuck near bottom on phones */
+          /* Keep the CTA/buttons visible near bottom on phones */
           .slide-4 .cta,
           [data-slide="4"] .cta,
           .slides > *:nth-child(4) .cta,
@@ -106,6 +127,7 @@ export default function MyApp({ Component, pageProps }) {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
+            /* subtle backdrop for readability over bright images */
             background: linear-gradient(
               to top,
               rgba(0, 0, 0, 0.35),
@@ -114,9 +136,6 @@ export default function MyApp({ Component, pageProps }) {
             padding-top: 6px;
             margin-top: 10px;
           }
-
-          /* IMPORTANT: do NOT disable pointer events on overlays.
-             We removed the previous rule that broke taps. */
         }
       `}</style>
     </>
