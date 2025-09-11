@@ -284,3 +284,55 @@ function Row({ label, value }) {
     </div>
   );
 }
+<style jsx global>{`
+  /* Mobile-only tweaks for the FINAL page */
+  @media (max-width: 520px) {
+    /* Make the main heading scale nicely on phones */
+    .final-page h1,
+    h1 {
+      font-size: clamp(1.4rem, 5.2vw + 0.6rem, 2rem);
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+
+    /* If your content sits in a centered wrapper, give it breathing room */
+    .final-page,
+    .results,
+    .container,
+    .content,
+    body .__next > div { /* safe catch-alls for common wrappers */
+      padding-left: 16px !important;
+      padding-right: 16px !important;
+    }
+
+    /* Stack ALL buttons on the page vertically and full width.
+       (Only applies on this page because the style is scoped here.) */
+    .final-page button,
+    button {
+      width: 100%;
+      display: block;
+      margin: 10px 0 !important;
+      padding: 12px 14px;
+      font-size: 1rem;
+      justify-content: center;
+    }
+
+    /* Make small text more compact so it doesn’t wrap awkwardly */
+    .final-page p,
+    .final-page li,
+    .final-page span {
+      font-size: 0.98rem;
+      line-height: 1.35;
+    }
+
+    /* If you’re still using a translucent panel, keep it readable on bright BGs */
+    .final-page .panel,
+    .panel {
+      background: rgba(0, 0, 0, 0.45);
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+      border-radius: 14px;
+      padding: 16px;
+    }
+  }
+`}</style>
