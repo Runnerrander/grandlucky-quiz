@@ -1,212 +1,292 @@
-import { useEffect, useMemo, useState } from "react";
+// pages/final.js
+import Head from "next/head";
+import Link from "next/link";
 import { useRouter } from "next/router";
+import { useEffect, useMemo, useRef, useState } from "react";
 
-const BG = "/bg-final.jpg"; // image in /public
+const BG_FINAL = "/bg-final.jpg"; // <-- lowercase public image
 
-export default function FinalPage() {
+export default function Final() {
   const router = useRouter();
+  const { ms, username, round_id } = router.query;
 
-  const getQ = (key) => {
-    if (typeof window !== "undefined") {
-      const p = new URLSearchParams(window.location.search).get(key);
-      if (p != null) return p;
-    }
-    const v = router?.query?.[key];
-    return typeof v === "string" ? v : "";
-  };
+  const [lang, setLang] = useState("hu");
+  const [savedOk, setSavedOk] = useState(null); // null | true | false
+  const savedOnce = useRef(false); // ensure we save only once
 
-  const username = getQ("username") || "";
-  const msStr = getQ("ms") || "";
-  const correctStr = getQ("c") || getQ("correct") || "";
-  const round_id = getQ("round_id") || ""; // kept for saving only (not shown)
+  const t = useMemo(
+    () =>
+      ({
+        hu: {
+          title: "Kvíz sikeresen befejezve!",
+          congrats: "Gratulálunk, teljesítetted a kvízt.",
+          meet: "Reméljük, találkozunk a döntőben!",
+          user: "Felhasználónév",
+          correct: "Helyes válaszok",
+          elapsed: "Eltelt idő",
+          round: "Forduló", // we’ll hide visually as requested
+          save: "Eredmény mentése",
+          print: "Eredmény nyomtatása",
+          back: "Vissza a főoldalra",
+          saveFail: "Mentés sikertelen. Kérlek próbáld újra. (DB)",
+          saved: "Eredmény elmentve.",
+          toggle: "English",
+        },
+        en: {
+          title: "Quiz completed successfully!",
+          congrats: "Congratulations, you’ve finished the quiz.",
+          meet: "Hope to see you in the finals!",
+          user: "Username",
+          correct: "Correct answers",
+          elapsed: "Elapsed time",
+          round: "Round", // hidden visually
+          save: "Save result",
+          print: "Print result",
+          back: "Back to homepage",
+          saveFail: "Save failed. Please try again. (DB)",
+          saved: "Result saved.",
+          toggle: "Magyar",
+        },
+      }[lang]),
+    [lang]
+  );
 
-  const time_ms = useMemo(() => {
-    const n = parseInt(msStr, 10);
-    return Number.isFinite(n) && n >= 0 ? n : 0;
-  }, [msStr]);
-
-  const correct = useMemo(() => {
-    const n = parseInt(correctStr, 10);
-    return Number.isFinite(n) ? n : 0;
-  }, [correctStr]);
-
-  const [saveState, setSaveState] = useState("idle");
-  const [saveError, setSaveError] = useState("");
-
-  const guardKey = useMemo(() => {
-    if (!username || !time_ms || correct < 5) return "";
-    return `gl_result_saved_${username}_${time_ms}_${correct}_${round_id || "none"}`;
-  }, [username, time_ms, correct, round_id]);
-
+  // Auto-save the result exactly once when all params are present
   useEffect(() => {
-    if (!username || !time_ms || correct < 5) return;
-    if (guardKey && typeof window !== "undefined" && localStorage.getItem(guardKey)) {
-      setSaveState("saved");
-      return;
-    }
-    let cancelled = false;
+    if (savedOnce.current) return;
+    if (!ms || !username) return; // need these at minimum
+
+    savedOnce.current = true;
     (async () => {
       try {
-        setSaveState("saving");
-        setSaveError("");
-        const res = await fetch("/api/saveResult", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username, ms: time_ms, correct, round_id: round_id || undefined }),
-        });
-        const text = await res.text();
-        let json;
-        try { json = JSON.parse(text); } catch { throw new Error("Bad JSON from API"); }
-        if (!res.ok || !json?.ok) throw new Error(json?.error || `HTTP ${res.status}`);
-        if (!cancelled) {
-          setSaveState("saved");
-          if (guardKey && typeof window !== "undefined") localStorage.setItem(guardKey, "1");
-        }
-      } catch (e) {
-        if (!cancelled) { setSaveState("error"); setSaveError(e?.message || "Save failed"); }
+        const url = `/api/saveResult?username=${encodeURIComponent(
+          String(username)
+        )}&ms=${encodeURIComponent(String(ms))}${
+          round_id ? `&round_id=${encodeURIComponent(String(round_id))}` : ""
+        }`;
+        const res = await fetch(url, { method: "GET" });
+        if (!res.ok) throw new Error("not ok");
+        const data = await res.json();
+        if (!data?.ok) throw new Error("bad payload");
+        setSavedOk(true);
+      } catch {
+        setSavedOk(false);
       }
     })();
-    return () => { cancelled = true; };
-  }, [username, time_ms, correct, round_id, guardKey]);
+  }, [ms, username, round_id]);
 
-  const handleDownload = () => {
-    const ts = new Date().toISOString().slice(0, 19).replace("T", " ");
-    const text =
-      `GrandLucky Travel — Trivia Result\n\n` +
-      `Username: ${username}\n` +
-      `Correct: ${correct} / 5\n` +
-      `Time: ${time_ms} ms\n` +
-      (round_id ? `` : ``) +
-      `Saved at: ${ts}\n`;
+  // Save printable txt
+  const onSave = () => {
+    const ts = new Date().toISOString().replace("T", " ").slice(0, 19);
+    const text = `GrandLucky Travel — Quiz Result
+Username: ${username || "-"}
+Correct: 5
+Time (ms): ${ms || "-"}
+Round: ${round_id || "-"}
+Saved at: ${ts}
+`;
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `grandlucky-result-${username || "user"}.txt`;
-    document.body.appendChild(a);
     a.click();
-    a.remove();
     URL.revokeObjectURL(url);
   };
 
-  const handlePrint = () => {
+  // Print simple page
+  const onPrint = () => {
     const w = window.open("", "_blank");
     if (!w) return;
-    const ts = new Date().toLocaleString();
     w.document.write(`<!doctype html>
-<html><head><meta charset="utf-8"><title>Trivia Result</title>
-<style>body{font-family:Arial,Helvetica,sans-serif;padding:24px} .card{max-width:560px;margin:0 auto;border:1px solid #ddd;border-radius:10px;padding:20px}</style>
+<html><head>
+<meta charset="utf-8"><title>Quiz Result</title>
+<style>
+  body{font-family:Arial,Helvetica,sans-serif;padding:24px}
+  .card{max-width:520px;margin:0 auto;border:1px solid #ddd;border-radius:10px;padding:22px}
+  h1{margin:0 0 10px;font-size:22px}
+  p{margin:6px 0;font-size:16px}
+  hr{margin:14px 0}
+</style>
 </head><body>
-  <div class="card">
-    <h2>GrandLucky Travel — Trivia Result</h2>
-    <p><strong>Username:</strong> ${username}</p>
-    <p><strong>Correct:</strong> ${correct} / 5</p>
-    <p><strong>Time:</strong> ${time_ms} ms</p>
-    <hr>
-    <p>Printed: ${ts}</p>
-  </div>
-  <script>window.print();</script>
+<div class="card">
+  <h1>GrandLucky Travel — Quiz Result</h1>
+  <p><strong>${t.user}:</strong> ${username || "-"}</p>
+  <p><strong>${t.correct}:</strong> 5 / 5</p>
+  <p><strong>${t.elapsed}:</strong> ${ms || "-"} ms</p>
+</div>
+<script>window.print()</script>
 </body></html>`);
     w.document.close();
   };
 
-  const t = {
-    title: "Kvíz sikeresen befejezve!",
-    lead: "Gratulálunk, teljesítetted a kvízt.",
-    username: "Felhasználónév:",
-    correct: "Helyes válaszok:",
-    time: "Eltelt idő:",
-    saveBtn: "Eredmény mentése",
-    printBtn: "Eredmény nyomtatása",
-    backBtn: "Vissza a főoldalra",
-    saving: "Eredmény mentése…",
-    saved: "Eredmény mentve.",
-    errorPrefix: "Mentés sikertelen",
-  };
-
-  const page = {
-    minHeight: "100vh",
-    background: `linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url('${BG}') center/cover no-repeat`,
-    color: "#fff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "40px 16px",
-  };
-  const card = {
-    width: "100%",
-    maxWidth: 740,
-    background: "#151515",
-    borderRadius: 12,
-    border: "1px solid #222",
-    boxShadow: "0 12px 30px rgba(0,0,0,.45)",
-    padding: 24,
-  };
-  const h1 = { textAlign: "center", margin: "0 0 6px", fontSize: 32, fontWeight: 800 };
-  const sub = { textAlign: "center", color: "#bbb", marginBottom: 18 };
-  const grid = { display: "grid", gap: 10, marginTop: 10 };
-  const row = { display: "grid", gridTemplateColumns: "180px 1fr", gap: 12, alignItems: "center" };
-  const chip = {
-    background: "#202020",
-    border: "1px solid #333",
-    borderRadius: 8,
-    padding: "10px 12px",
-    fontFamily:
-      "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
-  };
-  const btnBar = { display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", marginTop: 16 };
-  const btn = (primary = false) => ({
-    background: primary ? "#f4aa2a" : "transparent",
-    color: primary ? "#1a1a1a" : "#ddd",
-    border: primary ? "1px solid #f4aa2a" : "1px solid #666",
-    borderRadius: 10,
-    padding: "10px 14px",
-    cursor: "pointer",
-    fontWeight: 700,
-  });
-  const note = {
-    textAlign: "center",
-    marginTop: 12,
-    color: saveState === "error" ? "#ffd2d2" : "#bbb",
-    background: saveState === "error" ? "#7a1f1f" : "transparent",
-    borderRadius: 8,
-    padding: saveState === "error" ? "8px 10px" : 0,
-  };
-
   return (
-    <main style={page}>
-      <div style={card}>
-        <h1 style={h1}>{t.title}</h1>
-        <div style={sub}>{t.lead}</div>
+    <main className="screen">
+      <Head>
+        <title>Final — GrandLuckyTravel</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
 
-        <div style={grid}>
-          <div style={row}>
-            <div>{t.username}</div>
-            <div style={chip}>{username || "—"}</div>
-          </div>
-          <div style={row}>
-            <div>{t.correct}</div>
-            <div style={chip}>{Number.isFinite(correct) ? `${correct} / 5` : "—"}</div>
-          </div>
-          <div style={row}>
-            <div>{t.time}</div>
-            <div style={chip}>{Number.isFinite(time_ms) ? `${time_ms} ms` : "—"}</div>
-          </div>
-          {/* round_id intentionally hidden from UI */}
+      <button
+        className="lang"
+        onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}
+      >
+        {t.toggle}
+      </button>
+
+      <div className="card">
+        <h1>{t.title}</h1>
+        <p className="sub">{t.congrats}</p>
+        <p className="sub">{t.meet}</p>
+
+        <div className="row">
+          <span className="label">{t.user}:</span>
+          <span className="val">{username || "-"}</span>
+        </div>
+        <div className="row">
+          <span className="label">{t.correct}:</span>
+          <span className="val">5 / 5</span>
+        </div>
+        <div className="row">
+          <span className="label">{t.elapsed}:</span>
+          <span className="val">{ms || "-"} ms</span>
+        </div>
+        {/* Hidden ‘Round’ row as requested */}
+        <div className="row hide-round">
+          <span className="label">{t.round}:</span>
+          <span className="val">{round_id || "-"}</span>
         </div>
 
-        <div style={btnBar}>
-          <button style={btn(true)} onClick={handleDownload}>{t.saveBtn}</button>
-          <button style={btn(true)} onClick={handlePrint}>{t.printBtn}</button>
-          <button style={btn(false)} onClick={() => router.push("/")}>{t.backBtn}</button>
+        <div className="buttons">
+          <button className="btn" onClick={onSave}>
+            {t.save}
+          </button>
+          <button className="btn" onClick={onPrint}>
+            {t.print}
+          </button>
+          <Link className="btn" href="/">
+            {t.back}
+          </Link>
         </div>
 
-        <div style={note}>
-          {saveState === "saving" && t.saving}
-          {saveState === "saved" && t.saved}
-          {saveState === "error" && `${t.errorPrefix}. Kérlek próbáld újra. (${saveError})`}
-        </div>
+        {savedOk === false && <div className="warn">{t.saveFail}</div>}
+        {savedOk === true && <div className="ok">{t.saved}</div>}
       </div>
+
+      <style jsx>{`
+        :global(:root) {
+          --fg: #fff;
+          --muted: rgba(255, 255, 255, 0.86);
+          --yellow: #faaf3b;
+          --yellow-border: #e49b28;
+          --chip: #f6f6f6;
+          --chip-text: #1e1e1e;
+          --shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+        }
+        .screen {
+          min-height: 100svh;
+          color: var(--fg);
+          font-family: Montserrat, system-ui, sans-serif;
+          background: #0f0f0f url(${JSON.stringify(BG_FINAL)}) center/cover
+            no-repeat fixed;
+          display: grid;
+          place-items: center;
+          padding: 24px;
+        }
+        .lang {
+          position: fixed;
+          top: 16px;
+          right: 16px;
+          padding: 10px 18px;
+          border-radius: 999px;
+          font-weight: 900;
+          border: 0;
+          background: var(--chip);
+          color: var(--chip-text);
+          box-shadow: var(--shadow);
+          cursor: pointer;
+          z-index: 2;
+        }
+        .card {
+          width: 100%;
+          max-width: 780px;
+          background: rgba(0, 0, 0, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+          border-radius: 16px;
+          padding: 26px;
+          box-shadow: var(--shadow);
+        }
+        h1 {
+          margin: 0 0 8px;
+          font-size: clamp(26px, 5vw, 38px);
+          font-weight: 900;
+        }
+        .sub {
+          margin: 0;
+          color: var(--muted);
+        }
+        .row {
+          margin-top: 14px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          align-items: center;
+        }
+        .row .label {
+          opacity: 0.88;
+          font-weight: 700;
+        }
+        .row .val {
+          text-align: right;
+          font-weight: 800;
+        }
+        .hide-round {
+          display: none; /* hide the 'Round' row */
+        }
+        .buttons {
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+          margin-top: 18px;
+        }
+        .btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: 12px 18px;
+          border-radius: 999px;
+          font-weight: 900;
+          text-transform: uppercase;
+          color: #222;
+          background: var(--yellow);
+          border: 3px solid var(--yellow-border);
+          text-decoration: none;
+          box-shadow: var(--shadow), inset 0 2px 0 rgba(255, 255, 255, 0.65);
+          transition: transform 0.2s, box-shadow 0.2s;
+          cursor: pointer;
+        }
+        .btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 22px 36px rgba(0, 0, 0, 0.46),
+            inset 0 2px 0 rgba(255, 255, 255, 0.7);
+        }
+        .warn {
+          margin-top: 14px;
+          background: #7a1f1f;
+          color: #fff;
+          padding: 8px 12px;
+          border-radius: 8px;
+          display: inline-block;
+        }
+        .ok {
+          margin-top: 14px;
+          background: #1f7a3a;
+          color: #fff;
+          padding: 8px 12px;
+          border-radius: 8px;
+          display: inline-block;
+        }
+      `}</style>
     </main>
   );
 }
