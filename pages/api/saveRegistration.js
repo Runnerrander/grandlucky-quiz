@@ -1,124 +1,105 @@
 // pages/api/saveRegistration.js
-// Verifies a Stripe Checkout Session (paid/complete) and upserts a row in Supabase.
-// Also supports dev "PING…" session_ids for quick testing (no Stripe call).
+// Verifies a Stripe Checkout Session, then upserts a row in Supabase.
+// Also supports dev "PING…" session_ids for quick testing (now upserts those too).
 
-import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+const Stripe = require("stripe");
+const { createClient } = require("@supabase/supabase-js");
 
-/** ──────────────────────────────────────────────────────────────────────────
- *  Env requirements (Vercel → Project → Settings → Environment Variables):
- *   - STRIPE_SECRET_KEY
- *   - NEXT_PUBLIC_SUPABASE_URL
- *   - SUPABASE_SERVICE_ROLE    (server-side key; never expose to browser)
- *  Table: public.registrations (columns)
- *    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY
- *    session_id TEXT NOT NULL UNIQUE
- *    username TEXT NOT NULL
- *    password TEXT NOT NULL
- *    status   TEXT NOT NULL DEFAULT 'pending'
- *    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
- *  Unique index on session_id is recommended.
- *  ───────────────────────────────────────────────────────────────────────── */
+const stripeSecret = process.env.STRIPE_SECRET_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE;
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE;
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
+const supabase =
+  supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
 
-// Build Supabase admin client
-function getSupabase() {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE) {
-    throw new Error("Supabase environment variables are missing.");
-  }
-  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
-    auth: { persistSession: false },
-  });
-}
-
-// Small deterministic 4-digit code from any string (stable per session_id)
-function codeFrom(input) {
+// tiny helper: deterministic 4-digit code from a string (stable per session_id)
+function codeFrom(s) {
   let h = 0;
-  for (let i = 0; i < input.length; i++) h = (h * 31 + input.charCodeAt(i)) >>> 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
   const n = (h % 9000) + 1000; // 1000..9999
   return String(n);
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
 
   try {
-    // Accept GET ?session_id=… or POST { session_id / sessionId }
-    const sessionId =
-      (req.method === "POST"
-        ? req.body?.session_id || req.body?.sessionId
-        : req.query?.session_id || req.query?.sessionId) || "";
+    // Support GET (current flow) and POST (future-proof).
+    const session_id =
+      (req.method === "GET"
+        ? req.query?.session_id
+        : req.body?.session_id || req.body?.sessionId) || "";
 
-    if (!sessionId || typeof sessionId !== "string") {
-      return res.status(400).json({ ok: false, error: "Missing session_id" });
+    if (!session_id || typeof session_id !== "string") {
+      return res.status(400).json({ error: "Missing session_id" });
     }
 
-    const supabase = getSupabase();
-
-    // Idempotency: if a row already exists for this session, return its creds.
-    {
+    // If we already stored this session, return the same creds (idempotent).
+    if (supabase) {
       const { data: existing, error: exErr } = await supabase
         .from("registrations")
         .select("username,password,status")
-        .eq("session_id", sessionId)
+        .eq("session_id", session_id)
         .maybeSingle();
 
-      if (exErr) {
-        // Not fatal for client UX; still report
-        console.error("Supabase select error:", exErr);
-      }
-      if (existing) {
+      if (!exErr && existing) {
         return res.status(200).json({
           ok: true,
-          session_id: sessionId,
           username: existing.username,
           password: existing.password,
-          status: existing.status || "pending",
-          cached: true,
         });
       }
     }
 
-    // Dev shortcut: session_id starting with "PING" returns stub creds, and stores as 'pending'
-    if (/^PING/i.test(sessionId)) {
-      const code = codeFrom(sessionId);
+    // --- DEV shortcut: PING* session_ids -----------------------------------
+    if (/^PING/i.test(session_id)) {
+      const code = codeFrom(session_id);
       const username = `GL-${code}`;
       const password = `PASS-${code}`;
 
-      const { error: upErr } = await supabase
-        .from("registrations")
-        .upsert(
-          [{ session_id: sessionId, username, password, status: "pending" }],
-          { onConflict: "session_id" }
-        );
+      // Upsert for visibility in Supabase
+      if (supabase) {
+        await supabase
+          .from("registrations")
+          .upsert(
+            { session_id, username, password, status: "pending" },
+            { onConflict: "session_id" }
+          );
+      }
 
-      if (upErr) console.error("Supabase upsert (PING) error:", upErr);
+      return res.status(200).json({ ok: true, username, password });
+    }
 
-      return res.status(200).json({
-        ok: true,
-        session_id: sessionId,
-        username,
-        password,
-        status: "pending",
-        mode: "stub",
+    // --- Real Stripe verification ------------------------------------------
+    if (!stripeSecret) {
+      return res
+        .status(500)
+        .json({ error: "Server misconfigured: STRIPE_SECRET_KEY missing" });
+    }
+    if (!supabase) {
+      return res
+        .status(500)
+        .json({ error: "Server misconfigured: Supabase env vars missing" });
+    }
+
+    // Optional sanity check; comment out if your IDs might differ
+    if (!/^cs_(test|live)_[A-Za-z0-9]+/.test(session_id)) {
+      return res.status(400).json({ error: "Invalid session_id format" });
+    }
+
+    const stripe = new Stripe(stripeSecret);
+    let session;
+    try {
+      session = await stripe.checkout.sessions.retrieve(session_id, {
+        expand: ["payment_intent"],
       });
+    } catch (err) {
+      return res
+        .status(400)
+        .json({ error: `Stripe retrieve failed: ${err.message}` });
     }
 
-    // Real Stripe verification
-    if (!STRIPE_SECRET_KEY) {
-      throw new Error("STRIPE_SECRET_KEY is missing.");
-    }
-    const stripe = new Stripe(STRIPE_SECRET_KEY /*, { apiVersion: "2023-10-16" }*/);
-
-    // Retrieve and validate the Checkout Session
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["payment_intent"],
-    });
-
-    // Accept if Checkout is complete and either paid or no payment required.
+    // Accept when checkout is complete AND paid (or no payment required).
     const isComplete =
       session?.status === "complete" &&
       (session?.payment_status === "paid" ||
@@ -126,40 +107,30 @@ export default async function handler(req, res) {
 
     if (!isComplete) {
       return res.status(400).json({
-        ok: false,
-        error: `Checkout session not complete/paid (status=${session?.status}, payment_status=${session?.payment_status})`,
+        error: `Session not complete/paid (status=${session?.status}, payment_status=${session?.payment_status})`,
       });
     }
 
-    // Create deterministic-but-unique creds for this session
-    const code = codeFrom(sessionId + (session.customer || "") + (session.customer_email || ""));
+    const code = codeFrom(
+      session_id + (session.customer || "") + (session.customer_email || "")
+    );
     const username = `GL-${code}`;
     const password = `PASS-${code}`;
 
-    // Upsert (idempotent) and return the row
-    const { data: upData, error: upErr } = await supabase
+    // Upsert row keyed by unique session_id
+    const { error: upErr } = await supabase
       .from("registrations")
       .upsert(
-        [{ session_id: sessionId, username, password, status: "paid" }],
+        { session_id, username, password, status: "paid" },
         { onConflict: "session_id" }
-      )
-      .select("username,password,status")
-      .single();
+      );
 
     if (upErr) {
-      console.error("Supabase upsert error:", upErr);
-      return res.status(500).json({ ok: false, error: "Database upsert failed." });
+      return res.status(500).json({ error: upErr.message });
     }
 
-    return res.status(200).json({
-      ok: true,
-      session_id: sessionId,
-      username: upData.username,
-      password: upData.password,
-      status: upData.status,
-    });
-  } catch (e) {
-    console.error("saveRegistration error:", e);
-    return res.status(500).json({ ok: false, error: String(e?.message || e) });
+    return res.status(200).json({ ok: true, username, password });
+  } catch (err) {
+    return res.status(500).json({ error: err?.message || "Unknown server error" });
   }
-}
+};
