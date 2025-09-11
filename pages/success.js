@@ -28,7 +28,7 @@ export default function SuccessPage() {
     // Build absolute URL so it works in all environments
     const origin = typeof window === "undefined" ? "" : window.location.origin;
 
-    // ✅ Use the real endpoint now
+    // Use the real endpoint
     const url = `${origin}/api/saveRegistration?session_id=${encodeURIComponent(
       sid
     )}`;
@@ -47,7 +47,6 @@ export default function SuccessPage() {
     try {
       data = JSON.parse(text);
     } catch {
-      // If API returned raw text for some reason
       throw new Error("A válasz nem érvényes JSON.");
     }
 
@@ -113,6 +112,19 @@ export default function SuccessPage() {
     } catch {
       setError("Nem sikerült menteni a fájlt.");
     }
+  };
+
+  // NEW: Start quiz after user saved/printed
+  const handleReady = () => {
+    try {
+      if (creds?.username) {
+        localStorage.setItem("gl_username", creds.username);
+      }
+      const sid = getSessionId();
+      if (sid) localStorage.setItem("gl_session_id", sid);
+    } catch {}
+    // Go to trivia, auto-start, pass username for convenience
+    router.replace(`/trivia?auto=1&u=${encodeURIComponent(creds?.username || "")}`);
   };
 
   useEffect(() => {
@@ -203,6 +215,11 @@ export default function SuccessPage() {
     cursor: "pointer",
   };
 
+  const btnStrong = {
+    ...btnPrimary,
+    fontWeight: 800,
+  };
+
   const errBox = {
     background: "#3a0e0e",
     border: "1px solid #6b1a1a",
@@ -253,6 +270,9 @@ export default function SuccessPage() {
               </button>
               <button onClick={handleSave} style={btnPrimary}>
                 Mentés
+              </button>
+              <button onClick={handleReady} style={btnStrong}>
+                Készen állok — KVÍZ indítása
               </button>
               <button onClick={() => router.push("/")} style={btnGhost}>
                 Vissza
