@@ -5,55 +5,56 @@ import { useEffect, useMemo, useState } from "react";
 export default function Final() {
   const router = useRouter();
   const { username = "", ms = "", round_id = "", lang: rawLang } = router.query;
+
+  // default HU, allow ?lang=en to switch
   const lang = rawLang === "en" ? "en" : "hu";
 
-  const T = useMemo(
-    () =>
-      ({
-        hu: {
-          title: "Kvíz sikeresen befejezve!",
-          blurb:
-            "Gratulálunk, teljesítetted a kvízt. Reméljük, találkozunk a döntőben!",
-          labels: {
-            username: "Felhasználónév:",
-            correct: "Helyes válaszok:",
-            elapsed: "Eltelt idő:",
-          },
-          save: "Eredmény mentése",
-          print: "Eredmény nyomtatása",
-          back: "Vissza a főoldalra",
-          saved: "Eredmény mentve.",
-          saveFailed: "Mentés sikertelen. Kérlek próbáld újra. (DB)",
-          english: "English",
-          hungarian: "Magyar",
-        },
-        en: {
-          title: "Quiz completed successfully!",
-          blurb:
-            "Congrats, you’ve finished the quiz. We hope to see you in the finals!",
-          labels: {
-            username: "Username:",
-            correct: "Correct answers:",
-            elapsed: "Elapsed time:",
-          },
-          save: "Save result",
-          print: "Print result",
-          back: "Back to homepage",
-          saved: "Result saved.",
-          saveFailed: "Save failed. Please try again. (DB)",
-          english: "English",
-          hungarian: "Hungarian",
-        },
-      })[lang],
-    [lang]
-  );
+  const T = useMemo(() => {
+    const HU = {
+      title: "Kvíz sikeresen befejezve!",
+      blurb:
+        "Gratulálunk, teljesítetted a kvízt. Reméljük, találkozunk a döntőben!",
+      labels: {
+        username: "Felhasználónév:",
+        correct: "Helyes válaszok:",
+        elapsed: "Eltelt idő:",
+      },
+      save: "Eredmény mentése",
+      print: "Eredmény nyomtatása",
+      back: "Vissza a főoldalra",
+      saved: "Eredmény mentve.",
+      saveFailed: "Mentés sikertelen. Kérlek próbáld újra. (DB)",
+      english: "English",
+      hungarian: "Magyar",
+    };
+
+    const EN = {
+      title: "Quiz completed successfully!",
+      blurb:
+        "Congrats, you’ve finished the quiz. We hope to see you in the finals!",
+      labels: {
+        username: "Username:",
+        correct: "Correct answers:",
+        elapsed: "Elapsed time:",
+      },
+      save: "Save result",
+      print: "Print result",
+      back: "Back to homepage",
+      saved: "Result saved.",
+      saveFailed: "Save failed. Please try again. (DB)",
+      english: "English",
+      hungarian: "Hungarian",
+    };
+
+    return lang === "en" ? EN : HU;
+  }, [lang]);
 
   const msNum = Number(ms) || 0;
-  const correct = 5; // always 5 at this screen
+  const correct = 5; // always 5 here
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
 
-  // Auto-save to Supabase via our API (POST)
+  // Auto-save to Supabase via POST -> /api/saveResult
   useEffect(() => {
     if (!username || !ms) return;
     let mounted = true;
@@ -75,7 +76,7 @@ export default function Final() {
         });
         const json = await res.json().catch(() => ({}));
         if (!res.ok || json.error) throw new Error(json.error || "DB");
-      } catch (e) {
+      } catch (_) {
         if (mounted) setSaveError(true);
       } finally {
         if (mounted) setSaving(false);
@@ -94,7 +95,9 @@ export default function Final() {
       `${T.labels.correct} ${correct} / 5`,
       `${T.labels.elapsed} ${msNum} ms`,
     ];
-    const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/plain;charset=utf-8",
+    });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = `result-${username || "player"}.txt`;
@@ -129,7 +132,7 @@ export default function Final() {
           <Row label={T.labels.username} value={username || "—"} />
           <Row label={T.labels.correct} value={`${correct} / 5`} />
           <Row label={T.labels.elapsed} value={`${msNum} ms`} />
-          {/* Intentionally no “Forduló / round” row */}
+          {/* No "Forduló" row */}
         </div>
 
         <div className="actions">
@@ -144,12 +147,8 @@ export default function Final() {
           </a>
         </div>
 
-        {saveError && (
-          <div className="toast error">{T.saveFailed}</div>
-        )}
-        {!saveError && saving && (
-          <div className="toast">{/* silent saving… */}</div>
-        )}
+        {saveError && <div className="toast error">{T.saveFailed}</div>}
+        {!saveError && saving && <div className="toast">{/* saving... */}</div>}
       </div>
 
       <style jsx>{`
@@ -215,6 +214,11 @@ export default function Final() {
           gap: 12px;
           margin-top: 10px;
         }
+        .btn,
+        .btn:link,
+        .btn:visited {
+          text-decoration: none;
+        }
         .btn {
           padding: 10px 16px;
           border-radius: 10px;
@@ -229,6 +233,10 @@ export default function Final() {
         .btn.outline {
           background: transparent;
           border: 2px solid #ffd07a;
+        }
+        .btn.outline,
+        .btn.outline:link,
+        .btn.outline:visited {
           color: #ffd07a;
         }
         .toast {
