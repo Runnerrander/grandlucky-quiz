@@ -1,14 +1,11 @@
-// pages/final.js
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 
-// Use the image in /public. Note the %20 for the space in the filename.
-const BG = "/BG-sikeres%20reg.png";
+const BG = "/bg-final.jpg"; // image in /public
 
 export default function FinalPage() {
   const router = useRouter();
 
-  // ---- read query safely (supports hard refresh) ----
   const getQ = (key) => {
     if (typeof window !== "undefined") {
       const p = new URLSearchParams(window.location.search).get(key);
@@ -18,13 +15,11 @@ export default function FinalPage() {
     return typeof v === "string" ? v : "";
   };
 
-  // raw query params
   const username = getQ("username") || "";
   const msStr = getQ("ms") || "";
   const correctStr = getQ("c") || getQ("correct") || "";
-  const round_id = getQ("round_id") || "";
+  const round_id = getQ("round_id") || ""; // kept for saving only (not shown)
 
-  // normalized numeric values
   const time_ms = useMemo(() => {
     const n = parseInt(msStr, 10);
     return Number.isFinite(n) && n >= 0 ? n : 0;
@@ -35,75 +30,45 @@ export default function FinalPage() {
     return Number.isFinite(n) ? n : 0;
   }, [correctStr]);
 
-  // ---- auto-save state ----
-  const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | error
+  const [saveState, setSaveState] = useState("idle");
   const [saveError, setSaveError] = useState("");
 
-  // Use a small key to avoid re-saving on refresh (same URL)
   const guardKey = useMemo(() => {
     if (!username || !time_ms || correct < 5) return "";
     return `gl_result_saved_${username}_${time_ms}_${correct}_${round_id || "none"}`;
   }, [username, time_ms, correct, round_id]);
 
   useEffect(() => {
-    // only autosave for valid finished runs
     if (!username || !time_ms || correct < 5) return;
-    // already saved for this exact result?
     if (guardKey && typeof window !== "undefined" && localStorage.getItem(guardKey)) {
       setSaveState("saved");
       return;
     }
-
     let cancelled = false;
-    const run = async () => {
+    (async () => {
       try {
         setSaveState("saving");
         setSaveError("");
-
         const res = await fetch("/api/saveResult", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username,
-            ms: time_ms,
-            correct,
-            round_id: round_id || undefined,
-          }),
+          body: JSON.stringify({ username, ms: time_ms, correct, round_id: round_id || undefined }),
         });
-
         const text = await res.text();
         let json;
-        try {
-          json = JSON.parse(text);
-        } catch {
-          throw new Error("Bad JSON from API");
-        }
-
-        if (!res.ok || !json?.ok) {
-          throw new Error(json?.error || `HTTP ${res.status}`);
-        }
-
+        try { json = JSON.parse(text); } catch { throw new Error("Bad JSON from API"); }
+        if (!res.ok || !json?.ok) throw new Error(json?.error || `HTTP ${res.status}`);
         if (!cancelled) {
           setSaveState("saved");
-          if (guardKey && typeof window !== "undefined") {
-            localStorage.setItem(guardKey, "1");
-          }
+          if (guardKey && typeof window !== "undefined") localStorage.setItem(guardKey, "1");
         }
       } catch (e) {
-        if (!cancelled) {
-          setSaveState("error");
-          setSaveError(e?.message || "Save failed");
-        }
+        if (!cancelled) { setSaveState("error"); setSaveError(e?.message || "Save failed"); }
       }
-    };
-
-    run();
-    return () => {
-      cancelled = true;
-    };
+    })();
+    return () => { cancelled = true; };
   }, [username, time_ms, correct, round_id, guardKey]);
 
-  // ---- download & print for the user ----
   const handleDownload = () => {
     const ts = new Date().toISOString().slice(0, 19).replace("T", " ");
     const text =
@@ -111,7 +76,7 @@ export default function FinalPage() {
       `Username: ${username}\n` +
       `Correct: ${correct} / 5\n` +
       `Time: ${time_ms} ms\n` +
-      (round_id ? `Round: ${round_id}\n` : ``) +
+      (round_id ? `` : ``) +
       `Saved at: ${ts}\n`;
     const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -129,27 +94,22 @@ export default function FinalPage() {
     if (!w) return;
     const ts = new Date().toLocaleString();
     w.document.write(`<!doctype html>
-<html>
-<head><meta charset="utf-8"><title>Trivia Result</title>
+<html><head><meta charset="utf-8"><title>Trivia Result</title>
 <style>body{font-family:Arial,Helvetica,sans-serif;padding:24px} .card{max-width:560px;margin:0 auto;border:1px solid #ddd;border-radius:10px;padding:20px}</style>
-</head>
-<body>
+</head><body>
   <div class="card">
     <h2>GrandLucky Travel — Trivia Result</h2>
     <p><strong>Username:</strong> ${username}</p>
     <p><strong>Correct:</strong> ${correct} / 5</p>
     <p><strong>Time:</strong> ${time_ms} ms</p>
-    ${round_id ? `<p><strong>Round:</strong> ${round_id}</p>` : ``}
     <hr>
     <p>Printed: ${ts}</p>
   </div>
   <script>window.print();</script>
-</body>
-</html>`);
+</body></html>`);
     w.document.close();
   };
 
-  // ---- UI copy (HU only for this step) ----
   const t = {
     title: "Kvíz sikeresen befejezve!",
     lead: "Gratulálunk, teljesítetted a kvízt.",
@@ -164,10 +124,8 @@ export default function FinalPage() {
     errorPrefix: "Mentés sikertelen",
   };
 
-  // ---- styles (with background image restored) ----
   const page = {
     minHeight: "100vh",
-    // background image + a subtle dark overlay for readability
     background: `linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url('${BG}') center/cover no-repeat`,
     color: "#fff",
     display: "flex",
@@ -187,12 +145,7 @@ export default function FinalPage() {
   const h1 = { textAlign: "center", margin: "0 0 6px", fontSize: 32, fontWeight: 800 };
   const sub = { textAlign: "center", color: "#bbb", marginBottom: 18 };
   const grid = { display: "grid", gap: 10, marginTop: 10 };
-  const row = {
-    display: "grid",
-    gridTemplateColumns: "180px 1fr",
-    gap: 12,
-    alignItems: "center",
-  };
+  const row = { display: "grid", gridTemplateColumns: "180px 1fr", gap: 12, alignItems: "center" };
   const chip = {
     background: "#202020",
     border: "1px solid #333",
@@ -231,22 +184,15 @@ export default function FinalPage() {
             <div>{t.username}</div>
             <div style={chip}>{username || "—"}</div>
           </div>
-
           <div style={row}>
             <div>{t.correct}</div>
-            <div style={chip}>
-              {Number.isFinite(correct) ? `${correct} / 5` : "—"}
-            </div>
+            <div style={chip}>{Number.isFinite(correct) ? `${correct} / 5` : "—"}</div>
           </div>
-
           <div style={row}>
             <div>{t.time}</div>
-            <div style={chip}>
-              {Number.isFinite(time_ms) ? `${time_ms} ms` : "—"}
-            </div>
+            <div style={chip}>{Number.isFinite(time_ms) ? `${time_ms} ms` : "—"}</div>
           </div>
-
-          {/* Round row intentionally hidden from UI. Kept in file/print only. */}
+          {/* round_id intentionally hidden from UI */}
         </div>
 
         <div style={btnBar}>
