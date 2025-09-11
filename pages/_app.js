@@ -1,107 +1,41 @@
 // pages/_app.js
-import Head from "next/head";
-
-export default function MyApp({ Component, pageProps }) {
+export default function App({ Component, pageProps }) {
   return (
     <>
-      <Head>
-        {/* Mobile viewport */}
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1"
-        />
-      </Head>
-
       <Component {...pageProps} />
-
       <style jsx global>{`
-        /* Ensure interactive elements are above any overlay/copy */
-        button,
-        .btn,
-        a.button,
-        a.btn,
-        .cta-button,
-        .cta,
-        .slide-cta,
-        .hero-cta {
-          position: relative;
-          z-index: 6;
-        }
-
-        /* Keep language toggle / utility chips clickable */
-        .lang-toggle,
-        .locale-toggle,
-        .chip,
-        .pill {
-          position: relative;
-          z-index: 7;
-        }
-
-        /* Typical headlines/copy wrappers: keep them below CTAs */
-        h1,
-        h2,
-        .headline,
-        .title,
-        .slide-title,
-        .hero-title,
-        .copy,
-        .slide-copy {
-          position: relative;
-          z-index: 4;
-          word-break: break-word;
-        }
-
-        /* Make sure slide containers don't overflow weirdly */
-        .slide,
-        .hero,
-        .section {
-          overflow: hidden;
-        }
-
-        /* If your 4th slide uses a class or data attribute, both covered */
-        .slide-4 .slide-copy,
-        [data-slide="4"] .slide-copy {
-          margin-bottom: 12px;
-        }
-
-        /* Mobile typography & CTA layout */
-        @media (max-width: 480px) {
-          h1,
-          .headline,
-          .slide-title,
-          .hero-title {
-            font-size: 1.6rem;
-            line-height: 1.2;
-            letter-spacing: 0.2px;
+        /* ---- Mobile fixes (<=640px) ---- */
+        @media (max-width: 640px) {
+          /* Tame large headings so they don’t spill over CTAs */
+          h1, .h1 { 
+            font-size: clamp(22px, 6vw, 28px);
+            line-height: 1.15;
+            margin-bottom: 12px;
           }
-          h2,
-          .subtitle {
-            font-size: 1.2rem;
-            line-height: 1.25;
+
+          /* Make all buttons/links tap-safe above any text overlays */
+          button, .button, a.button, a.btn, .btn, .cta,
+          .cta button, .cta a {
+            position: relative;
+            z-index: 10;           /* ensure on top of text blocks */
           }
-          p,
-          li,
-          .copy,
-          .slide-copy,
-          .hero-copy {
-            font-size: 0.95rem;
-            line-height: 1.35;
+
+          /* Common “text block / overlay” containers get lower stacking */
+          .overlay, .copy, .text-block, .hero-copy, .slide-copy {
+            position: relative;
+            z-index: 1;
           }
-          .cta,
-          .slide-cta,
-          .hero-cta,
-          .cta-row {
-            display: flex;
+
+          /* Give sections/slides comfy padding so nothing gets cramped */
+          .section, .slide, .hero, .panel {
+            padding-left: 16px !important;
+            padding-right: 16px !important;
+          }
+
+          /* When a row layout is too tight, stack it */
+          .stack-mobile, .row {
             flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 12px;
-          }
-          .cta button,
-          .cta a,
-          .slide-cta .btn,
-          .hero-cta .btn {
-            font-size: 0.95rem;
-            padding: 10px 14px;
+            gap: 12px;
           }
         }
       `}</style>
