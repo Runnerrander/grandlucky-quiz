@@ -28,7 +28,7 @@ export default function SuccessPage() {
     // Build absolute URL so it works in all environments
     const origin = typeof window === "undefined" ? "" : window.location.origin;
 
-    // Use the real endpoint (GET with query param)
+    // ✅ Use the real endpoint now
     const url = `${origin}/api/saveRegistration?session_id=${encodeURIComponent(
       sid
     )}`;
@@ -47,6 +47,7 @@ export default function SuccessPage() {
     try {
       data = JSON.parse(text);
     } catch {
+      // If API returned raw text for some reason
       throw new Error("A válasz nem érvényes JSON.");
     }
 
@@ -75,12 +76,6 @@ export default function SuccessPage() {
 
       const c = await fetchCreds(sid);
       setCreds(c);
-
-      // store locally so Trivia can auto-start
-      try {
-        localStorage.setItem("gl_username", c.username);
-        localStorage.setItem("gl_session_id", String(sid));
-      } catch {}
     } catch (e) {
       setError(
         e?.message || "Ismeretlen hiba történt a hitelesítő adatok lekérésekor."
@@ -118,17 +113,6 @@ export default function SuccessPage() {
     } catch {
       setError("Nem sikerült menteni a fájlt.");
     }
-  };
-
-  // NEW: start the quiz after user saved/printed
-  const handleStartQuiz = () => {
-    try {
-      if (creds?.username) {
-        // ensure username is available to /trivia
-        localStorage.setItem("gl_username", creds.username);
-      }
-    } catch {}
-    router.push(`/trivia?auto=1&u=${encodeURIComponent(creds?.username || "")}`);
   };
 
   useEffect(() => {
@@ -269,10 +253,6 @@ export default function SuccessPage() {
               </button>
               <button onClick={handleSave} style={btnPrimary}>
                 Mentés
-              </button>
-              {/* NEW: Ready button */}
-              <button onClick={handleStartQuiz} style={btnPrimary}>
-                Készen állok — KVÍZ indítása
               </button>
               <button onClick={() => router.push("/")} style={btnGhost}>
                 Vissza
