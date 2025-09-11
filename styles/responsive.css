@@ -1,0 +1,71 @@
+/* -------- Global mobile-friendly tweaks (site-wide) -------- */
+
+/* Typography scales nicely across devices */
+:root {
+  --font-scale: 1rem;
+}
+html {
+  font-size: 100%;
+}
+body {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Images & media never overflow the viewport */
+img, svg, video, canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Make headings and text scale with screen size */
+h1 { font-size: clamp(1.4rem, 4.5vw, 2.25rem); line-height: 1.2; }
+h2 { font-size: clamp(1.2rem, 3.75vw, 1.75rem); line-height: 1.25; }
+h3 { font-size: clamp(1.1rem, 3.25vw, 1.4rem); line-height: 1.3; }
+p, li, label, input, textarea, button {
+  font-size: clamp(0.95rem, 2.8vw, 1.05rem);
+}
+
+/* Buttons become easier to tap on phones */
+button, .btn, [role="button"] {
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 0.8rem 1.1rem;
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+/* Horizontal button groups wrap as needed */
+.btn-row, .actions, .buttons, .cta-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Soft container helpers if you use them */
+.container, .wrap, .shell {
+  width: min(100% - 2rem, 1100px);
+  margin-inline: auto;
+}
+
+/* On narrow screens, make buttons full-width and add safe insets */
+@media (max-width: 640px) {
+  body { padding-bottom: env(safe-area-inset-bottom); }
+  button, .btn, [role="button"] {
+    width: 100%;
+  }
+}
+
+/* Optional: a generic translucent panel gets better padding on phones */
+.panel, .card, .glass {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.45);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  padding: clamp(1rem, 3vw, 1.5rem);
+}
