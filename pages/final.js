@@ -1,287 +1,266 @@
 // pages/final.js
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
-import Head from "next/head";
-import { useEffect, useMemo, useRef, useState } from "react";
+
+// Use the image in /public. Note the %20 for the space in the filename.
+const BG = "/BG-sikeres%20reg.png";
 
 export default function FinalPage() {
   const router = useRouter();
-  const sentRef = useRef(false);
 
-  // --- read query ------------------------------------------------------------
-  const q = router.query || {};
-  const username = (q.username || "").toString();
-  const ms = Number(q.ms || 0);
-  const correct = Number(q.c || q.cc || q.correct || 5); // default 5
-  const round_id = (q.round_id || "").toString();
+  // ---- read query safely (supports hard refresh) ----
+  const getQ = (key) => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search).get(key);
+      if (p != null) return p;
+    }
+    const v = router?.query?.[key];
+    return typeof v === "string" ? v : "";
+  };
 
-  // --- i18n ------------------------------------------------------------------
-  const [lang, setLang] = useState("hu");
-  useEffect(() => {
-    const fromUrl = (q.lang || "").toString().toLowerCase();
-    if (fromUrl === "en" || fromUrl === "hu") setLang(fromUrl);
-  }, [q.lang]);
+  // raw query params
+  const username = getQ("username") || "";
+  const msStr = getQ("ms") || "";
+  const correctStr = getQ("c") || getQ("correct") || "";
+  const round_id = getQ("round_id") || "";
 
-  const t = useMemo(
-    () =>
-      ({
-        hu: {
-          title: "Kvíz sikeresen befejezve!",
-          subtitle: "Gratulálunk, teljesítetted a kvízt. Reméljük, találkozunk a döntőben!",
-          username: "Felhasználónév:",
-          correct: "Helyes válaszok:",
-          elapsed: "Eltelt idő:",
-          // round is intentionally hidden now
-          elapsed_unit: "ms",
-          saveBtn: "Eredmény mentése",
-          printBtn: "Eredmény nyomtatása",
-          backBtn: "Vissza a főoldalra",
-          saving: "Eredmény mentése…",
-          saved: "Eredmény mentve.",
-          saveFail: "Mentés sikertelen. Kérlek próbáld újra. (DB)",
-          toggle: "English",
-        },
-        en: {
-          title: "Quiz completed successfully!",
-          subtitle: "Congrats — you finished the quiz. We hope to see you in the finals!",
-          username: "Username:",
-          correct: "Correct answers:",
-          elapsed: "Elapsed time:",
-          elapsed_unit: "ms",
-          saveBtn: "Save result",
-          printBtn: "Print result",
-          backBtn: "Back to homepage",
-          saving: "Saving your result…",
-          saved: "Result saved.",
-          saveFail: "Save failed. Please try again. (DB)",
-          toggle: "Magyar",
-        },
-      }[lang]),
-    [lang]
-  );
+  // normalized numeric values
+  const time_ms = useMemo(() => {
+    const n = parseInt(msStr, 10);
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  }, [msStr]);
 
-  // --- auto-save to Supabase on load ----------------------------------------
-  const [saveState, setSaveState] = useState("idle"); // idle | saving | ok | err
+  const correct = useMemo(() => {
+    const n = parseInt(correctStr, 10);
+    return Number.isFinite(n) ? n : 0;
+  }, [correctStr]);
+
+  // ---- auto-save state ----
+  const [saveState, setSaveState] = useState("idle"); // idle | saving | saved | error
+  const [saveError, setSaveError] = useState("");
+
+  // Use a small key to avoid re-saving on refresh (same URL)
+  const guardKey = useMemo(() => {
+    if (!username || !time_ms || correct < 5) return "";
+    return `gl_result_saved_${username}_${time_ms}_${correct}_${round_id || "none"}`;
+  }, [username, time_ms, correct, round_id]);
 
   useEffect(() => {
-    if (!router.isReady) return;
-    if (sentRef.current) return;
+    // only autosave for valid finished runs
+    if (!username || !time_ms || correct < 5) return;
+    // already saved for this exact result?
+    if (guardKey && typeof window !== "undefined" && localStorage.getItem(guardKey)) {
+      setSaveState("saved");
+      return;
+    }
 
-    // must have username + ms + >=5 correct to save
-    if (!username || !Number.isFinite(ms) || ms <= 0 || correct < 5) return;
-
-    sentRef.current = true;
-    (async () => {
+    let cancelled = false;
+    const run = async () => {
       try {
         setSaveState("saving");
+        setSaveError("");
+
         const res = await fetch("/api/saveResult", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             username,
-            time_ms: Math.round(ms),
-            correct: Number.isFinite(correct) ? correct : 5,
-            round_id: round_id || "unknown",
+            ms: time_ms,
+            correct,
+            round_id: round_id || undefined,
           }),
         });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || data?.ok !== true) throw new Error(data?.error || "not ok");
-        setSaveState("ok");
-      } catch {
-        setSaveState("err");
-        sentRef.current = false; // allow retry if user reloads
-      }
-    })();
-  }, [router.isReady, username, ms, correct, round_id]);
 
-  // --- helpers: download & print --------------------------------------------
+        const text = await res.text();
+        let json;
+        try {
+          json = JSON.parse(text);
+        } catch {
+          throw new Error("Bad JSON from API");
+        }
+
+        if (!res.ok || !json?.ok) {
+          throw new Error(json?.error || `HTTP ${res.status}`);
+        }
+
+        if (!cancelled) {
+          setSaveState("saved");
+          if (guardKey && typeof window !== "undefined") {
+            localStorage.setItem(guardKey, "1");
+          }
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setSaveState("error");
+          setSaveError(e?.message || "Save failed");
+        }
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [username, time_ms, correct, round_id, guardKey]);
+
+  // ---- download & print for the user ----
   const handleDownload = () => {
-    try {
-      const text =
-        `GrandLucky Travel — Quiz Result\n\n` +
-        `Username: ${username}\n` +
-        `Correct: ${correct} / 5\n` +
-        `Time: ${ms} ms\n` +
-        (round_id ? `Round: ${round_id}\n` : "") +
-        `Saved at: ${new Date().toLocaleString()}\n`;
-      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `grandlucky-result-${username || "user"}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch {}
+    const ts = new Date().toISOString().slice(0, 19).replace("T", " ");
+    const text =
+      `GrandLucky Travel — Trivia Result\n\n` +
+      `Username: ${username}\n` +
+      `Correct: ${correct} / 5\n` +
+      `Time: ${time_ms} ms\n` +
+      (round_id ? `Round: ${round_id}\n` : ``) +
+      `Saved at: ${ts}\n`;
+    const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `grandlucky-result-${username || "user"}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   const handlePrint = () => {
-    window.print();
+    const w = window.open("", "_blank");
+    if (!w) return;
+    const ts = new Date().toLocaleString();
+    w.document.write(`<!doctype html>
+<html>
+<head><meta charset="utf-8"><title>Trivia Result</title>
+<style>body{font-family:Arial,Helvetica,sans-serif;padding:24px} .card{max-width:560px;margin:0 auto;border:1px solid #ddd;border-radius:10px;padding:20px}</style>
+</head>
+<body>
+  <div class="card">
+    <h2>GrandLucky Travel — Trivia Result</h2>
+    <p><strong>Username:</strong> ${username}</p>
+    <p><strong>Correct:</strong> ${correct} / 5</p>
+    <p><strong>Time:</strong> ${time_ms} ms</p>
+    ${round_id ? `<p><strong>Round:</strong> ${round_id}</p>` : ``}
+    <hr>
+    <p>Printed: ${ts}</p>
+  </div>
+  <script>window.print();</script>
+</body>
+</html>`);
+    w.document.close();
   };
 
-  // --- UI --------------------------------------------------------------------
+  // ---- UI copy (HU only for this step) ----
+  const t = {
+    title: "Kvíz sikeresen befejezve!",
+    lead: "Gratulálunk, teljesítetted a kvízt.",
+    username: "Felhasználónév:",
+    correct: "Helyes válaszok:",
+    time: "Eltelt idő:",
+    saveBtn: "Eredmény mentése",
+    printBtn: "Eredmény nyomtatása",
+    backBtn: "Vissza a főoldalra",
+    saving: "Eredmény mentése…",
+    saved: "Eredmény mentve.",
+    errorPrefix: "Mentés sikertelen",
+  };
+
+  // ---- styles (with background image restored) ----
+  const page = {
+    minHeight: "100vh",
+    // background image + a subtle dark overlay for readability
+    background: `linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url('${BG}') center/cover no-repeat`,
+    color: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "40px 16px",
+  };
+  const card = {
+    width: "100%",
+    maxWidth: 740,
+    background: "#151515",
+    borderRadius: 12,
+    border: "1px solid #222",
+    boxShadow: "0 12px 30px rgba(0,0,0,.45)",
+    padding: 24,
+  };
+  const h1 = { textAlign: "center", margin: "0 0 6px", fontSize: 32, fontWeight: 800 };
+  const sub = { textAlign: "center", color: "#bbb", marginBottom: 18 };
+  const grid = { display: "grid", gap: 10, marginTop: 10 };
+  const row = {
+    display: "grid",
+    gridTemplateColumns: "180px 1fr",
+    gap: 12,
+    alignItems: "center",
+  };
+  const chip = {
+    background: "#202020",
+    border: "1px solid #333",
+    borderRadius: 8,
+    padding: "10px 12px",
+    fontFamily:
+      "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace",
+  };
+  const btnBar = { display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center", marginTop: 16 };
+  const btn = (primary = false) => ({
+    background: primary ? "#f4aa2a" : "transparent",
+    color: primary ? "#1a1a1a" : "#ddd",
+    border: primary ? "1px solid #f4aa2a" : "1px solid #666",
+    borderRadius: 10,
+    padding: "10px 14px",
+    cursor: "pointer",
+    fontWeight: 700,
+  });
+  const note = {
+    textAlign: "center",
+    marginTop: 12,
+    color: saveState === "error" ? "#ffd2d2" : "#bbb",
+    background: saveState === "error" ? "#7a1f1f" : "transparent",
+    borderRadius: 8,
+    padding: saveState === "error" ? "8px 10px" : 0,
+  };
+
   return (
-    <main style={styles.screen}>
-      <Head>
-        <title>Final — GrandLuckyTravel</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </Head>
+    <main style={page}>
+      <div style={card}>
+        <h1 style={h1}>{t.title}</h1>
+        <div style={sub}>{t.lead}</div>
 
-      {/* language toggle */}
-      <button
-        onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}
-        style={styles.lang}
-        aria-label="language-toggle"
-      >
-        {t.toggle}
-      </button>
-
-      <div style={styles.wrap}>
-        <div style={styles.card}>
-          <h1 style={styles.h1}>{t.title}</h1>
-          <p style={styles.lead}>{t.subtitle}</p>
-
-          <Row label={t.username} value={username || "—"} />
-          <Row label={t.correct} value={`${correct} / 5`} />
-          <Row label={t.elapsed} value={`${ms} ${t.elapsed_unit}`} />
-          {/* Round row intentionally hidden */}
-
-          {/* auto-save state */}
-          {saveState === "saving" && (
-            <div style={styles.info}>{t.saving}</div>
-          )}
-          {saveState === "ok" && (
-            <div style={styles.ok}>{t.saved}</div>
-          )}
-          {saveState === "err" && (
-            <div style={styles.err}>{t.saveFail}</div>
-          )}
-
-          <div style={styles.btns}>
-            <button onClick={handleDownload} style={styles.btnPrimary}>
-              {t.saveBtn}
-            </button>
-            <button onClick={handlePrint} style={styles.btnGhost}>
-              {t.printBtn}
-            </button>
-            <button onClick={() => router.push("/")} style={styles.btnGhost}>
-              {t.backBtn}
-            </button>
+        <div style={grid}>
+          <div style={row}>
+            <div>{t.username}</div>
+            <div style={chip}>{username || "—"}</div>
           </div>
+
+          <div style={row}>
+            <div>{t.correct}</div>
+            <div style={chip}>
+              {Number.isFinite(correct) ? `${correct} / 5` : "—"}
+            </div>
+          </div>
+
+          <div style={row}>
+            <div>{t.time}</div>
+            <div style={chip}>
+              {Number.isFinite(time_ms) ? `${time_ms} ms` : "—"}
+            </div>
+          </div>
+
+          {/* Round row intentionally hidden from UI. Kept in file/print only. */}
+        </div>
+
+        <div style={btnBar}>
+          <button style={btn(true)} onClick={handleDownload}>{t.saveBtn}</button>
+          <button style={btn(true)} onClick={handlePrint}>{t.printBtn}</button>
+          <button style={btn(false)} onClick={() => router.push("/")}>{t.backBtn}</button>
+        </div>
+
+        <div style={note}>
+          {saveState === "saving" && t.saving}
+          {saveState === "saved" && t.saved}
+          {saveState === "error" && `${t.errorPrefix}. Kérlek próbáld újra. (${saveError})`}
         </div>
       </div>
     </main>
   );
 }
-
-function Row({ label, value }) {
-  return (
-    <div style={styles.row}>
-      <div style={styles.label}>{label}</div>
-      <div style={styles.value}>{value}</div>
-    </div>
-  );
-}
-
-const styles = {
-  screen: {
-    minHeight: "100vh",
-    background: "#0f0f0f",
-    color: "#fff",
-    padding: "48px 16px",
-  },
-  lang: {
-    position: "fixed",
-    top: 16,
-    right: 16,
-    padding: "8px 14px",
-    borderRadius: 999,
-    border: "1px solid #444",
-    background: "#222",
-    color: "#fff",
-    cursor: "pointer",
-  },
-  wrap: {
-    maxWidth: 940,
-    margin: "0 auto",
-  },
-  card: {
-    margin: "0 auto",
-    maxWidth: 720,
-    background: "#151515",
-    border: "1px solid #222",
-    borderRadius: 12,
-    padding: 24,
-    boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
-  },
-  h1: { margin: "0 0 10px", fontSize: 32, fontWeight: 800, textAlign: "center" },
-  lead: { margin: "0 0 20px", color: "#bbb", textAlign: "center" },
-  row: {
-    display: "grid",
-    gridTemplateColumns: "180px 1fr",
-    alignItems: "center",
-    gap: 10,
-    padding: "10px 0",
-    borderBottom: "1px solid #222",
-  },
-  label: { color: "#aaa" },
-  value: {
-    background: "#1e1e1e",
-    border: "1px solid #2b2b2b",
-    borderRadius: 8,
-    padding: "10px 12px",
-    fontWeight: 700,
-  },
-  btns: {
-    marginTop: 18,
-    display: "flex",
-    gap: 10,
-    justifyContent: "center",
-    flexWrap: "wrap",
-  },
-  btnPrimary: {
-    background: "#f4aa2a",
-    border: "1px solid #f4aa2a",
-    color: "#000",
-    padding: "10px 14px",
-    borderRadius: 8,
-    cursor: "pointer",
-    fontWeight: 700,
-  },
-  btnGhost: {
-    background: "transparent",
-    border: "1px solid #666",
-    color: "#ddd",
-    padding: "10px 14px",
-    borderRadius: 8,
-    cursor: "pointer",
-    fontWeight: 600,
-  },
-  info: {
-    marginTop: 12,
-    textAlign: "center",
-    background: "#2a2a2a",
-    border: "1px solid #444",
-    color: "#ddd",
-    padding: "8px 10px",
-    borderRadius: 8,
-  },
-  ok: {
-    marginTop: 12,
-    textAlign: "center",
-    background: "#1e3a1e",
-    border: "1px solid #355a35",
-    color: "#c7f5c7",
-    padding: "8px 10px",
-    borderRadius: 8,
-  },
-  err: {
-    marginTop: 12,
-    textAlign: "center",
-    background: "#3a0e0e",
-    border: "1px solid #6b1a1a",
-    color: "#ffd2d2",
-    padding: "8px 10px",
-    borderRadius: 8,
-  },
-};
