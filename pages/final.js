@@ -2,6 +2,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 
+// Use the image in /public. Note the %20 for the space in the filename.
+const BG = "/BG-sikeres%20reg.png";
+
 export default function FinalPage() {
   const router = useRouter();
 
@@ -153,7 +156,6 @@ export default function FinalPage() {
     username: "Felhasználónév:",
     correct: "Helyes válaszok:",
     time: "Eltelt idő:",
-    // round label intentionally not used (row hidden)
     saveBtn: "Eredmény mentése",
     printBtn: "Eredmény nyomtatása",
     backBtn: "Vissza a főoldalra",
@@ -162,10 +164,11 @@ export default function FinalPage() {
     errorPrefix: "Mentés sikertelen",
   };
 
-  // ---- styles ----
+  // ---- styles (with background image restored) ----
   const page = {
     minHeight: "100vh",
-    background: "#0f0f0f",
+    // background image + a subtle dark overlay for readability
+    background: `linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,.55)), url('${BG}') center/cover no-repeat`,
     color: "#fff",
     display: "flex",
     alignItems: "center",
