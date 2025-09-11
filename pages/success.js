@@ -9,12 +9,14 @@ export default function SuccessPage() {
   const [creds, setCreds] = useState(null); // { username, password }
   const [error, setError] = useState("");
 
-  // --- helpers --------------------------------------------------------------
+  // --- helpers ------------------------------------------------------
+
   const getSessionId = () => {
-    // Try router first; fallback to direct URL parsing (works on hard reloads)
-    const fromRouter = router.query?.session_id;
+    // Prefer Next.js router first
+    const fromRouter = router?.query?.session_id;
     if (typeof fromRouter === "string" && fromRouter.trim()) return fromRouter;
 
+    // Fallback: parse from the URL (works on hard refresh)
     if (typeof window !== "undefined") {
       const sid = new URLSearchParams(window.location.search).get("session_id");
       if (sid) return sid;
@@ -23,185 +25,242 @@ export default function SuccessPage() {
   };
 
   const fetchCreds = async (sid) => {
-    // Build absolute URL to be safe across environments
+    // Build absolute URL so it works in all environments
     const origin =
-      typeof window !== "undefined" ? window.location.origin : "";
+      typeof window === "undefined" ? "" : window.location.origin;
+
+    // NOTE: calling saveRegistration2 (the stub you created)
     const url = `${origin}/api/saveRegistration2?session_id=${encodeURIComponent(
       sid
     )}`;
 
     const res = await fetch(url, { method: "GET" });
 
-    // Read as text first to avoid "Unexpected end of JSON input" masking
+    // Read as text first, then parse JSON (avoids "Unexpected end of JSON input")
     const text = await res.text();
-
-    let json;
-    try {
-      json = text ? JSON.parse(text) : {};
-    } catch (e) {
+    if (!res.ok) {
       throw new Error(
-        `Bad JSON from saveRegistration2. Body: ${text?.slice(0, 200) || "<empty>"}`
+        `Hiba a kérésben (${res.status}): ${text || "ismeretlen hiba"}`
       );
     }
 
-    if (!res.ok || json?.ok !== true) {
-      const msg =
-        json?.error ||
-        json?.message ||
-        `HTTP ${res.status} calling saveRegistration2`;
-      throw new Error(msg);
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      // If API returned raw text for some reason
+      throw new Error("A válasz nem érvényes JSON.");
     }
 
-    if (!json.username || !json.password) {
-      throw new Error("Response missing username/password.");
+    // Validate expected fields
+    if (
+      !data ||
+      data.ok !== true ||
+      typeof data.username !== "string" ||
+      typeof data.password !== "string"
+    ) {
+      throw new Error("Hiányzó vagy érvénytelen adatok a válaszban.");
     }
 
-    return { username: json.username, password: json.password };
+    return { username: data.username, password: data.password };
   };
 
-  // --- effects --------------------------------------------------------------
-  useEffect(() => {
-    const run = async () => {
+  const run = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
       const sid = getSessionId();
       if (!sid) {
-        setError("Hiányzó session azonosító (session_id).");
-        setLoading(false);
-        return;
+        throw new Error("Hiányzik a session_id az URL-ből.");
       }
 
-      try {
-        const result = await fetchCreds(sid);
-        setCreds(result);
-      } catch (e) {
-        setError(
-          `Sikertelen mentés: ${(e && e.message) || "ismeretlen hiba"}.`
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+      const c = await fetchCreds(sid);
+      setCreds(c);
+    } catch (e) {
+      setError(
+        e?.message || "Ismeretlen hiba történt a hitelesítő adatok lekérésekor."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // Wait until router.query is hydrated on client
-    if (router.isReady) run();
-  }, [router.isReady]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // --- UI -------------------------------------------------------------------
   const handlePrint = () => {
-    if (typeof window !== "undefined") window.print();
+    try {
+      window.print();
+    } catch {
+      setError("A nyomtatás nem indítható.");
+    }
+  };
+
+  // NEW: Save credentials to a local .txt file
+  const handleSave = () => {
+    try {
+      const text = `Felhasználónév: ${creds?.username}\nJelszó: ${creds?.password}\n`;
+      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `grandlucky-credentials-${creds?.username || "user"}.txt`;
+      document.body.appendChild(a);
+      a.click();
+
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        a.remove();
+      }, 0);
+    } catch {
+      setError("Nem sikerült menteni a fájlt.");
+    }
+  };
+
+  useEffect(() => {
+    if (!router.isReady) return;
+    run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady]);
+
+  // --- UI -----------------------------------------------------------
+
+  const page = {
+    minHeight: "100vh",
+    background: "#0f0f0f",
+    color: "#fff",
+    padding: "40px 16px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  };
+
+  const card = {
+    width: "100%",
+    maxWidth: 520,
+    background: "#151515",
+    borderRadius: 12,
+    boxShadow: "0 10px 30px rgba(0,0,0,0.4)",
+    border: "1px solid #222",
+    padding: 24,
+  };
+
+  const h1 = {
+    textAlign: "center",
+    marginBottom: 18,
+    fontWeight: 700,
+    fontSize: 32,
+  };
+
+  const sub = {
+    textAlign: "center",
+    marginBottom: 20,
+    color: "#bbb",
+  };
+
+  const row = {
+    display: "grid",
+    gridTemplateColumns: "140px 1fr",
+    gap: 12,
+    alignItems: "center",
+    marginTop: 16,
+  };
+
+  const label = { color: "#bbb" };
+
+  const chip = {
+    display: "inline-block",
+    background: "#1e1e1e",
+    border: "1px solid #333",
+    borderRadius: 8,
+    padding: "8px 12px",
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+  };
+
+  const btns = {
+    marginTop: 24,
+    display: "flex",
+    gap: 10,
+    justifyContent: "center",
+    flexWrap: "wrap",
+  };
+
+  const btnPrimary = {
+    background: "#f4aa2a",
+    border: "1px solid #f4aa2a",
+    color: "#000",
+    padding: "10px 14px",
+    borderRadius: 8,
+    cursor: "pointer",
+    fontWeight: 600,
+  };
+
+  const btnGhost = {
+    background: "transparent",
+    border: "1px solid #666",
+    color: "#ddd",
+    padding: "10px 14px",
+    borderRadius: 8,
+    cursor: "pointer",
+  };
+
+  const errBox = {
+    background: "#3a0e0e",
+    border: "1px solid #6b1a1a",
+    color: "#ffd2d2",
+    padding: "10px 12px",
+    borderRadius: 8,
+    marginTop: 18,
+    textAlign: "center",
+    fontSize: 14,
   };
 
   return (
-    <main style={styles.main}>
-      <h1 style={styles.h1}>Sikeres fizetés</h1>
-      <p style={styles.sub}>Köszönjük a regisztrációt!</p>
+    <div style={page}>
+      <div style={card}>
+        <h1 style={h1}>Sikeres fizetés</h1>
+        <div style={sub}>Köszönjük a regisztrációt!</div>
 
-      {loading && <p style={styles.badgeInfo}>Feldolgozás…</p>}
+        {loading && <div style={{ textAlign: "center" }}>Betöltés…</div>}
 
-      {!loading && error && <p style={styles.badgeError}>{error}</p>}
+        {!loading && error && <div style={errBox}>{error}</div>}
 
-      {!loading && !error && creds && (
-        <div style={styles.card}>
-          <p style={{ margin: 0, opacity: 0.8 }}>Belépési adataid</p>
-          <div style={styles.row}>
-            <span style={styles.key}>Felhasználónév:</span>
-            <span style={styles.value}>{creds.username}</span>
-          </div>
-          <div style={styles.row}>
-            <span style={styles.key}>Jelszó:</span>
-            <span style={styles.value}>{creds.password}</span>
-          </div>
+        {!loading && !error && creds && (
+          <>
+            <div
+              style={{
+                textAlign: "left",
+                fontWeight: 600,
+                marginTop: 6,
+                color: "#ccc",
+              }}
+            >
+              Belépési adataid
+            </div>
 
-          <div style={styles.actions}>
-            <button onClick={handlePrint} style={styles.btnPrimary}>
-              Nyomtatás
-            </button>
-            <a href="/" style={styles.btnGhost}>
-              Vissza
-            </a>
-          </div>
-        </div>
-      )}
-    </main>
+            <div style={row}>
+              <div style={label}>Felhasználónév:</div>
+              <div style={chip}>{creds.username}</div>
+            </div>
+
+            <div style={row}>
+              <div style={label}>Jelszó:</div>
+              <div style={chip}>{creds.password}</div>
+            </div>
+
+            <div style={btns}>
+              <button onClick={handlePrint} style={btnPrimary}>
+                Nyomtatás
+              </button>
+              <button onClick={handleSave} style={btnPrimary}>
+                Mentés
+              </button>
+              <button onClick={() => router.push("/")} style={btnGhost}>
+                Vissza
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
-
-// --- styles (simple inline to keep it self-contained) -----------------------
-const styles = {
-  main: {
-    minHeight: "100vh",
-    background: "#111",
-    color: "#fff",
-    padding: "48px 16px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: 16,
-  },
-  h1: { margin: 0, fontSize: 40, lineHeight: 1.2, textAlign: "center" },
-  sub: { margin: 0, opacity: 0.8, textAlign: "center" },
-
-  badgeInfo: {
-    background: "#223",
-    color: "#cde",
-    padding: "10px 14px",
-    borderRadius: 8,
-  },
-  badgeError: {
-    background: "#3a1212",
-    color: "#ffb8b8",
-    padding: "10px 14px",
-    borderRadius: 8,
-    maxWidth: 680,
-    textAlign: "center",
-  },
-
-  card: {
-    marginTop: 16,
-    background: "#1a1a1a",
-    border: "1px solid #2a2a2a",
-    borderRadius: 12,
-    padding: 20,
-    width: "100%",
-    maxWidth: 560,
-  },
-  row: {
-    display: "flex",
-    gap: 12,
-    alignItems: "baseline",
-    marginTop: 10,
-  },
-  key: { width: 140, color: "#bbb" },
-  value: {
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-    background: "#111",
-    border: "1px solid #2a2a2a",
-    borderRadius: 8,
-    padding: "8px 10px",
-  },
-  actions: {
-    marginTop: 18,
-    display: "flex",
-    gap: 12,
-  },
-
-  // button styles similar to your existing inline styles
-  btnPrimary: {
-    background: "#faa30b",
-    color: "#111",
-    border: "none",
-    borderRadius: 12,
-    padding: "10px 16px",
-    fontWeight: 700,
-    cursor: "pointer",
-  },
-  btnGhost: {
-    display: "inline-block",
-    textDecoration: "none",
-    color: "#fff",
-    background: "transparent",
-    border: "1px solid #666",
-    borderRadius: 12,
-    padding: "10px 16px",
-    fontWeight: 600,
-  },
-};
