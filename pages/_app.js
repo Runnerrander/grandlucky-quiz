@@ -14,8 +14,7 @@ export default function MyApp({ Component, pageProps }) {
 
       <Component {...pageProps} />
 
-      {/* Global CSS to ensure CTAs are visible/tappable on small screens,
-          with specific safeguards for Slide 4 */}
+      {/* Global CSS: ensure CTAs are visible/tappable; keep slide-4 fixes */}
       <style jsx global>{`
         /* Keep interactive elements above text overlays */
         button,
@@ -78,7 +77,6 @@ export default function MyApp({ Component, pageProps }) {
           }
 
           /* --- SPECIFIC: SLIDE 4 SAFEGUARDS --- */
-          /* Try several selectors so we catch your markup regardless of class names */
           .slide-4 .slide-copy,
           [data-slide="4"] .slide-copy,
           .slides > *:nth-child(4) .slide-copy,
@@ -108,7 +106,6 @@ export default function MyApp({ Component, pageProps }) {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
-            /* Optional: subtle backdrop for readability over bright images */
             background: linear-gradient(
               to top,
               rgba(0, 0, 0, 0.35),
@@ -118,12 +115,8 @@ export default function MyApp({ Component, pageProps }) {
             margin-top: 10px;
           }
 
-          /* If there's an overlay layer catching taps, disable it on phones */
-          .overlay,
-          .hero-overlay,
-          .slide-overlay {
-            pointer-events: none;
-          }
+          /* IMPORTANT: do NOT disable pointer events on overlays.
+             We removed the previous rule that broke taps. */
         }
       `}</style>
     </>
