@@ -471,15 +471,22 @@ export default function Vivko() {
               rgba(255, 255, 255, 0) 90%
             );
           }
+
+          /* push the whole text block down on mobile so HU/EN never overlaps */
           .text {
             max-width: 92vw;
             margin: 0 auto;
-            padding-top: clamp(22px, 9vw, 44px);
+            /* more top space than before */
+            --top-pad: clamp(88px, 18vw, 140px);
+            padding-top: var(--top-pad);
             text-align: left;
           }
+          /* slide 2 still gets a bit less than the generic, but more than before */
           .s-times .text {
-            padding-top: clamp(10px, 7vw, 38px);
+            --top-pad: clamp(78px, 17vw, 130px);
+            padding-top: var(--top-pad);
           }
+
           .script {
             font-size: clamp(44px, 10vw, 66px);
           }
@@ -500,8 +507,9 @@ export default function Vivko() {
             font-size: 12px;
             padding: 12px 20px;
           }
+
+          /* extra headroom for the grid on small screens */
           .text-draw {
-            /* a bit more room on small screens */
             max-height: calc(100svh - var(--top-pad) - max(16px, env(safe-area-inset-bottom)));
           }
         }
