@@ -38,7 +38,7 @@ export default function Vivko() {
         blur: "left",
         hScript: "Adventi Szezon",
         hStrongTop: "Vivkóval New Yorkban",
-        // ✅ Updated earlier (utazótársad + 7 nap 5 éjszaka)
+        // Updated earlier (utazótársad + 7 nap 5 éjszaka)
         sub:
           "Ha Te leszel a kétfordulós, tudásalapú verseny nyertese, Te és az utazótársad felejthetetlen élményeket élhettek át az USA keleti partján egy 7 nap 5 éjszakás utazás keretében. A nevezési díj: $9.99.",
         ui: "prevnext",
@@ -51,7 +51,7 @@ export default function Vivko() {
         blur: "left",
         hScript: "",
         hStrongTop: "",
-        // ✅ NEW HU dates & copy to match EN
+        // NEW HU dates & copy to match EN
         phase1:
           "1. forduló: Online kvíz, lezárás 2025. október 11. — 00:30 (CET)",
         phase2:
@@ -104,7 +104,7 @@ export default function Vivko() {
         blur: "left",
         hScript: "",
         hStrongTop: "",
-        // ✅ EN dates & copy (from your spec)
+        // EN dates & copy (from your spec)
         phase1:
           "1st Round: Online trivia, closes October 11, 2025 — 00:30 (CET)",
         phase2:
@@ -416,7 +416,10 @@ export default function Vivko() {
           text-decoration: underline;
         }
 
-        /* ---------- Mobile fix: Slide 4 (id: draw) scrolls; CTA sticky ---------- */
+        /* ---------- Slide 4 fix: remove footer on slide 4 so it never overlaps the buttons ---------- */
+        .s-draw .legal { display: none; }
+
+        /* ---------- Mobile tweaks (kept) ---------- */
         @media (max-width: 900px) {
           .hero::before,
           .blur-left::before {
