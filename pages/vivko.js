@@ -1,4 +1,4 @@
-// pages/vivko.js 
+// pages/vivko.js
 import Head from "next/head";
 import Link from "next/link";
 import { useState } from "react";
@@ -38,9 +38,10 @@ export default function Vivko() {
         blur: "left",
         hScript: "Adventi Szezon",
         hStrongTop: "Vivkóval New Yorkban",
+        // ✅ Updated sentence (utazótársad + 7 nap 5 éjszaka)
         sub:
-          sub: "Ha Te leszel a kétfordulós, tudásalapú verseny nyertese, Te és utazótársad felejthetetlen élményeket élhettek át az USA keleti partján, minden költséget mi fedezünk. A nevezési díj: $9.99.",
-
+          "Ha Te leszel a kétfordulós, tudásalapú verseny nyertese, Te és az utazótársad felejthetetlen élményeket élhettek át az USA keleti partján egy 7 nap 5 éjszakás utazás keretében. A nevezési díj: $9.99.",
+        ui: "prevnext",
         back: "VISSZA",
         next: "TOVÁBB",
       },
@@ -55,8 +56,7 @@ export default function Vivko() {
         phase2:
           "2. forduló: Online élő verseny, kezdés 2025. szeptember 27. — 20:00 (CET)",
         sub:
-          "Nyertesként Te és egy általad választott kísérő a Grand Slam Travel és a Vivkó Nails kíséretében utazhattok New Yorkba. Az utazás teljes körűen megszervezett, így sem tapasztalatra, sem nyelvtudásra nincs szükség. A nyeremény tartalmazza az ESTA ügyintézést, a repülőjegyeket, a transzfereket, a manhattani szállást reggelivel, ebéddel és vacsorával különböző éttermekben, belépőket több nevezetességhez, valamint egy különleges meglepetést.\n" +
-          "Az első forduló lezárása után a rendszer kiértékeli az eredményeket, és kiválasztja azt a hat versenyzőt, akik a legrövidebb idő alatt teljesítették a kvízt, valamint kiválaszt további huszonöt versenyzőt a befejezési idő alapján tartalék (standby) listára arra az esetre, ha a legjobb hat valamelyike nem lépne be a 2. fordulóba (élő verseny). Minden, a kvízt sikeresen teljesítő felhasználónév felkerül a GrandLucky Travel weboldalára 2025. szeptember 26-án 02:00-kor (CT) a befejezés idejével együtt.",
+          "Nyertesként Te és egy általad választott kísérő a Grand Slam Travel és a Vivkó Nails kíséretében utazhattok New Yorkba. Az utazás teljes körűen megszervezett, így sem tapasztalatra, sem nyelvtudásra nincs szükség. A nyeremény tartalmazza az ESTA ügyintézést, a repülőjegyeket, a transzfereket, a manhattani szállást reggelivel, ebéddel és vacsorával különböző éttermekben, belépőket több nevezetességhez, valamint egy különleges meglepetést.\nAz első forduló lezárása után a rendszer kiértékeli az eredményeket, és kiválasztja azt a hat versenyzőt, akik a legrövidebb idő alatt teljesítették a kvízt, valamint kiválaszt további huszonöt versenyzőt a befejezési idő alapján tartalék (standby) listára arra az esetre, ha a legjobb hat valamelyike nem lépne be a 2. fordulóba (élő verseny). Minden, a kvízt sikeresen teljesítő felhasználónév felkerül a GrandLucky Travel weboldalára 2025. szeptember 26-án 02:00-kor (CT) a befejezés idejével együtt.",
         ui: "cta",
         home: "FŐOLDAL",
         play: "JÁTSZOM!",
@@ -92,7 +92,7 @@ export default function Vivko() {
         hScript: "Advent Season",
         hStrongTop: "In New York with Vivko",
         sub:
-          "If you will be the winner the two round contest based on your skills, You and your  travel companion will enjoy unforgettable experiences on the US East Coast with all expense covered. You can enter the contest for a $ 9.99 entry fee",
+          "If you are the winner of the two-round, knowledge-based contest, you and your travel companion will enjoy unforgettable experiences on the US East Coast on a 7-day, 5-night trip. Entry fee: $9.99.",
         ui: "prevnext",
         back: "BACK",
         next: "NEXT",
@@ -104,12 +104,11 @@ export default function Vivko() {
         hScript: "",
         hStrongTop: "",
         phase1:
-          "1st. Round: Online trivia, closing down September 26, 2025 - 0.30 (CET)",
+          "1st Round: Online trivia, closes September 26, 2025 — 00:30 (CET)",
         phase2:
-          "2nd. Round: Online Live Contest, Starts September 27, 2025 — 18:00 (CET)",
+          "2nd Round: Online Live Contest, starts September 27, 2025 — 20:00 (CET)",
         sub:
-          "As the winner, you and a companion of your choice will travel to the Big Apple, accompanied by Grand Slam Travel and Vivko Nails. The trip is fully organized, so no prior experience or language skills are required. The prize includes ESTA processing, flights, transfers, a Manhattan hotel with breakfast, lunch and dinner in different restaurants, tickets to several attractions, and a special surprise.\n" +
-          "After the first round will be closed down the system will evaluate and pick sixt contestant who completed the trivia in the shortest time and picks twenty five contestant based on the time of completion who be listed as standby in case someone from the first six not enters to the second round (live content). All the Usernames that completed the trivia will be listed on the grandlucky travel webpage on September 26 2025-02.00 CT with the time of completation.",
+          "As the winner, you and a companion of your choice will travel to the Big Apple, accompanied by Grand Slam Travel and Vivko Nails. The trip is fully organized, so no prior experience or language skills are required. The prize includes ESTA processing, flights, transfers, a Manhattan hotel with breakfast, lunch and dinner in different restaurants, tickets to several attractions, and a special surprise.\nAfter the first round closes, the system will evaluate and pick six contestants who completed the trivia in the shortest time, and pick twenty-five additional contestants (by completion time) as standby in case any of the top six do not enter Round 2 (the live contest). All usernames that successfully complete the trivia will be listed on the GrandLucky Travel website on Sept 26, 2025 at 02:00 CT with their completion time.",
         ui: "cta",
         home: "HOME",
         play: "ENTER TO THE CONTEST",
@@ -120,20 +119,18 @@ export default function Vivko() {
   // Footer copy (bilingual)
   const footer = {
     hu: {
-      contact:
-        "Ha kérdésed vagy észrevételed van, kérjük, írj nekünk: ",
+      contact: "Ha kérdésed vagy észrevételed van, kérjük, írj nekünk: ",
       rights1: "Minden jog fenntartva – Grandlucky Travel",
       rights2: "3495 US Highway 1 STE34#1217 Princeton, NJ 08540",
     },
     en: {
-      contact:
-        "If you have any questions or concerns please contact us at: ",
+      contact: "If you have any questions or concerns please contact us at: ",
       rights1: "All rights reserved to Grandlucky Travel",
       rights2: "3495 US Highway 1 STE34#1217 Princeton, NJ 08540",
     },
   };
-  const F = footer[lang];
 
+  const F = footer[lang];
   const slides = copy[lang];
   const S = slides[i];
 
@@ -152,10 +149,7 @@ export default function Vivko() {
       <div className="bg" role="img" aria-label={S.id} />
 
       {/* Language toggle */}
-      <button
-        className="lang"
-        onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}
-      >
+      <button className="lang" onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}>
         {lang === "hu" ? "ANGOL" : "MAGYAR"}
       </button>
 
@@ -187,18 +181,10 @@ export default function Vivko() {
 
         {S.ui === "prevnext" ? (
           <div className="row">
-            <button
-              className="btn"
-              onClick={() => setI((p) => (p > 0 ? p - 1 : p))}
-            >
+            <button className="btn" onClick={() => setI((p) => (p > 0 ? p - 1 : p))}>
               {S.back}
             </button>
-            <button
-              className="btn"
-              onClick={() =>
-                setI((p) => (p < slides.length - 1 ? p + 1 : p))
-              }
-            >
+            <button className="btn" onClick={() => setI((p) => (p < slides.length - 1 ? p + 1 : p))}>
               {S.next}
             </button>
           </div>
@@ -218,9 +204,7 @@ export default function Vivko() {
       <footer className="legal">
         <p className="contact">
           {F.contact}
-          <a href="mailto:support@gradluckytravel.com">
-            support@gradluckytravel.com
-          </a>
+          <a href="mailto:support@gradluckytravel.com">support@gradluckytravel.com</a>
         </p>
         <p className="rights">
           <span>{F.rights1}</span>
@@ -301,11 +285,7 @@ export default function Vivko() {
               rgba(255, 255, 255, 0.18) 70%,
               rgba(255, 255, 255, 0) 100%
             ),
-            radial-gradient(
-              50% 40% at 12% 10%,
-              rgba(255, 255, 255, 0.85) 0%,
-              rgba(255, 255, 255, 0) 100%
-            );
+            radial-gradient(50% 40% at 12% 10%, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0) 100%);
           backdrop-filter: blur(5px);
           -webkit-backdrop-filter: blur(5px);
         }
@@ -314,8 +294,7 @@ export default function Vivko() {
           padding-top: clamp(12px, 4.8vw, 60px);
         }
         .s-times .strong {
-          text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85),
-            0 3px 10px rgba(0, 0, 0, 0.08);
+          text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85), 0 3px 10px rgba(0, 0, 0, 0.08);
         }
         .s-times .sub {
           color: #2a2a2a;
@@ -331,8 +310,7 @@ export default function Vivko() {
           border: 3px solid var(--yellow-border);
           background: var(--yellow);
           color: var(--dark);
-          box-shadow: 0 10px 18px rgba(0, 0, 0, 0.15),
-            inset 0 2px 0 rgba(255, 255, 255, 0.7);
+          box-shadow: 0 10px 18px rgba(0, 0, 0, 0.15), inset 0 2px 0 rgba(255, 255, 255, 0.7);
         }
 
         .text {
@@ -343,7 +321,7 @@ export default function Vivko() {
           padding-top: clamp(38px, 7.2vw, 100px);
         }
         .s-bridge .text {
-          padding-top: clamp(26px, 6.0vw, 80px);
+          padding-top: clamp(26px, 6vw, 80px);
         }
 
         .title {
@@ -354,17 +332,15 @@ export default function Vivko() {
           display: block;
           font: 700 clamp(54px, 6.2vw, 86px) "Caveat", cursive;
           color: #faaf3b;
-          text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55),
-            0 2px 6px rgba(0, 0, 0, 0.08);
+          text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55), 0 2px 6px rgba(0, 0, 0, 0.08);
           margin-bottom: clamp(6px, 0.6vw, 8px);
         }
         .strong {
           display: block;
           font-weight: 900;
-          font-size: clamp(42px, 5.0vw, 74px);
+          font-size: clamp(42px, 5vw, 74px);
           letter-spacing: -0.2px;
         }
-        /* Smaller lines for the two rounds + keep each on a single line (desktop/tablet) */
         .phase {
           display: block;
           font-weight: 900;
@@ -373,7 +349,7 @@ export default function Vivko() {
           white-space: nowrap;
         }
         .sub {
-          margin: clamp(12px, 1.6vw, 20px) 0 clamp(20px, 2.0vw, 26px);
+          margin: clamp(12px, 1.6vw, 20px) 0 clamp(20px, 2vw, 26px);
           font-weight: 500;
           font-size: clamp(18px, 1.7vw, 24px);
           color: var(--muted);
@@ -404,18 +380,15 @@ export default function Vivko() {
           background: var(--yellow);
           border: 3px solid var(--yellow-border);
           text-decoration: none;
-          box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18),
-            inset 0 2px 0 rgba(255, 255, 255, 0.65);
+          box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18), inset 0 2px 0 rgba(255, 255, 255, 0.65);
           transition: transform 0.2s ease, box-shadow 0.2s ease;
           cursor: pointer;
         }
         .btn:hover {
           transform: translateY(-2px);
-          box-shadow: 0 22px 36px rgba(0, 0, 0, 0.24),
-            inset 0 2px 0 rgba(255, 255, 255, 0.7);
+          box-shadow: 0 22px 36px rgba(0, 0, 0, 0.24), inset 0 2px 0 rgba(255, 255, 255, 0.7);
         }
 
-        /* Footer (left, two-line rights/address, black text) */
         .legal {
           position: absolute;
           bottom: clamp(16px, 3.2vh, 28px);
@@ -506,33 +479,11 @@ export default function Vivko() {
     </main>
   );
 }
+
 // Force no-cache so copy changes show up immediately
 export async function getServerSideProps({ res }) {
-  res.setHeader(
-    'Cache-Control',
-    'no-store, no-cache, must-revalidate, proxy-revalidate'
-  );
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  return { props: {} };
-}
-// Force no-cache so copy changes show up immediately
-export async function getServerSideProps({ res }) {
-  res.setHeader(
-    'Cache-Control',
-    'no-store, no-cache, must-revalidate, proxy-revalidate'
-  );
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  return { props: {} };
-}
-// Force no-cache so copy changes show up immediately
-export async function getServerSideProps({ res }) {
-  res.setHeader(
-    'Cache-Control',
-    'no-store, no-cache, must-revalidate, proxy-revalidate'
-  );
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   return { props: {} };
 }
