@@ -176,7 +176,7 @@ export default function Vivko() {
           ) : null}
         </h1>
 
-        {/* Scrollable text on Slide 4 without overlapping buttons */}
+        {/* Scrollable text on Slide 4; buttons separated below (no overlap) */}
         {S.sub && (
           <div className={`subwrap ${S.id === "draw" ? "subwrap-draw" : ""}`}>
             <p className="sub">
@@ -290,7 +290,7 @@ export default function Vivko() {
         /* REMOVE overlay/plate where requested */
         .s-heart::before,
         .s-bridge::before {
-          background: none !important; /* Slide 1 & Slide 3: no blur overlay */
+          background: none !important; /* Slide 1 & 3: no blur overlay */
         }
         /* Remove ALL blur/plates on Slide 2 */
         .s-times::before,
@@ -300,18 +300,6 @@ export default function Vivko() {
         .s-times::after {
           content: none !important;
           display: none !important;
-        }
-
-        .s-times .text {
-          padding-top: clamp(12px, 4.8vw, 60px);
-        }
-        .s-times .strong {
-          text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85),
-            0 3px 10px rgba(0, 0, 0, 0.08);
-        }
-        .s-times .sub {
-          color: #2a2a2a;
-          text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
         }
 
         .lang {
@@ -333,49 +321,23 @@ export default function Vivko() {
             right: 10px;
           }
         }
-        .s-draw .text {
-          padding-top: clamp(48px, 8.2vw, 110px);
-        }
 
+        /* Base text block */
         .text {
           position: relative;
           z-index: 2;
           max-width: min(980px, 86vw);
           margin-left: clamp(24px, 6.2vw, 80px);
-          padding-top: clamp(38px, 7.2vw, 100px);
+          /* define a CSS var for top padding we reuse below */
+          --top-pad: clamp(38px, 7.2vw, 100px);
+          padding-top: var(--top-pad);
+          display: block;
         }
-
-        /* ---- Slide 4 layout: make sub scroll, buttons follow WITHOUT overlap ---- */
-        .text-draw {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          /* keep it inside the viewport comfortably */
-          max-height: calc(100vh - clamp(38px, 7.2vw, 100px) - 24px);
-          overflow: hidden; /* contain child scrolling */
-        }
-        .text-draw .subwrap {
-          flex: 1 1 auto;
-          min-height: 0; /* enables flex child's overflow on Safari/iOS */
-        }
-        .text-draw .sub {
-          height: 100%;
-          overflow: auto;
-          -webkit-overflow-scrolling: touch;
-          padding-right: 4px; /* scrollbar spacing */
-          /* remove any extra bottom padding; the row is now below, not overlaying */
-          padding-bottom: 0;
-        }
-        /* Buttons row is now normal flow (not sticky), so no overlap */
-        .text-draw .row {
-          position: static;
-          background: transparent;
-          margin-top: 6px;
-          padding-top: 0;
-        }
-
         .s-bridge .text {
-          padding-top: clamp(26px, 6.0vw, 80px);
+          --top-pad: clamp(26px, 6.0vw, 80px);
+        }
+        .s-draw .text {
+          --top-pad: clamp(48px, 8.2vw, 110px);
         }
 
         .title {
@@ -403,13 +365,13 @@ export default function Vivko() {
           letter-spacing: -0.2px;
           white-space: nowrap;
         }
+
         .sub {
           margin: clamp(12px, 1.6vw, 20px) 0 clamp(20px, 2.0vw, 26px);
           font-weight: 500;
           font-size: clamp(18px, 1.7vw, 24px);
           color: var(--muted);
         }
-
         /* Slide 3 description yellow */
         .s-bridge .sub {
           color: var(--yellow);
@@ -420,6 +382,7 @@ export default function Vivko() {
           display: flex;
           gap: clamp(12px, 1.6vw, 16px);
           align-items: center;
+          flex-wrap: wrap;
         }
 
         .btn {
@@ -444,6 +407,29 @@ export default function Vivko() {
           transform: translateY(-2px);
           box-shadow: 0 22px 36px rgba(0, 0, 0, 0.24),
             inset 0 2px 0 rgba(255, 255, 255, 0.7);
+        }
+
+        /* ---------- Slide 4 (draw) — GRID so buttons never overlap ---------- */
+        .text-draw {
+          display: grid;
+          grid-template-rows: auto 1fr auto; /* title | scroll | buttons */
+          gap: 10px;
+          /* Keep inside viewport height; account for top padding and bottom safe area */
+          max-height: calc(100svh - var(--top-pad) - max(12px, env(safe-area-inset-bottom)));
+          padding-bottom: max(8px, env(safe-area-inset-bottom));
+        }
+        .text-draw .subwrap {
+          min-height: 0;       /* REQUIRED so 1fr can actually shrink on Safari/iOS */
+          overflow: auto;      /* scroll only this part */
+          -webkit-overflow-scrolling: touch;
+          padding-right: 4px;  /* scrollbar spacing */
+        }
+        .text-draw .row {
+          justify-content: flex-start;
+          position: static;    /* not sticky, no overlap */
+          background: transparent;
+          margin-top: 0;
+          padding-top: 0;
         }
 
         /* Footer base (hidden on slide 4 via conditional render above) */
@@ -513,6 +499,10 @@ export default function Vivko() {
           .btn {
             font-size: 12px;
             padding: 12px 20px;
+          }
+          .text-draw {
+            /* a bit more room on small screens */
+            max-height: calc(100svh - var(--top-pad) - max(16px, env(safe-area-inset-bottom)));
           }
         }
       `}</style>
