@@ -329,11 +329,29 @@ export default function Welcome() {
           .text {
             margin: 0 auto;
             text-align: center;
-            padding: clamp(16px, 6vw, 36px);
+            padding: max(16px, env(safe-area-inset-top)) clamp(16px, 6vw, 36px)
+              clamp(24px, 8vw, 40px);
           }
+
+          /* MOBILE-ONLY: HU/EN chip in yellow */
           .lang {
             justify-content: center;
+            gap: 10px;
+            margin-bottom: clamp(10px, 3.6vw, 18px);
           }
+          .lang button {
+            background: var(--yellow);
+            color: #1b1b1b;
+            border: 3px solid var(--yellow-border);
+            padding: 10px 16px;
+            box-shadow:
+              0 8px 16px rgba(0, 0, 0, 0.12),
+              inset 0 1.5px 0 rgba(255, 255, 255, 0.65);
+          }
+          .lang .active {
+            filter: saturate(1.05) brightness(1.02);
+          }
+
           .script {
             margin-left: 0 !important;
             font-size: clamp(40px, 10vw, 56px);
