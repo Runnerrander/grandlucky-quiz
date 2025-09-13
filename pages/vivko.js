@@ -39,8 +39,7 @@ export default function Vivko() {
         hScript: "Adventi Szezon",
         hStrongTop: "Vivkóval New Yorkban",
         sub:
-          sub: "Ha Te leszel a kétfordulós, tudásalapú verseny nyertese, Te és az utazótársad felejthetetlen élményeket élhettek át az USA keleti partján egy 7 nap 5 éjszakás utazás keretében.  A nevezési díj: $9.99."
-
+          sub: "Ha Te leszel a kétfordulós, tudásalapú verseny nyertese, Te és utazótársad felejthetetlen élményeket élhettek át az USA keleti partján, minden költséget mi fedezünk. A nevezési díj: $9.99.",
 
         back: "VISSZA",
         next: "TOVÁBB",
