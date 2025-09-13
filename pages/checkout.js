@@ -39,7 +39,6 @@ export default function Checkout() {
         "A sikeres fizetés után a <strong>Felhasználónevet</strong> és a <strong>Jelszót</strong> a rendszer automatikusan létrehozza. A 2. fordulóban (élő verseny) a hitelesítéshez szükséged lesz a <strong>Felhasználónév + Jelszó</strong> kombinációra.",
         "El tudod menteni vagy ki tudod nyomtatni a <strong>Felhasználónevedet</strong> és a <strong>Jelszavadat</strong>. Az első fordulóban a felhasználóneved automatikusan bekerül a kvízbe, és a rendszer eltárolja a kvíz befejezésének <strong>idejével együtt</strong>.",
         "Minden <strong>nevezés</strong> <strong>új Felhasználónevet és Jelszót</strong> hoz létre.",
-        // UPDATED line 4 (HU)
         "Az első fordulóban (online kvíz), ha valaki korábban pontosan ugyanannyi idő alatt teljesítette a kvízt, mint a versenyző, a versenyző két lehetőséget kap. 1. lehetőség: a befejezési időt <strong>+5 másodperccel</strong> növelten nyújtja be; vagy azonnal <strong>új kvízt indíthat</strong> további nevezési díj fizetése nélkül.",
         "Kérjük, a <strong>Felhasználónevet</strong> és a <strong>Jelszót</strong> tartsd biztonságos helyen.",
       ],
@@ -56,7 +55,6 @@ export default function Checkout() {
         "After successful payment, your <strong>Username</strong> and <strong>Password</strong> are created automatically by the system. You will need the Username and Password Combination at the 2nd. round (live contest) for verification.",
         "You can save or print your Username and Password. At first round your username will be inserted to the quiz automatically and stored in the system with the time the completion of trivia.",
         "Each entry generates a <strong>new Username and Password</strong>.",
-        // UPDATED line 4 (EN)
         "In round one (online trivia) if someone completed the trivia under earlier in the exact same time than the contestant, the contestant will get two options. Option 1: The contestant can submit the time of completion with added five second or can enter a new trivia immediately without paying the entry fee again.",
         "Keep your <strong>Username</strong> and <strong>Password</strong> in a safe place.",
       ],
@@ -110,13 +108,13 @@ export default function Checkout() {
           <span dangerouslySetInnerHTML={{ __html: C.agree }} />
         </label>
 
-        {/* Sticky actions on mobile */}
+        {/* Sticky actions on mobile — transparent background */}
         <div className="row actions">
           <Link href="/user-agreement" legacyBehavior>
             <a className="btn ghost">{C.back}</a>
           </Link>
 
-          <button className="btn" onClick={onPay} disabled={!accepted || busy}>
+        <button className="btn" onClick={onPay} disabled={!accepted || busy}>
             {busy ? "…" : C.pay}
           </button>
         </div>
@@ -135,7 +133,7 @@ export default function Checkout() {
           position: relative;
           min-height: 100svh;
           height: auto;
-          overflow: visible; /* important for sticky */
+          overflow: visible; /* keep sticky working */
           box-sizing: border-box;
 
           /* space from the top bar */
@@ -191,9 +189,7 @@ export default function Checkout() {
           font-size: clamp(16px, 1.6vw, 19px);
           line-height: 1.55;
         }
-        .list li + li {
-          margin-top: 8px;
-        }
+        .list li + li { margin-top: 8px; }
 
         .note {
           color: var(--muted);
@@ -208,10 +204,7 @@ export default function Checkout() {
           margin: 12px 0 18px;
           font-weight: 700;
         }
-        .agree input {
-          width: 18px;
-          height: 18px;
-        }
+        .agree input { width: 18px; height: 18px; }
 
         .row {
           display: flex;
@@ -220,24 +213,14 @@ export default function Checkout() {
           flex-wrap: wrap;
         }
 
-        /* Sticky action bar (mobile-first; safe on desktop too) */
+        /* Sticky action bar: now fully transparent */
         .actions {
           position: sticky;
           bottom: 0;
           z-index: 9;
           padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0));
-          background: linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0) 0%,
-            rgba(255, 255, 255, 0.92) 40%,
-            #fff 100%
-          );
-          /* keep the bar inside the content width */
-          margin-left: calc(-1 * clamp(18px, 3.6vw, 36px));
-          margin-right: calc(-1 * clamp(18px, 3.6vw, 36px));
-          padding-left: clamp(18px, 3.6vw, 36px);
-          padding-right: clamp(18px, 3.6vw, 36px);
-          border-top: 1px solid rgba(0, 0, 0, 0.06);
+          background: transparent; /* <- no plate/gradient */
+          border-top: none;
         }
 
         /* Yellow pill buttons */
@@ -264,23 +247,12 @@ export default function Checkout() {
           box-shadow: 0 22px 36px rgba(0, 0, 0, 0.24),
             inset 0 2px 0 rgba(255, 255, 255, 0.7);
         }
-        .btn[disabled] {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        .btn.ghost {
-          background: #fff;
-          border-color: #e8e8e8;
-        }
+        .btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+        .btn.ghost { background: #fff; border-color: #e8e8e8; }
 
         @media (max-width: 900px) {
-          .checkout {
-            padding-top: clamp(70px, 11vh, 120px);
-          }
-          .row .btn {
-            width: 100%;
-            justify-content: center;
-          }
+          .checkout { padding-top: clamp(70px, 11vh, 120px); }
+          .row .btn { width: 100%; justify-content: center; }
         }
       `}</style>
     </main>
