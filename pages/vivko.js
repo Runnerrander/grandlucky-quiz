@@ -516,6 +516,12 @@ export default function Vivko() {
             padding: 12px 20px;
           }
         }
+
+        /* Laptop-only: remove any leftover blur/plate on slide 2 ("times") */
+        @media (min-width: 901px) and (max-width: 1280px) {
+          .s-times.blur-left::before { background: none !important; }
+          .s-times::after { content: none !important; display: none !important; }
+        }
       `}</style>
     </main>
   );
