@@ -38,7 +38,6 @@ export default function Vivko() {
         blur: "left",
         hScript: "Adventi Szezon",
         hStrongTop: "Vivkóval New Yorkban",
-        // updated earlier: utazótársad + 7 nap / 5 éjszaka
         sub:
           "Ha Te leszel a kétfordulós, tudásalapú verseny nyertese, Te és az utazótársad felejthetetlen élményeket élhettek át az USA keleti partján egy 7 nap 5 éjszakás utazás keretében. A nevezési díj: $9.99.",
         ui: "prevnext",
@@ -51,7 +50,6 @@ export default function Vivko() {
         blur: "left",
         hScript: "",
         hStrongTop: "",
-        // Updated HU dates (Oct) + NEW travel line
         phase1:
           "1. forduló: Online kvíz, lezárás 2025. október 11. — 00:30 (CET)",
         phase2:
@@ -108,7 +106,6 @@ export default function Vivko() {
         blur: "left",
         hScript: "",
         hStrongTop: "",
-        // Updated EN dates (Oct) + NEW travel line
         phase1:
           "1st Round: Online trivia, closes October 11, 2025 — 00:30 (CET)",
         phase2:
@@ -124,7 +121,6 @@ export default function Vivko() {
     ],
   };
 
-  // Footer copy (bilingual)
   const footer = {
     hu: {
       contact: "Ha kérdésed vagy észrevételed van, kérjük, írj nekünk: ",
@@ -261,6 +257,7 @@ export default function Vivko() {
           z-index: 0;
         }
 
+        /* Base soft gradient overlay */
         .hero::before {
           content: "";
           position: absolute;
@@ -287,12 +284,13 @@ export default function Vivko() {
           );
         }
 
-        .s-times.blur-left::before,
-        .s-bridge.blur-left::before {
-          background: none;
+        /* REMOVE overlay/plate where requested */
+        .s-heart::before,
+        .s-bridge::before {
+          background: none !important; /* Slide 1 & Slide 3: no blur overlay */
         }
-        .s-times::after,
-        .s-bridge::after {
+        /* The “blur plate”: keep only for s-times (remove from s-bridge) */
+        .s-times::after {
           content: "";
           position: absolute;
           top: 0;
@@ -351,7 +349,7 @@ export default function Vivko() {
           padding-top: clamp(38px, 7.2vw, 100px);
         }
         .s-bridge .text {
-          padding-top: clamp(26px, 6vw, 80px);
+          padding-top: clamp(26px, 6.0vw, 80px);
         }
 
         .title {
@@ -369,7 +367,7 @@ export default function Vivko() {
         .strong {
           display: block;
           font-weight: 900;
-          font-size: clamp(42px, 5vw, 74px);
+          font-size: clamp(42px, 5.0vw, 74px);
           letter-spacing: -0.2px;
         }
         .phase {
@@ -380,7 +378,7 @@ export default function Vivko() {
           white-space: nowrap;
         }
         .sub {
-          margin: clamp(12px, 1.6vw, 20px) 0 clamp(20px, 2vw, 26px);
+          margin: clamp(12px, 1.6vw, 20px) 0 clamp(20px, 2.0vw, 26px);
           font-weight: 500;
           font-size: clamp(18px, 1.7vw, 24px);
           color: var(--muted);
@@ -448,6 +446,27 @@ export default function Vivko() {
           text-decoration: underline;
         }
 
+        /* -------- Slide 4 scrolling (all viewports) -------- */
+        .s-draw .sub {
+          max-height: calc(100vh - 260px);
+          overflow: auto;
+          -webkit-overflow-scrolling: touch;
+          padding-right: 4px;
+        }
+        .s-draw .row {
+          position: sticky;
+          bottom: 16px;
+          z-index: 4;
+          gap: 12px;
+          background: linear-gradient(
+            to top,
+            rgba(255, 255, 255, 0.35),
+            rgba(255, 255, 255, 0)
+          );
+          padding-top: 6px;
+          margin-top: 10px;
+        }
+
         /* ---------- Mobile tweaks ---------- */
         @media (max-width: 900px) {
           .hero::before,
@@ -461,12 +480,7 @@ export default function Vivko() {
               rgba(255, 255, 255, 0) 90%
             );
           }
-          .s-times.blur-left::before,
-          .s-bridge.blur-left::before {
-            background: none !important;
-          }
-          .s-times::after,
-          .s-bridge::after {
+          .s-times::after {
             width: clamp(220px, 60vw, 520px);
             height: clamp(200px, 44vh, 380px);
             backdrop-filter: blur(6px);
@@ -500,27 +514,6 @@ export default function Vivko() {
           .btn {
             font-size: 12px;
             padding: 12px 20px;
-          }
-
-          /* Slide 4 long text scrolls; CTA stays visible */
-          .s-draw .sub {
-            max-height: calc(100svh - 260px);
-            overflow: auto;
-            -webkit-overflow-scrolling: touch;
-            padding-right: 4px;
-          }
-          .s-draw .row {
-            position: sticky;
-            bottom: 16px;
-            z-index: 4;
-            gap: 12px;
-            background: linear-gradient(
-              to top,
-              rgba(255, 255, 255, 0.35),
-              rgba(255, 255, 255, 0)
-            );
-            padding-top: 6px;
-            margin-top: 10px;
           }
         }
       `}</style>
