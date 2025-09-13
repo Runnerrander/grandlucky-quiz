@@ -81,7 +81,10 @@ export default function Checkout() {
       </Head>
 
       {/* Language toggle chip */}
-      <button className="lang" onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}>
+      <button
+        className="lang"
+        onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}
+      >
         {lang === "hu" ? "ANGOL" : "MAGYAR"}
       </button>
 
@@ -107,7 +110,8 @@ export default function Checkout() {
           <span dangerouslySetInnerHTML={{ __html: C.agree }} />
         </label>
 
-        <div className="row">
+        {/* Sticky actions on mobile */}
+        <div className="row actions">
           <Link href="/user-agreement" legacyBehavior>
             <a className="btn ghost">{C.back}</a>
           </Link>
@@ -126,15 +130,15 @@ export default function Checkout() {
           --yellow-border: #e49b28;
         }
 
-        /* Composite background. No blur/scroll. */
+        /* Full-screen background; allow scrolling so sticky works */
         .checkout {
           position: relative;
-          height: 100dvh;
-          height: 100svh;
-          overflow: hidden;
+          min-height: 100svh;
+          height: auto;
+          overflow: visible; /* important for sticky */
           box-sizing: border-box;
 
-          /* move text down without shifting background */
+          /* space from the top bar */
           padding-top: clamp(80px, 12vh, 140px);
 
           font-family: "Montserrat", system-ui, sans-serif;
@@ -150,7 +154,7 @@ export default function Checkout() {
           position: fixed;
           top: clamp(14px, 2vw, 22px);
           right: clamp(14px, 2vw, 22px);
-          z-index: 2;
+          z-index: 10;
           padding: 12px 22px;
           border-radius: 999px;
           font-weight: 900;
@@ -166,6 +170,8 @@ export default function Checkout() {
           max-width: 960px;
           margin: 0 auto;
           padding: 0 clamp(18px, 3.6vw, 36px);
+          /* leave room so content never hides behind sticky actions */
+          padding-bottom: 110px;
         }
 
         .title {
@@ -185,7 +191,9 @@ export default function Checkout() {
           font-size: clamp(16px, 1.6vw, 19px);
           line-height: 1.55;
         }
-        .list li + li { margin-top: 8px; }
+        .list li + li {
+          margin-top: 8px;
+        }
 
         .note {
           color: var(--muted);
@@ -200,13 +208,36 @@ export default function Checkout() {
           margin: 12px 0 18px;
           font-weight: 700;
         }
-        .agree input { width: 18px; height: 18px; }
+        .agree input {
+          width: 18px;
+          height: 18px;
+        }
 
         .row {
           display: flex;
           gap: 12px;
           align-items: center;
           flex-wrap: wrap;
+        }
+
+        /* Sticky action bar (mobile-first; safe on desktop too) */
+        .actions {
+          position: sticky;
+          bottom: 0;
+          z-index: 9;
+          padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0));
+          background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0) 0%,
+            rgba(255, 255, 255, 0.92) 40%,
+            #fff 100%
+          );
+          /* keep the bar inside the content width */
+          margin-left: calc(-1 * clamp(18px, 3.6vw, 36px));
+          margin-right: calc(-1 * clamp(18px, 3.6vw, 36px));
+          padding-left: clamp(18px, 3.6vw, 36px);
+          padding-right: clamp(18px, 3.6vw, 36px);
+          border-top: 1px solid rgba(0, 0, 0, 0.06);
         }
 
         /* Yellow pill buttons */
@@ -226,18 +257,30 @@ export default function Checkout() {
             inset 0 2px 0 rgba(255, 255, 255, 0.65);
           transition: transform 0.2s ease, box-shadow 0.2s ease;
           cursor: pointer;
+          touch-action: manipulation;
         }
         .btn:hover:not([disabled]) {
           transform: translateY(-2px);
           box-shadow: 0 22px 36px rgba(0, 0, 0, 0.24),
             inset 0 2px 0 rgba(255, 255, 255, 0.7);
         }
-        .btn[disabled] { opacity: 0.6; cursor: not-allowed; }
-        .btn.ghost { background: #fff; border-color: #e8e8e8; }
+        .btn[disabled] {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        .btn.ghost {
+          background: #fff;
+          border-color: #e8e8e8;
+        }
 
         @media (max-width: 900px) {
-          .checkout { padding-top: clamp(70px, 11vh, 120px); }
-          .row .btn { width: 100%; justify-content: center; }
+          .checkout {
+            padding-top: clamp(70px, 11vh, 120px);
+          }
+          .row .btn {
+            width: 100%;
+            justify-content: center;
+          }
         }
       `}</style>
     </main>
