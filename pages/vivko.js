@@ -161,7 +161,7 @@ export default function Vivko() {
       </button>
 
       {/* Content */}
-      <section className="text">
+      <section className={`text ${S.id === "draw" ? "text-draw" : ""}`}>
         <h1 className="title">
           {S.hScript ? <span className="script">{S.hScript}</span> : null}
           {S.hStrongTop ? <span className="strong">{S.hStrongTop}</span> : null}
@@ -176,15 +176,18 @@ export default function Vivko() {
           ) : null}
         </h1>
 
+        {/* Scrollable text on Slide 4 without overlapping buttons */}
         {S.sub && (
-          <p className="sub">
-            {S.sub.split("\n").map((line, k) => (
-              <span key={k}>
-                {line}
-                <br />
-              </span>
-            ))}
-          </p>
+          <div className={`subwrap ${S.id === "draw" ? "subwrap-draw" : ""}`}>
+            <p className="sub">
+              {S.sub.split("\n").map((line, k) => (
+                <span key={k}>
+                  {line}
+                  <br />
+                </span>
+              ))}
+            </p>
+          </div>
         )}
 
         {S.ui === "prevnext" ? (
@@ -289,31 +292,14 @@ export default function Vivko() {
         .s-bridge::before {
           background: none !important; /* Slide 1 & Slide 3: no blur overlay */
         }
-        /* The “blur plate”: keep only for s-times (remove from s-bridge) */
+        /* Remove ALL blur/plates on Slide 2 */
+        .s-times::before,
+        .s-times.blur-left::before {
+          background: none !important;
+        }
         .s-times::after {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: 0;
-          width: clamp(240px, 36vw, 520px);
-          height: clamp(200px, 30vh, 400px);
-          pointer-events: none;
-          z-index: 1;
-          background: radial-gradient(
-              120% 100% at 0% 0%,
-              rgba(255, 255, 255, 0.9) 0%,
-              rgba(255, 255, 255, 0.75) 22%,
-              rgba(255, 255, 255, 0.46) 48%,
-              rgba(255, 255, 255, 0.18) 70%,
-              rgba(255, 255, 255, 0) 100%
-            ),
-            radial-gradient(
-              50% 40% at 12% 10%,
-              rgba(255, 255, 255, 0.85) 0%,
-              rgba(255, 255, 255, 0) 100%
-            );
-          backdrop-filter: blur(5px);
-          -webkit-backdrop-filter: blur(5px);
+          content: none !important;
+          display: none !important;
         }
 
         .s-times .text {
@@ -340,7 +326,6 @@ export default function Vivko() {
           box-shadow: 0 10px 18px rgba(0, 0, 0, 0.15),
             inset 0 2px 0 rgba(255, 255, 255, 0.7);
         }
-        /* Smaller/more tucked on mobile so it doesn't cover text */
         @media (max-width: 900px) {
           .lang {
             padding: 10px 16px;
@@ -348,7 +333,6 @@ export default function Vivko() {
             right: 10px;
           }
         }
-        /* Give slide 4 a little extra headroom under the lang chip */
         .s-draw .text {
           padding-top: clamp(48px, 8.2vw, 110px);
         }
@@ -360,6 +344,36 @@ export default function Vivko() {
           margin-left: clamp(24px, 6.2vw, 80px);
           padding-top: clamp(38px, 7.2vw, 100px);
         }
+
+        /* ---- Slide 4 layout: make sub scroll, buttons follow WITHOUT overlap ---- */
+        .text-draw {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          /* keep it inside the viewport comfortably */
+          max-height: calc(100vh - clamp(38px, 7.2vw, 100px) - 24px);
+          overflow: hidden; /* contain child scrolling */
+        }
+        .text-draw .subwrap {
+          flex: 1 1 auto;
+          min-height: 0; /* enables flex child's overflow on Safari/iOS */
+        }
+        .text-draw .sub {
+          height: 100%;
+          overflow: auto;
+          -webkit-overflow-scrolling: touch;
+          padding-right: 4px; /* scrollbar spacing */
+          /* remove any extra bottom padding; the row is now below, not overlaying */
+          padding-bottom: 0;
+        }
+        /* Buttons row is now normal flow (not sticky), so no overlap */
+        .text-draw .row {
+          position: static;
+          background: transparent;
+          margin-top: 6px;
+          padding-top: 0;
+        }
+
         .s-bridge .text {
           padding-top: clamp(26px, 6.0vw, 80px);
         }
@@ -458,30 +472,6 @@ export default function Vivko() {
           text-decoration: underline;
         }
 
-        /* -------- Slide 4 scrolling & safe area -------- */
-        .s-draw .sub {
-          /* Make room for the sticky button row so text never hides behind it */
-          padding-right: 4px;
-          padding-bottom: max(110px, env(safe-area-inset-bottom));
-          max-height: calc(100vh - 280px);
-          overflow: auto;
-          -webkit-overflow-scrolling: touch;
-        }
-        .s-draw .row {
-          position: sticky;
-          bottom: max(12px, env(safe-area-inset-bottom));
-          z-index: 5;
-          gap: 12px;
-          /* subtle fade to separate from text */
-          background: linear-gradient(
-            to top,
-            rgba(255, 255, 255, 0.55),
-            rgba(255, 255, 255, 0)
-          );
-          padding-top: 8px;
-          margin-top: 10px;
-        }
-
         /* ---------- Mobile tweaks ---------- */
         @media (max-width: 900px) {
           .hero::before,
@@ -494,12 +484,6 @@ export default function Vivko() {
               rgba(255, 255, 255, 0.08) 72%,
               rgba(255, 255, 255, 0) 90%
             );
-          }
-          .s-times::after {
-            width: clamp(220px, 60vw, 520px);
-            height: clamp(200px, 44vh, 380px);
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
           }
           .text {
             max-width: 92vw;
@@ -530,12 +514,6 @@ export default function Vivko() {
             font-size: 12px;
             padding: 12px 20px;
           }
-        }
-
-        /* Laptop-only: remove any leftover blur/plate on slide 2 ("times") */
-        @media (min-width: 901px) and (max-width: 1280px) {
-          .s-times.blur-left::before { background: none !important; }
-          .s-times::after { content: none !important; display: none !important; }
         }
       `}</style>
     </main>
