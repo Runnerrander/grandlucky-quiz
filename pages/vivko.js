@@ -340,6 +340,18 @@ export default function Vivko() {
           box-shadow: 0 10px 18px rgba(0, 0, 0, 0.15),
             inset 0 2px 0 rgba(255, 255, 255, 0.7);
         }
+        /* Smaller/more tucked on mobile so it doesn't cover text */
+        @media (max-width: 900px) {
+          .lang {
+            padding: 10px 16px;
+            top: 10px;
+            right: 10px;
+          }
+        }
+        /* Give slide 4 a little extra headroom under the lang chip */
+        .s-draw .text {
+          padding-top: clamp(48px, 8.2vw, 110px);
+        }
 
         .text {
           position: relative;
@@ -446,24 +458,27 @@ export default function Vivko() {
           text-decoration: underline;
         }
 
-        /* -------- Slide 4 scrolling (all viewports) -------- */
+        /* -------- Slide 4 scrolling & safe area -------- */
         .s-draw .sub {
-          max-height: calc(100vh - 260px);
+          /* Make room for the sticky button row so text never hides behind it */
+          padding-right: 4px;
+          padding-bottom: max(110px, env(safe-area-inset-bottom));
+          max-height: calc(100vh - 280px);
           overflow: auto;
           -webkit-overflow-scrolling: touch;
-          padding-right: 4px;
         }
         .s-draw .row {
           position: sticky;
-          bottom: 16px;
-          z-index: 4;
+          bottom: max(12px, env(safe-area-inset-bottom));
+          z-index: 5;
           gap: 12px;
+          /* subtle fade to separate from text */
           background: linear-gradient(
             to top,
-            rgba(255, 255, 255, 0.35),
+            rgba(255, 255, 255, 0.55),
             rgba(255, 255, 255, 0)
           );
-          padding-top: 6px;
+          padding-top: 8px;
           margin-top: 10px;
         }
 
