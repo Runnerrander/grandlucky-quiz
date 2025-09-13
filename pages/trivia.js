@@ -1,479 +1,384 @@
 // pages/trivia.js
-import Head from "next/head";
-import { useRouter } from "next/router";
-import { useEffect, useMemo, useState, useCallback } from "react";
-
-const LS_USERNAME = "gl_username";
-
-// --- Utilities ------------------------------------------------------
-
-// FNV-1a 32-bit
-function fnv1a(str) {
-  let h = 0x811c9dc5 >>> 0;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = (h >>> 0) * 0x01000193;
-  }
-  return h >>> 0;
-}
-
-// xorshift32 PRNG -> [0,1)
-function makeRng(seed32) {
-  let x = seed32 || 123456789;
-  return () => {
-    x ^= x << 13;
-    x ^= x >>> 17;
-    x ^= x << 5;
-    return ((x >>> 0) % 0x7fffffff) / 0x7fffffff;
-  };
-}
-
-// Fisher–Yates with custom RNG (in place)
-function shuffleInPlace(arr, rng) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
-}
-
-// --- Page -----------------------------------------------------------
+import { useEffect, useMemo, useRef, useState } from 'react';
+import Head from 'next/head';
+import Link from 'next/link';
+import Router, { useRouter } from 'next/router';
 
 export default function TriviaPage() {
   const router = useRouter();
 
-  const [lang, setLang] = useState("hu");
-  const [username, setUsername] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  // UI state
+  const [lang, setLang] = useState('hu');               // default HU
+  const [username, setUsername] = useState('');
+  const [round, setRound] = useState(null);             // { id }
+  const [status, setStatus] = useState('loading');      // loading | no-round | blocked | ready | playing
+  const [notice, setNotice] = useState('');
 
-  // Full bank (raw) + filtered by lang
-  const [bank, setBank] = useState([]);          // filtered current locale
-  const [order, setOrder] = useState([]);        // array of indices into bank (shuffled, all unique)
-  const [optMap, setOptMap] = useState({});      // q.id -> { options, answerIndex } shuffled per user
-
-  // Quiz progress
-  const [pos, setPos] = useState(0);             // 0..order.length-1
-  const [choice, setChoice] = useState(null);    // selected option idx (after shuffle)
+  // game state
+  const [questions, setQuestions] = useState([]);
+  const [qIdx, setQIdx] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
-  const [startedAt, setStartedAt] = useState(0);
+  const [feedback, setFeedback] = useState(null);
+  const [locked, setLocked] = useState(false);
 
-  // Read username from URL or localStorage
-  useEffect(() => {
-    const fromUrl = typeof router.query.u === "string" ? router.query.u.trim() : "";
-    if (fromUrl) {
-      setUsername(fromUrl);
-      return;
-    }
-    if (typeof window !== "undefined") {
-      const lu = localStorage.getItem(LS_USERNAME) || "";
-      setUsername(lu.trim());
-    }
-  }, [router.query.u]);
+  const startTimeRef = useRef(null);
 
-  // Load questions.json (fallback included)
-  useEffect(() => {
-    let ignore = false;
-    (async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        let data = [];
-        try {
-          const res = await fetch("/questions.json", { cache: "no-store" });
-          if (res.ok) data = await res.json();
-        } catch {
-          // ignore fetch errors
-        }
-
-        if (!Array.isArray(data) || data.length === 0) {
-          // Small fallback so the page still works
-          data = [
-            {
-              id: "stub-hu-1",
-              locale: "hu",
-              text: "Melyik város az USA fővárosa?",
-              options: ["New York", "Washington, D.C.", "Philadelphia", "Boston"],
-              answerIndex: 1,
-              difficulty: 1,
-            },
-            {
-              id: "stub-hu-2",
-              locale: "hu",
-              text: "Hány másodperc van egy percben?",
-              options: ["50", "55", "60", "65"],
-              answerIndex: 2,
-              difficulty: 1,
-            },
-            {
-              id: "stub-hu-3",
-              locale: "hu",
-              text: "Melyik állam New York városának otthona?",
-              options: ["New Jersey", "New York", "Connecticut", "Pennsylvania"],
-              answerIndex: 1,
-              difficulty: 1,
-            },
-            {
-              id: "stub-en-1",
-              locale: "en",
-              text: "Which city is the capital of the USA?",
-              options: ["New York", "Washington, D.C.", "Philadelphia", "Boston"],
-              answerIndex: 1,
-              difficulty: 1,
-            },
-            {
-              id: "stub-en-2",
-              locale: "en",
-              text: "How many seconds are in a minute?",
-              options: ["50", "55", "60", "65"],
-              answerIndex: 2,
-              difficulty: 1,
-            },
-            {
-              id: "stub-en-3",
-              locale: "en",
-              text: "Which state is home to New York City?",
-              options: ["New Jersey", "New York", "Connecticut", "Pennsylvania"],
-              answerIndex: 1,
-              difficulty: 1,
-            },
-          ];
-        }
-
-        if (ignore) return;
-
-        const filtered = data.filter((q) => (q?.locale || "hu") === lang);
-        setBank(filtered.length ? filtered : data);
-      } catch (e) {
-        if (!ignore) setError(e?.message || "Failed to load questions.");
-      } finally {
-        if (!ignore) setLoading(false);
-      }
-    })();
-    return () => { ignore = true; };
+  const t = useMemo(() => {
+    const hu = {
+      title: 'GrandLucky Kvíz',
+      start: 'Kvíz indítása',
+      played_block: 'Már játszottál ebben a fordulóban ezzel a felhasználónévvel.',
+      need_success: 'Hiányzik a felhasználónév. Kérjük, térj vissza a Siker oldalra.',
+      no_round: 'Jelenleg nincs aktív forduló.',
+      your_user: 'Felhasználóneved',
+      correct: 'Helyes!',
+      wrong: 'Nem egészen, próbáld újra.',
+      next: 'Következő kérdés',
+      // ✅ corrected text
+      tie_rule:
+        'Döntetlen szabály: Ha azonos befejezési idő szerepel, a korábbi beérkezés élvez elsőbbséget; azonos idő esetén felajánljuk, hogy +5 mp kerül a befejezési idődhöz vagy azonnal új kvízt kezdhetsz, újabb díj nélkül.',
+      no_q: 'Nincsenek elérhető kérdések ehhez a nyelvhez/fordulóhoz.',
+      retry: 'Újra',
+      loading: 'Betöltés…',
+    };
+    const en = {
+      title: 'GrandLucky Trivia',
+      start: 'Start Quiz',
+      played_block: 'You’ve already played this round with this username.',
+      need_success: 'Username missing. Please go back to the Success page.',
+      no_round: 'There is no active round right now.',
+      your_user: 'Your Username',
+      correct: 'Correct!',
+      wrong: 'Not quite, try again.',
+      next: 'Next question',
+      tie_rule:
+        'Tie rule: If an identical finish time exists, the earlier submission wins; if exact tie, we offer +5 seconds to your time OR an immediate retake at no additional payment.',
+      no_q: 'No questions are available for this language/round.',
+      retry: 'Retry',
+      loading: 'Loading…',
+    };
+    return lang === 'hu' ? hu : en;
   }, [lang]);
 
-  // Build deterministic order (ALL questions, no repeats) and per-question option shuffles
+  // Boot once the router is ready
   useEffect(() => {
-    if (!username || bank.length === 0) return;
+    if (!router.isReady) return;
 
-    const seed = fnv1a(username);
-    const rng = makeRng(seed);
+    const q = router.query;
 
-    // 1) Order of questions: shuffle all indices using seeded Fisher–Yates
-    const idxs = Array.from({ length: bank.length }, (_, i) => i);
-    shuffleInPlace(idxs, rng);
+    // Language
+    const qLang = String(q.lang || '').toLowerCase();
+    if (qLang === 'en' || qLang === 'hu') setLang(qLang);
 
-    // 2) Per-question option order: seeded by username + q.id
-    const map = {};
-    for (const i of idxs) {
-      const q = bank[i];
-      const optIdx = Array.from({ length: q.options.length }, (_, k) => k);
-      const optRng = makeRng(fnv1a(`${username}|${q.id || i}`));
-      shuffleInPlace(optIdx, optRng);
-      const shuffledOptions = optIdx.map((k) => q.options[k]);
-      const newAnswerIndex = optIdx.indexOf(q.answerIndex);
-      map[q.id || String(i)] = { options: shuffledOptions, answerIndex: newAnswerIndex };
+    // Username
+    const qUser = typeof q.u === 'string' ? q.u.trim() : '';
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('gl_username') : '';
+    const useUser = qUser || stored || '';
+    if (qUser) {
+      try { localStorage.setItem('gl_username', qUser); } catch {}
     }
+    setUsername(useUser);
 
-    setOrder(idxs);
-    setOptMap(map);
-    setPos(0);
-    setChoice(null);
-    setCorrectCount(0);
-    setStartedAt(Date.now());
-  }, [username, bank]);
+    // Round — prefer explicit round_id param, else ask the server
+    const roundIdFromQuery = typeof q.round_id === 'string' ? q.round_id : '';
 
-  // Current question (with shuffled options from optMap)
-  const current = useMemo(() => {
-    if (order.length === 0) return null;
-    const idx = order[Math.max(0, Math.min(pos, order.length - 1))];
-    const base = bank[idx];
-    if (!base) return null;
-    const keyed = optMap[base.id || String(idx)];
-    if (!keyed) return base;
-    return {
-      ...base,
-      options: keyed.options,
-      answerIndex: keyed.answerIndex,
+    const boot = async () => {
+      try {
+        if (roundIdFromQuery) {
+          setRound({ id: roundIdFromQuery });
+          // Check if already played (if we have a username)
+          if (useUser) {
+            try {
+              const qs = new URLSearchParams({ username: useUser, round_id: roundIdFromQuery });
+              const sResp = await fetch(`/api/submission-status?${qs}`);
+              if (sResp.ok) {
+                const s = await sResp.json();
+                if (s?.hasPlayed) { setStatus('blocked'); return; }
+              }
+            } catch {}
+          }
+          setStatus('ready');
+          return;
+        }
+
+        // fallback: fetch active round from server (cache-busted + no-store)
+        const url = `/api/active-round?lang=${encodeURIComponent(lang)}&ts=${Date.now()}`;
+        const resp = await fetch(url, { method: 'GET', cache: 'no-store', headers: { Accept: 'application/json' } });
+        if (!resp.ok) throw new Error('active-round missing');
+        const data = await resp.json();
+
+        // Accept multiple shapes from the API
+        const activeRoundId =
+          (data && (data.round_id || data.roundId || data.id || data?.round?.id)) || null;
+
+        if (!activeRoundId) {
+          setStatus('no-round');
+          setRound(null);
+          return;
+        }
+
+        setRound({ id: activeRoundId });
+
+        if (useUser) {
+          try {
+            const qs = new URLSearchParams({ username: useUser, round_id: activeRoundId });
+            const sResp = await fetch(`/api/submission-status?${qs}`);
+            if (sResp.ok) {
+              const s = await sResp.json();
+              if (s?.hasPlayed) { setStatus('blocked'); return; }
+            }
+          } catch {}
+        }
+
+        setStatus('ready');
+      } catch {
+        setStatus('no-round');
+        setRound(null);
+      }
     };
-  }, [order, pos, bank, optMap]);
 
-  // Submit logic
-  const onSubmit = useCallback(() => {
-    if (!current || choice == null) return;
-    const isCorrect = choice === (current.answerIndex ?? -1);
+    // If no username, still let them see the page (with note)
+    if (!useUser) {
+      // still attempt to resolve round so the Start button can be enabled after they set a user
+      if (roundIdFromQuery) {
+        setRound({ id: roundIdFromQuery });
+        setStatus('ready');
+      } else {
+        boot();
+      }
+    } else {
+      boot();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady]); // eslint-disable-line
 
-    if (isCorrect) {
-      const next = correctCount + 1;
-      setCorrectCount(next);
-      if (next >= 5) {
-        const elapsedMs = Date.now() - startedAt;
-        const params = new URLSearchParams({
-          u: username || "",
-          ms: String(elapsedMs),
-        });
-        // Hand over to /final (already stores result in Supabase)
-        router.push(`/final?${params.toString()}`);
+  // No auto-start. User must click Start; timer begins on click.
+  const startQuiz = async () => {
+    if (!round) return;
+    setNotice('');
+    setStatus('loading');
+
+    try {
+      // Pass username + round_id so server can seed shuffle
+      const qs = new URLSearchParams({
+        lang,
+        limit: '50',
+        username,
+        round_id: round.id,
+      });
+      const r = await fetch(`/api/get-questions?${qs}`);
+      if (!r.ok) throw new Error('get-questions missing');
+      const { questions: got } = await r.json();
+
+      if (!got || got.length === 0) {
+        setQuestions([]);
+        setStatus('ready');
+        setNotice(t.no_q);
         return;
       }
+
+      setQuestions(got);
+      setQIdx(0);
+      setCorrectCount(0);
+      setFeedback(null);
+      setLocked(false);
+
+      // ⏱️ Start timer *when* the user clicks Start
+      startTimeRef.current = Date.now();
+
+      setStatus('playing');
+    } catch {
+      setQuestions([]);
+      setStatus('ready');
+      setNotice(t.no_q);
     }
+  };
 
-    // Advance to next question (no wrap; but order contains ALL, so plenty)
-    setPos((p) => Math.min(p + 1, order.length - 1));
-    setChoice(null);
-  }, [current, choice, correctCount, startedAt, username, order.length, router]);
+  const curr = questions[qIdx];
 
-  // --- Copy (HU/EN) -------------------------------------------------
-  const C = useMemo(
-    () =>
-      ({
-        hu: {
-          title: "Kvíz",
-          lead: "Válaszd ki a helyes választ! 5 helyes megoldás után továbblépünk.",
-          yourUser: "Felhasználó:",
-          submit: "Következő",
-          loading: "Betöltés…",
-          err: "Hiba történt a kérdések betöltése közben.",
-          switch: "ANGOL",
-        },
-        en: {
-          title: "Trivia",
-          lead: "Pick the correct answer. After 5 correct answers you’ll advance.",
-          yourUser: "User:",
-          submit: "Next",
-          loading: "Loading…",
-          err: "An error occurred while loading questions.",
-          switch: "MAGYAR",
-        },
-      })[lang],
-    [lang]
-  );
+  // One attempt per question, then advance. End at 5 correct.
+  const choose = (idx) => {
+    if (!curr || locked) return;
+    setLocked(true);
+
+    const isCorrect = idx === curr.correct_idx;
+    const nextCorrect = isCorrect ? correctCount + 1 : correctCount;
+
+    setFeedback({ ok: isCorrect });
+
+    setTimeout(() => {
+      setFeedback(null);
+
+      if (nextCorrect >= 5) {
+        setCorrectCount(nextCorrect);
+        return finishQuiz(nextCorrect);
+      }
+
+      setCorrectCount(nextCorrect);
+      setQIdx((q) => (q + 1) % Math.max(questions.length, 1));
+      setLocked(false);
+    }, 350);
+  };
+
+  const finishQuiz = async (cc) => {
+    const elapsed = Date.now() - (startTimeRef.current || Date.now());
+    try {
+      await fetch('/api/submit-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username,
+          round_id: round?.id,
+          answers: [],                 // you can fill this later if you want to store choices
+          correct_count: cc,
+          total_time_ms: elapsed,
+        }),
+      }).then((r) => r.json()).catch(() => ({}));
+    } catch {}
+
+    Router.push(
+      `/final?cc=${encodeURIComponent(cc)}&ms=${encodeURIComponent(elapsed)}&round_id=${encodeURIComponent(
+        round?.id || ''
+      )}&username=${encodeURIComponent(username)}`
+    );
+  };
 
   return (
-    <main className="screen">
+    <>
       <Head>
-        <title>Trivia — GrandLuckyTravel</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&display=swap"
-        />
+        <title>{t.title}</title>
+        <meta name="robots" content="noindex" />
       </Head>
 
-      {/* Top */}
-      <header className="top">
-        <div className="who">
-          <span>{C.yourUser}</span>
-          <strong>{username || "—"}</strong>
-        </div>
-        <button
-          className="lang"
-          onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}
-          aria-label="language-toggle"
-        >
-          {C.switch}
-        </button>
-      </header>
-
-      {/* Body */}
-      <section className="wrap">
-        <h1 className="title">{C.title}</h1>
-        <p className="lead">{C.lead}</p>
-
-        {loading ? (
-          <div className="info">{C.loading}</div>
-        ) : error ? (
-          <div className="err">{C.err}</div>
-        ) : !current ? (
-          <div className="info">…</div>
-        ) : (
-          <div className="card">
-            <div className="qhead">
-              <div className="count">
-                <span>
-                  {correctCount}/5 <small>✔</small>
-                </span>
-              </div>
-              <div className="qid">
-                <small>{current.id || "—"}</small>
-              </div>
-            </div>
-
-            <div className="qtext">{current.text}</div>
-
-            <div className="opts" role="radiogroup" aria-label="options">
-              {current.options?.map((opt, i) => (
-                <label
-                  key={`opt-${i}`}
-                  className={`opt ${choice === i ? "sel" : ""}`}
-                >
-                  <input
-                    type="radio"
-                    name="opt"
-                    value={i}
-                    checked={choice === i}
-                    onChange={() => setChoice(i)}
-                  />
-                  <span className="txt">{opt}</span>
-                </label>
-              ))}
-            </div>
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#111', color: '#fff' }}>
+        {/* Top bar */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 20px' }}>
+          <div style={{ fontWeight: 700, letterSpacing: 0.5 }}>GrandLucky</div>
+          <div>
+            <button
+              onClick={() => setLang((l) => (l === 'hu' ? 'en' : 'hu'))}
+              style={{ background: '#faaf3b', color: '#111', border: 'none', borderRadius: 999, padding: '6px 12px', fontWeight: 700 }}
+            >
+              {lang.toUpperCase()}
+            </button>
           </div>
-        )}
-      </section>
+        </div>
 
-      {/* Bottom (sticky). On desktop it looks the same; MOBILE tweaks are in media query only */}
-      <footer className="bottom">
-        <button
-          className="btn"
-          disabled={choice == null || loading || !current}
-          onClick={onSubmit}
-        >
-          {current ? C.submit : "…"}
-        </button>
-      </footer>
+        <div style={{ maxWidth: 820, width: '100%', margin: '0 auto', padding: '24px' }}>
+          {/* Missing username note */}
+          {!username && (
+            <div style={{ background: '#222', padding: 16, borderRadius: 12, marginBottom: 16 }}>
+              {t.need_success}{' '}
+              <Link href="/success" style={{ color: '#faaf3b', textDecoration: 'underline' }}>
+                Success
+              </Link>
+            </div>
+          )}
 
-      <style jsx>{`
-        :global(:root) {
-          --bg: #0f0f0f;
-          --card: #151515;
-          --border: #262626;
-          --fg: #f7f7f7;
-          --muted: #bdbdbd;
-          --yellow: #faaf3b;
-          --yellow-border: #e49b28;
-        }
+          {/* Username display */}
+          {username && (
+            <div style={{ marginBottom: 12, opacity: 0.9, textAlign: 'right' }}>
+              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>{t.your_user}</div>
+              <div style={{ fontSize: 18, fontWeight: 700 }}>{username}</div>
+            </div>
+          )}
 
-        .screen {
-          min-height: 100svh;
-          background: var(--bg);
-          color: var(--fg);
-          font-family: "Montserrat", system-ui, sans-serif;
-          display: grid;
-          grid-template-rows: auto 1fr auto;
-        }
+          {/* Notice */}
+          {notice && (
+            <div style={{ background: '#332', border: '1px solid #553', padding: 12, borderRadius: 10, marginBottom: 12 }}>
+              {notice}{' '}
+              <button
+                onClick={() => { setNotice(''); }}
+                style={{ marginLeft: 8, background: 'transparent', border: '1px solid #775', color: '#fff', borderRadius: 8, padding: '2px 8px' }}
+              >
+                {t.retry}
+              </button>
+            </div>
+          )}
 
-        .top {
-          position: sticky;
-          top: 0;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          gap: 12px;
-          padding: 14px 18px;
-          background: rgba(15, 15, 15, 0.86);
-          backdrop-filter: blur(4px);
-          border-bottom: 1px solid var(--border);
-          z-index: 5;
-        }
-        .who {
-          display: flex;
-          gap: 6px;
-          align-items: baseline;
-          color: var(--muted);
-          font-weight: 600;
-        }
-        .who strong { color: var(--fg); font-weight: 800; }
-        .lang {
-          padding: 10px 16px;
-          border-radius: 999px;
-          background: #222;
-          border: 1px solid #3a3a3a;
-          color: #fff;
-          font-weight: 900;
-          cursor: pointer;
-        }
+          {/* States */}
+          {status === 'loading' && (
+            <div style={{ background: '#222', padding: 16, borderRadius: 12 }}>{t.loading}</div>
+          )}
 
-        .wrap {
-          padding: 18px;
-          max-width: 940px;
-          margin: 0 auto;
-          width: 100%;
-        }
-        .title { margin: 6px 0 4px; font-size: 28px; font-weight: 900; }
-        .lead  { margin: 0 0 12px; color: var(--muted); font-weight: 600; }
+          {status === 'no-round' && (
+            <div style={{ background: '#222', padding: 16, borderRadius: 12 }}>{t.no_round}</div>
+          )}
 
-        .card {
-          background: var(--card);
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: 16px;
-        }
-        .qhead {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 10px;
-          color: var(--muted);
-          font-weight: 700;
-        }
-        .qtext { font-size: 18px; font-weight: 800; margin-bottom: 12px; }
-        .opts { display: grid; gap: 10px; }
-        .opt {
-          display: flex;
-          gap: 10px;
-          align-items: center;
-          background: #1a1a1a;
-          border: 1px solid #2e2e2e;
-          border-radius: 10px;
-          padding: 12px;
-          cursor: pointer;
-        }
-        .opt input {
-          width: 18px; height: 18px;
-          accent-color: var(--yellow);
-          cursor: pointer;
-        }
-        .opt .txt { font-weight: 700; line-height: 1.25; }
-        .opt.sel {
-          border-color: var(--yellow-border);
-          box-shadow: 0 0 0 1px var(--yellow-border) inset;
-        }
+          {status === 'blocked' && (
+            <div style={{ background: '#222', padding: 16, borderRadius: 12, lineHeight: 1.5 }}>
+              <div style={{ marginBottom: 8, fontWeight: 700 }}>{t.played_block}</div>
+              {/* Bigger + whiter + moved down */}
+              <div style={{ marginTop: 18, fontSize: 18, color: '#fff', lineHeight: 1.6 }}>{t.tie_rule}</div>
+              <div style={{ marginTop: 12 }}>
+                <Link href="/" style={{ color: '#faaf3b', textDecoration: 'underline' }}>
+                  Home
+                </Link>
+              </div>
+            </div>
+          )}
 
-        .bottom {
-          position: sticky;
-          bottom: 0;
-          padding: 12px 18px;
-          background: rgba(15, 15, 15, 0.86);
-          backdrop-filter: blur(4px);
-          border-top: 1px solid var(--border);
-          z-index: 5;
-        }
-        .btn {
-          width: 100%;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          padding: 14px 18px;
-          border-radius: 999px;
-          font-weight: 900;
-          text-transform: uppercase;
-          color: #1a1a1a;
-          background: var(--yellow);
-          border: 3px solid var(--yellow-border);
-          box-shadow: 0 14px 26px rgba(0, 0, 0, 0.28),
-            inset 0 2px 0 rgba(255, 255, 255, 0.7);
-          cursor: pointer;
-        }
-        .btn[disabled] { opacity: 0.6; cursor: not-allowed; }
+          {status === 'ready' && username && (
+            <div style={{ textAlign: 'center', marginTop: 32 }}>
+              <button
+                onClick={startQuiz}
+                style={{
+                  background: '#000',
+                  color: '#fff',
+                  border: '2px solid #fff',
+                  borderRadius: 12,
+                  padding: '14px 24px',
+                  fontSize: 18,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                {t.start}
+              </button>
+              {/* Bigger + whiter + moved down */}
+              <div style={{ marginTop: 24, fontSize: 18, color: '#fff', lineHeight: 1.6 }}>{t.tie_rule}</div>
+            </div>
+          )}
 
-        /* -------- MOBILE-ONLY (desktop untouched) -------- */
-        @media (max-width: 900px) {
-          .title { font-size: 24px; }
-          .qtext { font-size: 17px; }
-          .opt .txt { font-size: 15px; }
-          .wrap { padding-bottom: 90px; } /* breathing room above sticky footer */
-          .bottom { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
-          .lang {
-            background: var(--yellow);
-            color: #1a1a1a;
-            border: 3px solid var(--yellow-border);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.12), inset 0 1.5px 0 rgba(255,255,255,0.65);
-          }
-        }
-      `}</style>
-    </main>
+          {status === 'playing' && questions.length > 0 && (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ fontSize: 14, opacity: 0.8, marginBottom: 6 }}>{correctCount}/5</div>
+              <div style={{ background: '#222', padding: 20, borderRadius: 16 }}>
+                <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 14, lineHeight: 1.35 }}>{questions[qIdx]?.text}</div>
+                <div style={{ display: 'grid', gap: 10 }}>
+                  {(questions[qIdx]?.choices || []).slice(0, 3).map((c, i) => (
+                    <button
+                      key={i}
+                      onClick={() => choose(i)}
+                      disabled={locked}
+                      style={{
+                        textAlign: 'left',
+                        background: '#111',
+                        border: '1px solid #333',
+                        borderRadius: 12,
+                        padding: '12px 14px',
+                        color: '#fff',
+                        fontWeight: 600,
+                        cursor: locked ? 'not-allowed' : 'pointer',
+                        opacity: locked ? 0.6 : 1,
+                      }}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+                {feedback && (
+                  <div style={{ marginTop: 12, fontWeight: 700, color: feedback.ok ? '#7fff7f' : '#ff7f7f' }}>
+                    {feedback.ok ? t.correct : t.wrong}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div style={{ flex: 1 }} />
+      </div>
+    </>
   );
 }
