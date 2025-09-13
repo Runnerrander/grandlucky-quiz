@@ -38,7 +38,7 @@ export default function Vivko() {
         blur: "left",
         hScript: "Adventi Szezon",
         hStrongTop: "Vivkóval New Yorkban",
-        // ✅ Updated sentence (utazótársad + 7 nap 5 éjszaka)
+        // ✅ Updated earlier (utazótársad + 7 nap 5 éjszaka)
         sub:
           "Ha Te leszel a kétfordulós, tudásalapú verseny nyertese, Te és az utazótársad felejthetetlen élményeket élhettek át az USA keleti partján egy 7 nap 5 éjszakás utazás keretében. A nevezési díj: $9.99.",
         ui: "prevnext",
@@ -51,12 +51,13 @@ export default function Vivko() {
         blur: "left",
         hScript: "",
         hStrongTop: "",
+        // ✅ NEW HU dates & copy to match EN
         phase1:
-          "1. forduló: Online kvíz, lezárás 2025. szeptember 26. — 0:30 (CET)",
+          "1. forduló: Online kvíz, lezárás 2025. október 11. — 00:30 (CET)",
         phase2:
-          "2. forduló: Online élő verseny, kezdés 2025. szeptember 27. — 20:00 (CET)",
+          "2. forduló: Online élő verseny, kezdés 2025. október 18. — 18:00 (CET)",
         sub:
-          "Nyertesként Te és egy általad választott kísérő a Grand Slam Travel és a Vivkó Nails kíséretében utazhattok New Yorkba. Az utazás teljes körűen megszervezett, így sem tapasztalatra, sem nyelvtudásra nincs szükség. A nyeremény tartalmazza az ESTA ügyintézést, a repülőjegyeket, a transzfereket, a manhattani szállást reggelivel, ebéddel és vacsorával különböző éttermekben, belépőket több nevezetességhez, valamint egy különleges meglepetést.\nAz első forduló lezárása után a rendszer kiértékeli az eredményeket, és kiválasztja azt a hat versenyzőt, akik a legrövidebb idő alatt teljesítették a kvízt, valamint kiválaszt további huszonöt versenyzőt a befejezési idő alapján tartalék (standby) listára arra az esetre, ha a legjobb hat valamelyike nem lépne be a 2. fordulóba (élő verseny). Minden, a kvízt sikeresen teljesítő felhasználónév felkerül a GrandLucky Travel weboldalára 2025. szeptember 26-án 02:00-kor (CT) a befejezés idejével együtt.",
+          "Nyertesként Te és egy általad választott kísérő a Grand Slam Travel és a Vivkó Nails kíséretében utazhattok New Yorkba. Az utazás teljes körűen megszervezett, így sem tapasztalatra, sem nyelvtudásra nincs szükség. A nyeremény tartalmazza az ESTA ügyintézést, a repülőjegyeket, a transzfereket, egy manhattani szállodát reggelivel, belépőket több nevezetességhez, valamint egy különleges meglepetést. Csak az ebédhez és vacsorához, illetve a költőpénzhez szükséges összeget kell magaddal hoznod.\nAz első forduló lezárása után a rendszer kiértékeli az eredményeket, és kiválasztja azt a hat versenyzőt, akik a kvízt helyesen a legrövidebb idő alatt teljesítették, valamint további versenyzőket is kiválaszt tartaléklistára (a befejezési idő alapján) azok közül, akik szintén helyesen teljesítették a kvízt, arra az esetre, ha a legjobb hatból valaki nem lépne be a 2. fordulóba (élő verseny), mindaddig, amíg 6 versenyző jelen nincs az élő versenyen. Minden, a kvízt sikeresen teljesítő felhasználónév felkerül a GrandLucky Travel weboldalára vagy aloldalára 2025. október 12-én 20:00-kor (CT) a befejezés idejével együtt.",
         ui: "cta",
         home: "FŐOLDAL",
         play: "JÁTSZOM!",
@@ -103,12 +104,13 @@ export default function Vivko() {
         blur: "left",
         hScript: "",
         hStrongTop: "",
+        // ✅ EN dates & copy (from your spec)
         phase1:
-          "1st Round: Online trivia, closes September 26, 2025 — 00:30 (CET)",
+          "1st Round: Online trivia, closes October 11, 2025 — 00:30 (CET)",
         phase2:
-          "2nd Round: Online Live Contest, starts September 27, 2025 — 20:00 (CET)",
+          "2nd Round: Online Live Contest, starts October 18, 2025 — 18:00 (CET)",
         sub:
-          "As the winner, you and a companion of your choice will travel to the Big Apple, accompanied by Grand Slam Travel and Vivko Nails. The trip is fully organized, so no prior experience or language skills are required. The prize includes ESTA processing, flights, transfers, a Manhattan hotel with breakfast, lunch and dinner in different restaurants, tickets to several attractions, and a special surprise.\nAfter the first round closes, the system will evaluate and pick six contestants who completed the trivia in the shortest time, and pick twenty-five additional contestants (by completion time) as standby in case any of the top six do not enter Round 2 (the live contest). All usernames that successfully complete the trivia will be listed on the GrandLucky Travel website on Sept 26, 2025 at 02:00 CT with their completion time.",
+          "As the winner, you and a companion of your choice will travel to the Big Apple, accompanied by Grand Slam Travel and Vivko Nails. The trip is fully organized, so no prior experience or language skills are required. The prize includes ESTA processing, flights, transfers, a Manhattan hotel with breakfast, tickets to several attractions, and a special surprise. You only need to bring your own money for lunch and dinner and for spending money.\nAfter the first round closes, the system will evaluate and pick six contestants who completed the trivia  correctly in the shortest time, and pick additional contestants who also competed the trivia correctly (by the completion time) as standby in case any of the top six do not enter Round 2 (the live contest) until 6 contestant present at the live contest. All usernames that successfully complete the trivia will be listed on the GrandLucky Travel website or a subsite on October 12, 2025 at 20:00 CT with their completion time.",
         ui: "cta",
         home: "HOME",
         play: "ENTER TO THE CONTEST",
@@ -414,6 +416,7 @@ export default function Vivko() {
           text-decoration: underline;
         }
 
+        /* ---------- Mobile fix: Slide 4 (id: draw) scrolls; CTA sticky ---------- */
         @media (max-width: 900px) {
           .hero::before,
           .blur-left::before {
@@ -473,6 +476,27 @@ export default function Vivko() {
           .legal .contact,
           .legal .rights {
             font-size: clamp(12px, 3.4vw, 14px);
+          }
+
+          /* Slide 4 long text scrolls; CTA stays visible */
+          .s-draw .sub {
+            max-height: calc(100svh - 260px); /* leaves room for title + CTA */
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-right: 4px;
+          }
+          .s-draw .row {
+            position: sticky;
+            bottom: 16px;
+            z-index: 4;
+            gap: 12px;
+            background: linear-gradient(
+              to top,
+              rgba(255, 255, 255, 0.35),
+              rgba(255, 255, 255, 0)
+            );
+            padding-top: 6px;
+            margin-top: 10px;
           }
         }
       `}</style>
