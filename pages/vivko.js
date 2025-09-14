@@ -512,6 +512,33 @@ export default function Vivko() {
             max-height: calc(100svh - var(--top-pad) - max(16px, env(safe-area-inset-bottom)));
           }
         }
+
+        /* ---------- ANDROID/TABLET SAFETY NET (touch tablets only, slides 1–3) ---------- */
+        @media (min-width: 900px) and (max-width: 1180px) and (hover: none) and (pointer: coarse) {
+          /* Nudge the block higher on slides 1–3 */
+          .s-heart .text { transform: translateY(-3.0vh); }
+          .s-times .text { transform: translateY(-3.4vh); }
+          .s-bridge .text { transform: translateY(-3.0vh); }
+
+          /* Slightly reduce the two top lines only */
+          .s-heart .script,
+          .s-times .script,
+          .s-bridge .script { font-size: clamp(44px, 5.0vw, 70px); }
+
+          .s-heart .strong,
+          .s-times .strong,
+          .s-bridge .strong { font-size: clamp(34px, 4.2vw, 60px); }
+
+          /* Micro-hardening: allow soft wrapping on touch tablets */
+          .script,
+          .strong,
+          .sub {
+            overflow-wrap: anywhere;
+            word-break: normal;
+            hyphens: auto;
+            -webkit-hyphens: auto;
+          }
+        }
       `}</style>
     </main>
   );
