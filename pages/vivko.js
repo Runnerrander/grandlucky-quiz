@@ -1,4 +1,4 @@
-// pages/vivko.js
+// pages/vivko.js 
 import Head from "next/head";
 import Link from "next/link";
 import { useState } from "react";
@@ -448,14 +448,27 @@ export default function Vivko() {
           text-decoration: underline;
         }
 
-        /* ---------- Laptop tuning (UP = smaller top-pad) ---------- */
+        /* ---------- Laptop tuning (UP + slightly smaller top lines), slides 1–3 ONLY ---------- */
         @media (min-width: 900px) and (max-width: 1400px) {
           .text { --top-pad: clamp(16px, 4.4vw, 56px); }
           .s-times .text { --top-pad: clamp(12px, 3.8vw, 48px); }  /* slide 2 needs most lift */
           .s-bridge .text { --top-pad: clamp(14px, 4.2vw, 52px); } /* slide 3 a bit higher */
+
+          /* move the block up a touch without shifting layout */
+          .s-heart .text { transform: translateY(-1.4vh); }
+          .s-times .text { transform: translateY(-2.0vh); }
+          .s-bridge .text { transform: translateY(-1.4vh); }
+
+          /* make only the top two lines a bit smaller on laptops */
+          .s-heart .script,
+          .s-times .script,
+          .s-bridge .script { font-size: clamp(48px, 5.4vw, 78px); }
+          .s-heart .strong,
+          .s-times .strong,
+          .s-bridge .strong { font-size: clamp(38px, 4.6vw, 68px); }
         }
 
-        /* ---------- Mobile tweaks (UP on 1–3, keep 4 intact) ---------- */
+        /* ---------- Mobile tweaks (keep as-is; you said mobile is perfect) ---------- */
         @media (max-width: 900px) {
           .hero::before,
           .blur-left::before {
@@ -472,12 +485,12 @@ export default function Vivko() {
           .text {
             max-width: 92vw;
             margin: 0 auto;
-            --top-pad: clamp(22px, 8.5vw, 44px); /* UP from before */
+            --top-pad: clamp(22px, 8.5vw, 44px);
             padding-top: var(--top-pad);
             text-align: left;
           }
-          .s-times .text { --top-pad: clamp(18px, 7.8vw, 40px); }  /* slide 2 UP a touch more */
-          .s-bridge .text { --top-pad: clamp(22px, 8.2vw, 42px); } /* slide 3 slight UP */
+          .s-times .text { --top-pad: clamp(18px, 7.8vw, 40px); }
+          .s-bridge .text { --top-pad: clamp(22px, 8.2vw, 42px); }
 
           .lang {
             padding: 9px 14px;
@@ -495,7 +508,6 @@ export default function Vivko() {
           .row { gap: 10px; }
           .btn { font-size: 12px; padding: 12px 20px; }
 
-          /* extra headroom for the grid on small screens (slide 4 only) */
           .text-draw {
             max-height: calc(100svh - var(--top-pad) - max(16px, env(safe-area-inset-bottom)));
           }
