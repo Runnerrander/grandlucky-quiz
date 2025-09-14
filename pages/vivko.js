@@ -328,10 +328,11 @@ export default function Vivko() {
           z-index: 2;
           max-width: min(980px, 86vw);
           margin-left: clamp(24px, 6.2vw, 80px);
-          /* define a CSS var for top padding we reuse below */
           --top-pad: clamp(38px, 7.2vw, 100px);
           padding-top: var(--top-pad);
           display: block;
+          will-change: transform;
+          transform: translateY(0); /* default */
         }
         .s-bridge .text {
           --top-pad: clamp(26px, 6.0vw, 80px);
@@ -414,19 +415,18 @@ export default function Vivko() {
           display: grid;
           grid-template-rows: auto 1fr auto; /* title | scroll | buttons */
           gap: 10px;
-          /* Keep inside viewport height; account for top padding and bottom safe area */
           max-height: calc(100svh - var(--top-pad) - max(12px, env(safe-area-inset-bottom)));
           padding-bottom: max(8px, env(safe-area-inset-bottom));
         }
         .text-draw .subwrap {
-          min-height: 0;       /* REQUIRED so 1fr can shrink on Safari/iOS */
-          overflow: auto;      /* scroll only this part */
+          min-height: 0;
+          overflow: auto;
           -webkit-overflow-scrolling: touch;
-          padding-right: 4px;  /* scrollbar spacing */
+          padding-right: 4px;
         }
         .text-draw .row {
           justify-content: flex-start;
-          position: static;    /* not sticky, no overlap */
+          position: static;
           background: transparent;
           margin-top: 0;
           padding-top: 0;
@@ -458,7 +458,7 @@ export default function Vivko() {
           text-decoration: underline;
         }
 
-        /* ---------- Mobile tweaks (KEEP AS-IS) ---------- */
+        /* ---------- MOBILE (UNCHANGED from your “perfect” state) ---------- */
         @media (max-width: 900px) {
           .hero::before,
           .blur-left::before {
@@ -471,67 +471,42 @@ export default function Vivko() {
               rgba(255, 255, 255, 0) 90%
             );
           }
-
-          /* push the whole text block down on mobile so HU/EN never overlaps */
           .text {
             max-width: 92vw;
             margin: 0 auto;
-            /* more top space */
             --top-pad: clamp(88px, 18vw, 140px);
             padding-top: var(--top-pad);
             text-align: left;
+            transform: translateY(0); /* no shift on mobile */
           }
           .s-times .text {
             --top-pad: clamp(78px, 17vw, 130px);
             padding-top: var(--top-pad);
+            transform: translateY(0);
           }
+          .script { font-size: clamp(44px, 10vw, 66px); }
+          .strong { font-size: clamp(32px, 8.5vw, 48px); }
+          .phase { font-size: clamp(16px, 4.6vw, 22px); white-space: normal; }
+          .sub { font-size: clamp(16px, 4.4vw, 20px); }
+          .row { gap: 10px; }
+          .btn { font-size: 12px; padding: 12px 20px; }
 
-          .script {
-            font-size: clamp(44px, 10vw, 66px);
-          }
-          .strong {
-            font-size: clamp(32px, 8.5vw, 48px);
-          }
-          .phase {
-            font-size: clamp(16px, 4.6vw, 22px);
-            white-space: normal;
-          }
-          .sub {
-            font-size: clamp(16px, 4.4vw, 20px);
-          }
-          .row {
-            gap: 10px;
-          }
-          .btn {
-            font-size: 12px;
-            padding: 12px 20px;
-          }
-
-          /* extra headroom for the grid on small screens */
           .text-draw {
             max-height: calc(100svh - var(--top-pad) - max(16px, env(safe-area-inset-bottom)));
           }
         }
 
-        /* ---------- Laptop-only tweaks (move slides 1–3 UP) ---------- */
+        /* ---------- LAPTOP-ONLY: move slides 1–3 UP via translate (desktop & mobile unaffected) ---------- */
+        @media (min-width: 900px) && (max-width: 1280px) {
+          .s-heart .text { transform: translateY(-3vh); }
+          .s-times .text { transform: translateY(-4vh); }
+          .s-bridge .text { transform: translateY(-3vh); }
+        }
+        /* Some build tools require separate conditions instead of && */
         @media (min-width: 900px) and (max-width: 1280px) {
-          /* Slide 1 – heart: small lift */
-          .s-heart .text {
-            --top-pad: clamp(22px, 3.8vw, 58px);
-            padding-top: var(--top-pad);
-          }
-
-          /* Slide 2 – times: biggest lift (was covering eye/forehead) */
-          .s-times .text {
-            --top-pad: clamp(16px, 3.2vw, 46px);
-            padding-top: var(--top-pad);
-          }
-
-          /* Slide 3 – bridge: slight lift */
-          .s-bridge .text {
-            --top-pad: clamp(20px, 3.6vw, 54px);
-            padding-top: var(--top-pad);
-          }
+          .s-heart .text { transform: translateY(-3vh); }
+          .s-times .text { transform: translateY(-4vh); }
+          .s-bridge .text { transform: translateY(-3vh); }
         }
       `}</style>
     </main>
