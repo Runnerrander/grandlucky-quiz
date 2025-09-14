@@ -397,7 +397,7 @@ export default function Vivko() {
           text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.18);
         }
 
-        /* === NEW: Slide 2 (times) — make title & subtitle white (HU & EN) === */
+        /* === Slide 2 (times) — make title & subtitle white (HU & EN) === */
         .s-times .strong { color: #fff; }
         .s-times .sub { color: #fff; }
 
@@ -479,6 +479,10 @@ export default function Vivko() {
           color: var(--dark);
           text-decoration: underline;
         }
+
+        /* === NEW: Slide 3 (bridge) — footer text & link white === */
+        .s-bridge .legal { color: #fff; }
+        .s-bridge .legal a { color: #fff; }
 
         /* ---------- Laptop tuning (existing), slides 1–3 ONLY ---------- */
         @media (min-width: 900px) and (max-width: 1400px) {
