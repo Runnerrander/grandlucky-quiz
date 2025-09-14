@@ -287,18 +287,17 @@ export default function Vivko() {
           );
         }
 
-        /* REMOVE overlay/plate where requested */
+        /* REMOVE overlay/plate where requested (Slides 1–3) */
         .s-heart::before,
         .s-bridge::before {
           background: none !important; /* Slide 1 & 3: no blur overlay */
         }
-        /* Remove ALL blur/plates on Slide 2 */
         .s-times::before,
         .s-times.blur-left::before {
-          background: none !important;
+          background: none !important; /* Slide 2: no blur overlay */
         }
         .s-times::after {
-          content: none !important;
+          content: none !important; /* remove plate entirely */
           display: none !important;
         }
 
@@ -314,13 +313,6 @@ export default function Vivko() {
           box-shadow: 0 10px 18px rgba(0, 0, 0, 0.15),
             inset 0 2px 0 rgba(255, 255, 255, 0.7);
         }
-        @media (max-width: 900px) {
-          .lang {
-            padding: 10px 16px;
-            top: 10px;
-            right: 10px;
-          }
-        }
 
         /* Base text block */
         .text {
@@ -328,11 +320,9 @@ export default function Vivko() {
           z-index: 2;
           max-width: min(980px, 86vw);
           margin-left: clamp(24px, 6.2vw, 80px);
-          --top-pad: clamp(38px, 7.2vw, 100px);
+          --top-pad: clamp(38px, 7.2vw, 100px); /* Desktop default */
           padding-top: var(--top-pad);
           display: block;
-          will-change: transform;
-          transform: translateY(0); /* default */
         }
         .s-bridge .text {
           --top-pad: clamp(26px, 6.0vw, 80px);
@@ -401,7 +391,7 @@ export default function Vivko() {
           text-decoration: none;
           box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18),
             inset 0 2px 0 rgba(255, 255, 255, 0.65);
-          transition: transform 0.2s, box-shadow 0.2s;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
           cursor: pointer;
         }
         .btn:hover {
@@ -419,7 +409,7 @@ export default function Vivko() {
           padding-bottom: max(8px, env(safe-area-inset-bottom));
         }
         .text-draw .subwrap {
-          min-height: 0;
+          min-height: 0;       /* so 1fr can shrink on iOS */
           overflow: auto;
           -webkit-overflow-scrolling: touch;
           padding-right: 4px;
@@ -458,7 +448,14 @@ export default function Vivko() {
           text-decoration: underline;
         }
 
-        /* ---------- MOBILE (UNCHANGED from your “perfect” state) ---------- */
+        /* ---------- Laptop tuning (UP = smaller top-pad) ---------- */
+        @media (min-width: 900px) and (max-width: 1400px) {
+          .text { --top-pad: clamp(16px, 4.4vw, 56px); }
+          .s-times .text { --top-pad: clamp(12px, 3.8vw, 48px); }  /* slide 2 needs most lift */
+          .s-bridge .text { --top-pad: clamp(14px, 4.2vw, 52px); } /* slide 3 a bit higher */
+        }
+
+        /* ---------- Mobile tweaks (UP on 1–3, keep 4 intact) ---------- */
         @media (max-width: 900px) {
           .hero::before,
           .blur-left::before {
@@ -471,42 +468,37 @@ export default function Vivko() {
               rgba(255, 255, 255, 0) 90%
             );
           }
+
           .text {
             max-width: 92vw;
             margin: 0 auto;
-            --top-pad: clamp(88px, 18vw, 140px);
+            --top-pad: clamp(22px, 8.5vw, 44px); /* UP from before */
             padding-top: var(--top-pad);
             text-align: left;
-            transform: translateY(0); /* no shift on mobile */
           }
-          .s-times .text {
-            --top-pad: clamp(78px, 17vw, 130px);
-            padding-top: var(--top-pad);
-            transform: translateY(0);
+          .s-times .text { --top-pad: clamp(18px, 7.8vw, 40px); }  /* slide 2 UP a touch more */
+          .s-bridge .text { --top-pad: clamp(22px, 8.2vw, 42px); } /* slide 3 slight UP */
+
+          .lang {
+            padding: 9px 14px;
+            top: 8px;
+            right: 8px;
           }
+
           .script { font-size: clamp(44px, 10vw, 66px); }
           .strong { font-size: clamp(32px, 8.5vw, 48px); }
-          .phase { font-size: clamp(16px, 4.6vw, 22px); white-space: normal; }
+          .phase {
+            font-size: clamp(16px, 4.6vw, 22px);
+            white-space: normal;
+          }
           .sub { font-size: clamp(16px, 4.4vw, 20px); }
           .row { gap: 10px; }
           .btn { font-size: 12px; padding: 12px 20px; }
 
+          /* extra headroom for the grid on small screens (slide 4 only) */
           .text-draw {
             max-height: calc(100svh - var(--top-pad) - max(16px, env(safe-area-inset-bottom)));
           }
-        }
-
-        /* ---------- LAPTOP-ONLY: move slides 1–3 UP via translate (desktop & mobile unaffected) ---------- */
-        @media (min-width: 900px) && (max-width: 1280px) {
-          .s-heart .text { transform: translateY(-3vh); }
-          .s-times .text { transform: translateY(-4vh); }
-          .s-bridge .text { transform: translateY(-3vh); }
-        }
-        /* Some build tools require separate conditions instead of && */
-        @media (min-width: 900px) and (max-width: 1280px) {
-          .s-heart .text { transform: translateY(-3vh); }
-          .s-times .text { transform: translateY(-4vh); }
-          .s-bridge .text { transform: translateY(-3vh); }
         }
       `}</style>
     </main>
