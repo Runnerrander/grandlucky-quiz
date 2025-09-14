@@ -287,17 +287,18 @@ export default function Vivko() {
           );
         }
 
-        /* REMOVE overlay/plate where requested (Slides 1–3) */
+        /* REMOVE overlay/plate where requested */
         .s-heart::before,
         .s-bridge::before {
           background: none !important; /* Slide 1 & 3: no blur overlay */
         }
+        /* Remove ALL blur/plates on Slide 2 */
         .s-times::before,
         .s-times.blur-left::before {
-          background: none !important; /* Slide 2: no blur overlay */
+          background: none !important;
         }
         .s-times::after {
-          content: none !important; /* remove plate entirely */
+          content: none !important;
           display: none !important;
         }
 
@@ -313,6 +314,13 @@ export default function Vivko() {
           box-shadow: 0 10px 18px rgba(0, 0, 0, 0.15),
             inset 0 2px 0 rgba(255, 255, 255, 0.7);
         }
+        @media (max-width: 900px) {
+          .lang {
+            padding: 10px 16px;
+            top: 10px;
+            right: 10px;
+          }
+        }
 
         /* Base text block */
         .text {
@@ -320,7 +328,8 @@ export default function Vivko() {
           z-index: 2;
           max-width: min(980px, 86vw);
           margin-left: clamp(24px, 6.2vw, 80px);
-          --top-pad: clamp(38px, 7.2vw, 100px); /* Desktop default */
+          /* define a CSS var for top padding we reuse below */
+          --top-pad: clamp(38px, 7.2vw, 100px);
           padding-top: var(--top-pad);
           display: block;
         }
@@ -391,7 +400,7 @@ export default function Vivko() {
           text-decoration: none;
           box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18),
             inset 0 2px 0 rgba(255, 255, 255, 0.65);
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
+          transition: transform 0.2s, box-shadow 0.2s;
           cursor: pointer;
         }
         .btn:hover {
@@ -405,18 +414,19 @@ export default function Vivko() {
           display: grid;
           grid-template-rows: auto 1fr auto; /* title | scroll | buttons */
           gap: 10px;
+          /* Keep inside viewport height; account for top padding and bottom safe area */
           max-height: calc(100svh - var(--top-pad) - max(12px, env(safe-area-inset-bottom)));
           padding-bottom: max(8px, env(safe-area-inset-bottom));
         }
         .text-draw .subwrap {
-          min-height: 0;       /* so 1fr can shrink on iOS */
-          overflow: auto;
+          min-height: 0;       /* REQUIRED so 1fr can shrink on Safari/iOS */
+          overflow: auto;      /* scroll only this part */
           -webkit-overflow-scrolling: touch;
-          padding-right: 4px;
+          padding-right: 4px;  /* scrollbar spacing */
         }
         .text-draw .row {
           justify-content: flex-start;
-          position: static;
+          position: static;    /* not sticky, no overlap */
           background: transparent;
           margin-top: 0;
           padding-top: 0;
@@ -448,14 +458,7 @@ export default function Vivko() {
           text-decoration: underline;
         }
 
-        /* ---------- Laptop tuning (UP = smaller top-pad) ---------- */
-        @media (min-width: 900px) and (max-width: 1400px) {
-          .text { --top-pad: clamp(16px, 4.4vw, 56px); }
-          .s-times .text { --top-pad: clamp(12px, 3.8vw, 48px); }  /* slide 2 needs most lift */
-          .s-bridge .text { --top-pad: clamp(14px, 4.2vw, 52px); } /* slide 3 a bit higher */
-        }
-
-        /* ---------- Mobile tweaks (UP on 1–3, keep 4 intact) ---------- */
+        /* ---------- Mobile tweaks (KEEP AS-IS) ---------- */
         @media (max-width: 900px) {
           .hero::before,
           .blur-left::before {
@@ -469,35 +472,65 @@ export default function Vivko() {
             );
           }
 
+          /* push the whole text block down on mobile so HU/EN never overlaps */
           .text {
             max-width: 92vw;
             margin: 0 auto;
-            --top-pad: clamp(22px, 8.5vw, 44px); /* UP from before */
+            /* more top space */
+            --top-pad: clamp(88px, 18vw, 140px);
             padding-top: var(--top-pad);
             text-align: left;
           }
-          .s-times .text { --top-pad: clamp(18px, 7.8vw, 40px); }  /* slide 2 UP a touch more */
-          .s-bridge .text { --top-pad: clamp(22px, 8.2vw, 42px); } /* slide 3 slight UP */
-
-          .lang {
-            padding: 9px 14px;
-            top: 8px;
-            right: 8px;
+          .s-times .text {
+            --top-pad: clamp(78px, 17vw, 130px);
+            padding-top: var(--top-pad);
           }
 
-          .script { font-size: clamp(44px, 10vw, 66px); }
-          .strong { font-size: clamp(32px, 8.5vw, 48px); }
+          .script {
+            font-size: clamp(44px, 10vw, 66px);
+          }
+          .strong {
+            font-size: clamp(32px, 8.5vw, 48px);
+          }
           .phase {
             font-size: clamp(16px, 4.6vw, 22px);
             white-space: normal;
           }
-          .sub { font-size: clamp(16px, 4.4vw, 20px); }
-          .row { gap: 10px; }
-          .btn { font-size: 12px; padding: 12px 20px; }
+          .sub {
+            font-size: clamp(16px, 4.4vw, 20px);
+          }
+          .row {
+            gap: 10px;
+          }
+          .btn {
+            font-size: 12px;
+            padding: 12px 20px;
+          }
 
-          /* extra headroom for the grid on small screens (slide 4 only) */
+          /* extra headroom for the grid on small screens */
           .text-draw {
             max-height: calc(100svh - var(--top-pad) - max(16px, env(safe-area-inset-bottom)));
+          }
+        }
+
+        /* ---------- Laptop-only tweaks (move slides 1–3 UP) ---------- */
+        @media (min-width: 900px) and (max-width: 1280px) {
+          /* Slide 1 – heart: small lift */
+          .s-heart .text {
+            --top-pad: clamp(22px, 3.8vw, 58px);
+            padding-top: var(--top-pad);
+          }
+
+          /* Slide 2 – times: biggest lift (was covering eye/forehead) */
+          .s-times .text {
+            --top-pad: clamp(16px, 3.2vw, 46px);
+            padding-top: var(--top-pad);
+          }
+
+          /* Slide 3 – bridge: slight lift */
+          .s-bridge .text {
+            --top-pad: clamp(20px, 3.6vw, 54px);
+            padding-top: var(--top-pad);
           }
         }
       `}</style>
