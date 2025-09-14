@@ -34,7 +34,6 @@ export default function TriviaPage() {
       correct: 'Helyes!',
       wrong: 'Nem egészen, próbáld újra.',
       next: 'Következő kérdés',
-      // ✅ corrected text
       tie_rule:
         'Döntetlen szabály: Ha azonos befejezési idő szerepel, a korábbi beérkezés élvez elsőbbséget; azonos idő esetén felajánljuk, hogy +5 mp kerül a befejezési idődhöz vagy azonnal új kvízt kezdhetsz, újabb díj nélkül.',
       no_q: 'Nincsenek elérhető kérdések ehhez a nyelvhez/fordulóhoz.',
@@ -139,7 +138,6 @@ export default function TriviaPage() {
 
     // If no username, still let them see the page (with note)
     if (!useUser) {
-      // still attempt to resolve round so the Start button can be enabled after they set a user
       if (roundIdFromQuery) {
         setRound({ id: roundIdFromQuery });
         setStatus('ready');
@@ -159,7 +157,6 @@ export default function TriviaPage() {
     setStatus('loading');
 
     try {
-      // Pass username + round_id so server can seed shuffle
       const qs = new URLSearchParams({
         lang,
         limit: '50',
@@ -229,7 +226,7 @@ export default function TriviaPage() {
         body: JSON.stringify({
           username,
           round_id: round?.id,
-          answers: [],                 // you can fill this later if you want to store choices
+          answers: [],
           correct_count: cc,
           total_time_ms: elapsed,
         }),
@@ -248,7 +245,20 @@ export default function TriviaPage() {
       <Head>
         <title>{t.title}</title>
         <meta name="robots" content="noindex" />
+        {/* Prevent mobile text auto-enlargement / font boosting */}
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
+
+      {/* ✅ Global reset to stop mobile right-shift/overflow */}
+      <style jsx global>{`
+        html {
+          box-sizing: border-box;
+          -webkit-text-size-adjust: 100%;
+          text-size-adjust: 100%;
+        }
+        *, *::before, *::after { box-sizing: inherit; }
+        body { margin: 0; overflow-x: hidden; }
+      `}</style>
 
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#111', color: '#fff' }}>
         {/* Top bar */}
@@ -275,11 +285,23 @@ export default function TriviaPage() {
             </div>
           )}
 
-          {/* Username display */}
+          {/* Username display (keep right, but prevent overflow) */}
           {username && (
-            <div style={{ marginBottom: 12, opacity: 0.9, textAlign: 'right' }}>
-              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>{t.your_user}</div>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>{username}</div>
+            <div style={{ marginTop: 8, marginBottom: 12, opacity: 0.9, textAlign: 'right' }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>{t.your_user}</div>
+              <div
+                style={{
+                  fontSize: 16,
+                  fontWeight: 700,
+                  maxWidth: '100%',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+                title={username}
+              >
+                {username}
+              </div>
             </div>
           )}
 
@@ -308,7 +330,6 @@ export default function TriviaPage() {
           {status === 'blocked' && (
             <div style={{ background: '#222', padding: 16, borderRadius: 12, lineHeight: 1.5 }}>
               <div style={{ marginBottom: 8, fontWeight: 700 }}>{t.played_block}</div>
-              {/* Bigger + whiter + moved down */}
               <div style={{ marginTop: 18, fontSize: 18, color: '#fff', lineHeight: 1.6 }}>{t.tie_rule}</div>
               <div style={{ marginTop: 12 }}>
                 <Link href="/" style={{ color: '#faaf3b', textDecoration: 'underline' }}>
@@ -335,8 +356,7 @@ export default function TriviaPage() {
               >
                 {t.start}
               </button>
-              {/* Bigger + whiter + moved down */}
-              <div style={{ marginTop: 24, fontSize: 18, color: '#fff', lineHeight: 1.6 }}>{t.tie_rule}</div>
+              <div style={{ marginTop: 24, fontSize: 18, color: '#fff', lineHeight: 1.6, textAlign: 'center' }}>{t.tie_rule}</div>
             </div>
           )}
 
@@ -361,6 +381,7 @@ export default function TriviaPage() {
                         fontWeight: 600,
                         cursor: locked ? 'not-allowed' : 'pointer',
                         opacity: locked ? 0.6 : 1,
+                        width: '100%',
                       }}
                     >
                       {c}
