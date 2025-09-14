@@ -397,6 +397,10 @@ export default function Vivko() {
           text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.18);
         }
 
+        /* === NEW: Slide 2 (times) — make title & subtitle white (HU & EN) === */
+        .s-times .strong { color: #fff; }
+        .s-times .sub { color: #fff; }
+
         .row {
           display: flex;
           gap: clamp(12px, 1.6vw, 16px);
@@ -505,6 +509,7 @@ export default function Vivko() {
               rgba(255, 255, 255, 0) 90%
             );
           }
+
           .text {
             max-width: 92vw;
             margin: 0 auto;
@@ -514,13 +519,23 @@ export default function Vivko() {
           }
           .s-times .text { --top-pad: clamp(18px, 7.8vw, 40px); }
           .s-bridge .text { --top-pad: clamp(22px, 8.2vw, 42px); }
-          .lang { padding: 9px 14px; top: 8px; right: 8px; }
+
+          .lang {
+            padding: 9px 14px;
+            top: 8px;
+            right: 8px;
+          }
+
           .script { font-size: clamp(44px, 10vw, 66px); }
           .strong { font-size: clamp(32px, 8.5vw, 48px); }
-          .phase { font-size: clamp(16px, 4.6vw, 22px); white-space: normal; }
+          .phase {
+            font-size: clamp(16px, 4.6vw, 22px);
+            white-space: normal;
+          }
           .sub { font-size: clamp(16px, 4.4vw, 20px); }
           .row { gap: 10px; }
           .btn { font-size: 12px; padding: 12px 20px; }
+
           .text-draw {
             max-height: calc(100svh - var(--top-pad) - max(16px, env(safe-area-inset-bottom)));
           }
