@@ -1,11 +1,39 @@
 // pages/vivko.js 
 import Head from "next/head";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Vivko() {
   const [lang, setLang] = useState("hu");
   const [i, setI] = useState(0); // active slide index
+  const [uaClass, setUaClass] = useState(""); // runtime: tablet / android chrome flags
+
+  // Runtime detection: touch-tablet width band + Android Chrome hint
+  useEffect(() => {
+    const compute = () => {
+      const ua = (typeof navigator !== "undefined" && navigator.userAgent) || "";
+      const isAndroid = /Android/i.test(ua);
+      const isChrome =
+        /Chrome\/\d+/i.test(ua) && !/Edg|OPR|SamsungBrowser/i.test(ua);
+      const isAndroidChrome = isAndroid && isChrome;
+
+      const touchCapable =
+        typeof window !== "undefined" &&
+        ("ontouchstart" in window ||
+          (navigator && (navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0)));
+
+      const w = typeof window !== "undefined" ? window.innerWidth : 0;
+      const tpad = touchCapable && w >= 700 && w <= 1400;
+
+      const classes = [];
+      if (tpad) classes.push("tpad");
+      if (isAndroidChrome) classes.push("androidchrome");
+      setUaClass(classes.join(" "));
+    };
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
+  }, []);
 
   // ---------- Copy (HU / EN) ----------
   const copy = {
@@ -139,7 +167,7 @@ export default function Vivko() {
   const S = slides[i];
 
   return (
-    <main className={`hero s-${S.id} blur-${S.blur}`}>
+    <main className={`hero s-${S.id} blur-${S.blur} ${uaClass}`}>
       <Head>
         <title>Vivkó – GrandLuckyTravel</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -448,18 +476,14 @@ export default function Vivko() {
           text-decoration: underline;
         }
 
-        /* ---------- Laptop tuning (UP + slightly smaller top lines), slides 1–3 ONLY ---------- */
+        /* ---------- Laptop tuning (existing), slides 1–3 ONLY ---------- */
         @media (min-width: 900px) and (max-width: 1400px) {
           .text { --top-pad: clamp(16px, 4.4vw, 56px); }
-          .s-times .text { --top-pad: clamp(12px, 3.8vw, 48px); }  /* slide 2 needs most lift */
-          .s-bridge .text { --top-pad: clamp(14px, 4.2vw, 52px); } /* slide 3 a bit higher */
-
-          /* move the block up a touch without shifting layout */
+          .s-times .text { --top-pad: clamp(12px, 3.8vw, 48px); }
+          .s-bridge .text { --top-pad: clamp(14px, 4.2vw, 52px); }
           .s-heart .text { transform: translateY(-1.4vh); }
           .s-times .text { transform: translateY(-2.0vh); }
           .s-bridge .text { transform: translateY(-1.4vh); }
-
-          /* make only the top two lines a bit smaller on laptops */
           .s-heart .script,
           .s-times .script,
           .s-bridge .script { font-size: clamp(48px, 5.4vw, 78px); }
@@ -468,7 +492,7 @@ export default function Vivko() {
           .s-bridge .strong { font-size: clamp(38px, 4.6vw, 68px); }
         }
 
-        /* ---------- Mobile tweaks (keep as-is; you said mobile is perfect) ---------- */
+        /* ---------- Mobile tweaks (unchanged) ---------- */
         @media (max-width: 900px) {
           .hero::before,
           .blur-left::before {
@@ -481,7 +505,6 @@ export default function Vivko() {
               rgba(255, 255, 255, 0) 90%
             );
           }
-
           .text {
             max-width: 92vw;
             margin: 0 auto;
@@ -491,52 +514,47 @@ export default function Vivko() {
           }
           .s-times .text { --top-pad: clamp(18px, 7.8vw, 40px); }
           .s-bridge .text { --top-pad: clamp(22px, 8.2vw, 42px); }
-
-          .lang {
-            padding: 9px 14px;
-            top: 8px;
-            right: 8px;
-          }
-
+          .lang { padding: 9px 14px; top: 8px; right: 8px; }
           .script { font-size: clamp(44px, 10vw, 66px); }
           .strong { font-size: clamp(32px, 8.5vw, 48px); }
-          .phase {
-            font-size: clamp(16px, 4.6vw, 22px);
-            white-space: normal;
-          }
+          .phase { font-size: clamp(16px, 4.6vw, 22px); white-space: normal; }
           .sub { font-size: clamp(16px, 4.4vw, 20px); }
           .row { gap: 10px; }
           .btn { font-size: 12px; padding: 12px 20px; }
-
           .text-draw {
             max-height: calc(100svh - var(--top-pad) - max(16px, env(safe-area-inset-bottom)));
           }
         }
 
-        /* ---------- ANDROID/TABLET SAFETY NET (touch tablets only, slides 1–3) ---------- */
-        @media (min-width: 900px) and (max-width: 1180px) and (hover: none) and (pointer: coarse) {
-          /* Nudge the block higher on slides 1–3 */
-          .s-heart .text { transform: translateY(-3.0vh); }
-          .s-times .text { transform: translateY(-3.4vh); }
-          .s-bridge .text { transform: translateY(-3.0vh); }
+        /* ---------- ANDROID CHROME / TOUCH TABLET HARD OVERRIDE (slides 1–3) ---------- */
+        /* Applies if UA says Android Chrome OR runtime flagged tablet. */
+        @media (min-width: 700px) and (max-width: 1400px) {
+          /* LANDSCAPE: stronger nudge + smaller top lines */
+          @media (orientation: landscape) {
+            .androidchrome.s-heart .text, .tpad.s-heart .text { transform: translateY(-6vh); }
+            .androidchrome.s-times .text, .tpad.s-times .text { transform: translateY(-6.5vh); }
+            .androidchrome.s-bridge .text, .tpad.s-bridge .text { transform: translateY(-6vh); }
 
-          /* Slightly reduce the two top lines only */
-          .s-heart .script,
-          .s-times .script,
-          .s-bridge .script { font-size: clamp(44px, 5.0vw, 70px); }
+            .androidchrome .script, .tpad .script { font-size: clamp(40px, 4.6vw, 64px); line-height: 1.0; }
+            .androidchrome .strong, .tpad .strong { font-size: clamp(32px, 3.8vw, 54px); line-height: 1.02; }
 
-          .s-heart .strong,
-          .s-times .strong,
-          .s-bridge .strong { font-size: clamp(34px, 4.2vw, 60px); }
+            .androidchrome .script, .androidchrome .strong, .androidchrome .sub,
+            .tpad .script, .tpad .strong, .tpad .sub {
+              overflow-wrap: anywhere;
+              word-break: normal;
+              hyphens: auto;
+              -webkit-hyphens: auto;
+            }
+          }
 
-          /* Micro-hardening: allow soft wrapping on touch tablets */
-          .script,
-          .strong,
-          .sub {
-            overflow-wrap: anywhere;
-            word-break: normal;
-            hyphens: auto;
-            -webkit-hyphens: auto;
+          /* PORTRAIT: moderate nudge */
+          @media (orientation: portrait) {
+            .androidchrome.s-heart .text, .tpad.s-heart .text { transform: translateY(-4vh); }
+            .androidchrome.s-times .text, .tpad.s-times .text { transform: translateY(-4.5vh); }
+            .androidchrome.s-bridge .text, .tpad.s-bridge .text { transform: translateY(-4vh); }
+
+            .androidchrome .script, .tpad .script { font-size: clamp(42px, 5.0vw, 68px); line-height: 1.02; }
+            .androidchrome .strong, .tpad .strong { font-size: clamp(34px, 4.2vw, 56px); line-height: 1.04; }
           }
         }
       `}</style>
