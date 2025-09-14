@@ -79,11 +79,11 @@ export default function Vivko() {
         hScript: "",
         hStrongTop: "",
         phase1:
-          "1. forduló: Online kvíz, lezárás 2025. október 11. — 00:30 (CET)",
+          "1. forduló: Online kvíz, lezárás 2025. október 11 — 00:30 (CET)",
         phase2:
-          "2. forduló: Online élő verseny, kezdés 2025. október 18. — 18:00 (CET)",
+          "2. forduló: Online élő verseny, kezdés 2025. október 18 — 18:00 (CET)",
         phase3:
-          "3. Utazás: november 27. – december 3. (7 nap / 5 éjszaka)",
+          "3. Utazás: november 27 – december 3 (7 nap/5 éjszaka)",
         sub:
           "Nyertesként Te és egy általad választott kísérő a Grand Slam Travel és a Vivkó Nails kíséretében utazhattok New Yorkba. Az utazás teljes körűen megszervezett, így sem tapasztalatra, sem nyelvtudásra nincs szükség. A nyeremény tartalmazza az ESTA ügyintézést, a repülőjegyeket, a transzfereket, egy manhattani szállodát reggelivel, belépőket több nevezetességhez, valamint egy különleges meglepetést. Csak az ebédhez és vacsorához, illetve a költőpénzhez szükséges összeget kell magaddal hoznod.\nAz első forduló lezárása után a rendszer kiértékeli az eredményeket, és kiválasztja azt a hat versenyzőt, akik a kvízt helyesen a legrövidebb idő alatt teljesítették, valamint további versenyzőket is kiválaszt tartaléklistára (a befejezési idő alapján) azok közül, akik szintén helyesen teljesítették a kvízt, arra az esetre, ha a legjobb hatból valaki nem lépne be a 2. fordulóba (élő verseny), mindaddig, amíg 6 versenyző jelen nincs az élő versenyen. Minden, a kvízt sikeresen teljesítő felhasználónév felkerül a GrandLucky Travel weboldalára vagy aloldalára 2025. október 12-én 20:00-kor (CT) a befejezés idejével együtt.",
         ui: "cta",
