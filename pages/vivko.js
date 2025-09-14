@@ -50,10 +50,12 @@ export default function Vivko() {
         blur: "left",
         hScript: "",
         hStrongTop: "",
-        phase1: "1. forduló: Online kvíz, lezárás 2025. október 11. — 00:30 (CET)",
+        phase1:
+          "1. forduló: Online kvíz, lezárás 2025. október 11. — 00:30 (CET)",
         phase2:
           "2. forduló: Online élő verseny, kezdés 2025. október 18. — 18:00 (CET)",
-        phase3: "3. Utazás: november 27. – december 3. (7 nap / 5 éjszaka)",
+        phase3:
+          "3. Utazás: november 27. – december 3. (7 nap / 5 éjszaka)",
         sub:
           "Nyertesként Te és egy általad választott kísérő a Grand Slam Travel és a Vivkó Nails kíséretében utazhattok New Yorkba. Az utazás teljes körűen megszervezett, így sem tapasztalatra, sem nyelvtudásra nincs szükség. A nyeremény tartalmazza az ESTA ügyintézést, a repülőjegyeket, a transzfereket, egy manhattani szállodát reggelivel, belépőket több nevezetességhez, valamint egy különleges meglepetést. Csak az ebédhez és vacsorához, illetve a költőpénzhez szükséges összeget kell magaddal hoznod.\nAz első forduló lezárása után a rendszer kiértékeli az eredményeket, és kiválasztja azt a hat versenyzőt, akik a kvízt helyesen a legrövidebb idő alatt teljesítették, valamint további versenyzőket is kiválaszt tartaléklistára (a befejezési idő alapján) azok közül, akik szintén helyesen teljesítették a kvízt, arra az esetre, ha a legjobb hatból valaki nem lépne be a 2. fordulóba (élő verseny), mindaddig, amíg 6 versenyző jelen nincs az élő versenyen. Minden, a kvízt sikeresen teljesítő felhasználónév felkerül a GrandLucky Travel weboldalára vagy aloldalára 2025. október 12-én 20:00-kor (CT) a befejezés idejével együtt.",
         ui: "cta",
@@ -68,7 +70,8 @@ export default function Vivko() {
         blur: "right",
         hScript: "Advent Season",
         hStrongTop: "In New York with Vivko",
-        sub: "Discover the magic of Times Square with Vivko during the holiday season.",
+        sub:
+          "Discover the magic of Times Square with Vivko during the holiday season.",
         ui: "prevnext",
         back: "BACK",
         next: "NEXT",
@@ -79,7 +82,8 @@ export default function Vivko() {
         blur: "left",
         hScript: "Advent Season",
         hStrongTop: "In New York with Vivko",
-        sub: "Discover the magic of Times Square with Vivko during the holiday season.",
+        sub:
+          "Discover the magic of Times Square with Vivko during the holiday season.",
         ui: "prevnext",
         back: "BACK",
         next: "NEXT",
@@ -106,9 +110,10 @@ export default function Vivko() {
           "1st Round: Online trivia, closes October 11, 2025 — 00:30 (CET)",
         phase2:
           "2nd Round: Online Live Contest, starts October 18, 2025 — 18:00 (CET)",
-        phase3: "3. Travel: November 27 – December 3 (7 days / 5 nights)",
+        phase3:
+          "3. Travel: November 27 – December 3 (7 days / 5 nights)",
         sub:
-          "As the winner, you and a companion of your choice will travel to the Big Apple, accompanied by Grand Slam Travel and Vivko Nails. The trip is fully organized, so no prior experience or language skills are required. The prize includes ESTA processing, flights, transfers, a Manhattan hotel with breakfast, tickets to several attractions, and a special surprise. You only need to bring your own money for lunch and dinner and for spending money.\nAfter the first round closes, the system will evaluate and pick six contestants who completed the trivia correctly in the shortest time, and pick additional contestants who also completed the trivia correctly (by the completion time) as standby in case any of the top six do not enter Round 2 (the live contest) until 6 contestants are present at the live contest. All usernames that successfully complete the trivia will be listed on the GrandLucky Travel website or a subsite on October 12, 2025 at 20:00 CT with their completion time.",
+          "As the winner, you and a companion of your choice will travel to the Big Apple, accompanied by Grand Slam Travel and Vivko Nails. The trip is fully organized, so no prior experience or language skills are required. The prize includes ESTA processing, flights, transfers, a Manhattan hotel with breakfast, tickets to several attractions, and a special surprise. You only need to bring your own money for lunch and dinner and for spending money.\nAfter the first round closes, the system will evaluate and pick six contestants who completed the trivia  correctly in the shortest time, and pick additional contestants who also competed the trivia correctly (by the completion time) as standby in case any of the top six do not enter Round 2 (the live contest) until 6 contestant present at the live contest. All usernames that successfully complete the trivia will be listed on the GrandLucky Travel website or a subsite on October 12, 2025 at 20:00 CT with their completion time.",
         ui: "cta",
         home: "HOME",
         play: "ENTER TO THE CONTEST",
@@ -148,7 +153,10 @@ export default function Vivko() {
       <div className="bg" role="img" aria-label={S.id} />
 
       {/* Language toggle */}
-      <button className="lang" onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}>
+      <button
+        className="lang"
+        onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}
+      >
         {lang === "hu" ? "ANGOL" : "MAGYAR"}
       </button>
 
@@ -168,7 +176,7 @@ export default function Vivko() {
           ) : null}
         </h1>
 
-        {/* Slide 4 gets a scrollable body so buttons never overlap */}
+        {/* Scrollable text on Slide 4; buttons separated below (no overlap) */}
         {S.sub && (
           <div className={`subwrap ${S.id === "draw" ? "subwrap-draw" : ""}`}>
             <p className="sub">
@@ -184,12 +192,17 @@ export default function Vivko() {
 
         {S.ui === "prevnext" ? (
           <div className="row">
-            <button className="btn" onClick={() => setI((p) => (p > 0 ? p - 1 : p))}>
+            <button
+              className="btn"
+              onClick={() => setI((p) => (p > 0 ? p - 1 : p))}
+            >
               {S.back}
             </button>
             <button
               className="btn"
-              onClick={() => setI((p) => (p < slides.length - 1 ? p + 1 : p))}
+              onClick={() =>
+                setI((p) => (p < slides.length - 1 ? p + 1 : p))
+              }
             >
               {S.next}
             </button>
@@ -211,7 +224,9 @@ export default function Vivko() {
         <footer className="legal">
           <p className="contact">
             {F.contact}
-            <a href="mailto:support@gradluckytravel.com">support@gradluckytravel.com</a>
+            <a href="mailto:support@gradluckytravel.com">
+              support@gradluckytravel.com
+            </a>
           </p>
           <p className="rights">
             <span>{F.rights1}</span>
@@ -245,7 +260,7 @@ export default function Vivko() {
           z-index: 0;
         }
 
-        /* Base soft gradient overlay (disabled per slide below) */
+        /* Base soft gradient overlay */
         .hero::before {
           content: "";
           position: absolute;
@@ -272,14 +287,19 @@ export default function Vivko() {
           );
         }
 
-        /* Remove all blur/plates for slides 1–3 */
+        /* REMOVE overlay/plate where requested (Slides 1–3) */
         .s-heart::before,
-        .s-times::before,
-        .s-times.blur-left::before,
         .s-bridge::before {
-          background: none !important;
+          background: none !important; /* Slide 1 & 3: no blur overlay */
         }
-        .s-times::after { content: none !important; display: none !important; }
+        .s-times::before,
+        .s-times.blur-left::before {
+          background: none !important; /* Slide 2: no blur overlay */
+        }
+        .s-times::after {
+          content: none !important; /* remove plate entirely */
+          display: none !important;
+        }
 
         .lang {
           position: absolute;
@@ -290,58 +310,95 @@ export default function Vivko() {
           border: 3px solid var(--yellow-border);
           background: var(--yellow);
           color: var(--dark);
-          box-shadow: 0 10px 18px rgba(0, 0, 0, 0.15), inset 0 2px 0 rgba(255, 255, 255, 0.7);
-        }
-        @media (max-width: 900px) {
-          .lang { padding: 10px 16px; top: 10px; right: 10px; }
+          box-shadow: 0 10px 18px rgba(0, 0, 0, 0.15),
+            inset 0 2px 0 rgba(255, 255, 255, 0.7);
         }
 
-        /* Base text block; slide-specific top padding tweaked below */
+        /* Base text block */
         .text {
           position: relative;
           z-index: 2;
           max-width: min(980px, 86vw);
           margin-left: clamp(24px, 6.2vw, 80px);
-          --top-pad: clamp(38px, 7.2vw, 100px); /* default */
+          --top-pad: clamp(38px, 7.2vw, 100px); /* Desktop default */
           padding-top: var(--top-pad);
           display: block;
         }
-        .s-bridge .text { --top-pad: clamp(26px, 6vw, 80px); }
-        .s-draw .text   { --top-pad: clamp(48px, 8.2vw, 110px); }
+        .s-bridge .text {
+          --top-pad: clamp(26px, 6.0vw, 80px);
+        }
+        .s-draw .text {
+          --top-pad: clamp(48px, 8.2vw, 110px);
+        }
 
-        .title { margin: 0 0 clamp(12px, 1.8vw, 18px); line-height: 1.04; }
+        .title {
+          margin: 0 0 clamp(12px, 1.8vw, 18px);
+          line-height: 1.04;
+        }
         .script {
           display: block;
           font: 700 clamp(54px, 6.2vw, 86px) "Caveat", cursive;
           color: #faaf3b;
-          text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55), 0 2px 6px rgba(0,0,0,.08);
-          margin-bottom: clamp(6px, .6vw, 8px);
+          text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55),
+            0 2px 6px rgba(0, 0, 0, 0.08);
+          margin-bottom: clamp(6px, 0.6vw, 8px);
         }
-        .strong { display: block; font-weight: 900; font-size: clamp(42px, 5vw, 74px); letter-spacing: -0.2px; }
-        .phase  { display: block; font-weight: 900; font-size: clamp(20px, 2.4vw, 32px); letter-spacing: -0.2px; white-space: nowrap; }
+        .strong {
+          display: block;
+          font-weight: 900;
+          font-size: clamp(42px, 5.0vw, 74px);
+          letter-spacing: -0.2px;
+        }
+        .phase {
+          display: block;
+          font-weight: 900;
+          font-size: clamp(20px, 2.4vw, 32px);
+          letter-spacing: -0.2px;
+          white-space: nowrap;
+        }
 
         .sub {
-          margin: clamp(12px, 1.6vw, 20px) 0 clamp(20px, 2vw, 26px);
+          margin: clamp(12px, 1.6vw, 20px) 0 clamp(20px, 2.0vw, 26px);
           font-weight: 500;
           font-size: clamp(18px, 1.7vw, 24px);
           color: var(--muted);
         }
+        /* Slide 3 description yellow */
         .s-bridge .sub {
           color: var(--yellow);
-          text-shadow: 0 1px 0 rgba(0,0,0,.25), 0 2px 6px rgba(0,0,0,.18);
+          text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.18);
         }
 
-        .row { display: flex; gap: clamp(12px, 1.6vw, 16px); align-items: center; flex-wrap: wrap; }
-        .btn {
-          display: inline-flex; align-items: center; justify-content: center;
-          padding: clamp(14px, 1.1vw, 16px) clamp(24px, 2.2vw, 32px);
-          border-radius: 999px; font-weight: 900; font-size: clamp(12px, .95vw, 14px);
-          text-transform: uppercase; color: var(--dark);
-          background: var(--yellow); border: 3px solid var(--yellow-border);
-          text-decoration: none; box-shadow: 0 16px 28px rgba(0,0,0,.18), inset 0 2px 0 rgba(255,255,255,.65);
-          transition: transform .2s ease, box-shadow .2s ease; cursor: pointer;
+        .row {
+          display: flex;
+          gap: clamp(12px, 1.6vw, 16px);
+          align-items: center;
+          flex-wrap: wrap;
         }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 22px 36px rgba(0,0,0,.24), inset 0 2px 0 rgba(255,255,255,.7); }
+
+        .btn {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          padding: clamp(14px, 1.1vw, 16px) clamp(24px, 2.2vw, 32px);
+          border-radius: 999px;
+          font-weight: 900;
+          font-size: clamp(12px, 0.95vw, 14px);
+          text-transform: uppercase;
+          color: var(--dark);
+          background: var(--yellow);
+          border: 3px solid var(--yellow-border);
+          text-decoration: none;
+          box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18),
+            inset 0 2px 0 rgba(255, 255, 255, 0.65);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+          cursor: pointer;
+        }
+        .btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 22px 36px rgba(0, 0, 0, 0.24),
+            inset 0 2px 0 rgba(255, 255, 255, 0.7);
+        }
 
         /* ---------- Slide 4 (draw) — GRID so buttons never overlap ---------- */
         .text-draw {
@@ -351,66 +408,94 @@ export default function Vivko() {
           max-height: calc(100svh - var(--top-pad) - max(12px, env(safe-area-inset-bottom)));
           padding-bottom: max(8px, env(safe-area-inset-bottom));
         }
-        .text-draw .subwrap { min-height: 0; overflow: auto; -webkit-overflow-scrolling: touch; padding-right: 4px; }
-        .text-draw .row     { justify-content: flex-start; position: static; background: transparent; margin-top: 0; padding-top: 0; }
+        .text-draw .subwrap {
+          min-height: 0;       /* so 1fr can shrink on iOS */
+          overflow: auto;
+          -webkit-overflow-scrolling: touch;
+          padding-right: 4px;
+        }
+        .text-draw .row {
+          justify-content: flex-start;
+          position: static;
+          background: transparent;
+          margin-top: 0;
+          padding-top: 0;
+        }
 
-        /* Footer (hidden on slide 4 via conditional render) */
+        /* Footer base (hidden on slide 4 via conditional render above) */
         .legal {
-          position: absolute; bottom: clamp(16px, 3.2vh, 28px); left: clamp(16px, 3vw, 32px);
-          right: auto; z-index: 3; max-width: min(92vw, 820px); text-align: left; color: var(--dark);
-          font-weight: 700; line-height: 1.35;
+          position: absolute;
+          bottom: clamp(16px, 3.2vh, 28px);
+          left: clamp(16px, 3vw, 32px);
+          right: auto;
+          z-index: 3;
+          max-width: min(92vw, 820px);
+          text-align: left;
+          color: var(--dark);
+          font-weight: 700;
+          line-height: 1.35;
         }
-        .legal .contact { margin: 0 0 4px 0; font-size: clamp(12px, 1.4vw, 14px); }
-        .legal .rights  { margin: 0; font-size: clamp(12px, 1.35vw, 14px); }
-        .legal a { color: var(--dark); text-decoration: underline; }
-
-        /* ===================== PER-DEVICE TOP-PADDING TUNING ===================== */
-
-        /* Desktop (>= 1200px): lift text slightly on slides 2 & 3 */
-        @media (min-width: 1200px) {
-          .s-heart .text  { --top-pad: 7vh; }
-          .s-times .text  { --top-pad: 5.4vh; }
-          .s-bridge .text { --top-pad: 5.2vh; }
+        .legal .contact {
+          margin: 0 0 4px 0;
+          font-size: clamp(12px, 1.4vw, 14px);
+        }
+        .legal .rights {
+          margin: 0;
+          font-size: clamp(12px, 1.35vw, 14px);
+        }
+        .legal a {
+          color: var(--dark);
+          text-decoration: underline;
         }
 
-        /* Laptop (900–1199px): lift text a touch on slides 1–3 */
-        @media (min-width: 900px) and (max-width: 1199px) {
-          .s-heart .text  { --top-pad: 7.8vh; }
-          .s-times .text  { --top-pad: 6.2vh; }
-          .s-bridge .text { --top-pad: 6.0vh; }
+        /* ---------- Laptop tuning (UP = smaller top-pad) ---------- */
+        @media (min-width: 900px) and (max-width: 1400px) {
+          .text { --top-pad: clamp(16px, 4.4vw, 56px); }
+          .s-times .text { --top-pad: clamp(12px, 3.8vw, 48px); }  /* slide 2 needs most lift */
+          .s-bridge .text { --top-pad: clamp(14px, 4.2vw, 52px); } /* slide 3 a bit higher */
         }
 
-        /* Mobile (<= 900px): push 1–2 down (below head), slide 3 up a bit */
+        /* ---------- Mobile tweaks (UP on 1–3, keep 4 intact) ---------- */
         @media (max-width: 900px) {
-          .hero::before, .blur-left::before {
+          .hero::before,
+          .blur-left::before {
             background: linear-gradient(
               90deg,
-              rgba(255,255,255,.78) 0%,
-              rgba(255,255,255,.5) 28%,
-              rgba(255,255,255,.22) 52%,
-              rgba(255,255,255,.08) 72%,
-              rgba(255,255,255,0) 90%
+              rgba(255, 255, 255, 0.78) 0%,
+              rgba(255, 255, 255, 0.5) 28%,
+              rgba(255, 255, 255, 0.22) 52%,
+              rgba(255, 255, 255, 0.08) 72%,
+              rgba(255, 255, 255, 0) 90%
             );
           }
+
           .text {
             max-width: 92vw;
             margin: 0 auto;
-            --top-pad: clamp(96px, 19vw, 150px);
+            --top-pad: clamp(22px, 8.5vw, 44px); /* UP from before */
             padding-top: var(--top-pad);
             text-align: left;
           }
-          .s-heart .text { --top-pad: clamp(108px, 21.5vw, 170px); } /* down */
-          .s-times .text { --top-pad: clamp(112px, 23vw, 180px); }   /* down */
-          .s-bridge .text { --top-pad: clamp(76px, 16vw, 118px); }   /* up */
+          .s-times .text { --top-pad: clamp(18px, 7.8vw, 40px); }  /* slide 2 UP a touch more */
+          .s-bridge .text { --top-pad: clamp(22px, 8.2vw, 42px); } /* slide 3 slight UP */
+
+          .lang {
+            padding: 9px 14px;
+            top: 8px;
+            right: 8px;
+          }
 
           .script { font-size: clamp(44px, 10vw, 66px); }
           .strong { font-size: clamp(32px, 8.5vw, 48px); }
-          .phase  { font-size: clamp(16px, 4.6vw, 22px); white-space: normal; }
-          .sub    { font-size: clamp(16px, 4.4vw, 20px); }
-          .row    { gap: 10px; }
-          .btn    { font-size: 12px; padding: 12px 20px; }
+          .phase {
+            font-size: clamp(16px, 4.6vw, 22px);
+            white-space: normal;
+          }
+          .sub { font-size: clamp(16px, 4.4vw, 20px); }
+          .row { gap: 10px; }
+          .btn { font-size: 12px; padding: 12px 20px; }
 
-          /* extra headroom for slide 4 grid */
+          /* extra headroom for the grid on small screens (slide 4 only) */
           .text-draw {
             max-height: calc(100svh - var(--top-pad) - max(16px, env(safe-area-inset-bottom)));
           }
