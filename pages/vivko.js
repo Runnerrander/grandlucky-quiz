@@ -257,13 +257,11 @@ export default function Vivko() {
           z-index: 0;
         }
 
-        /* REMOVE all blur/plates so nothing pushes text */
+        /* Remove any old blur/plates entirely */
         .hero::before,
         .s-heart::before,
         .s-times::before,
-        .s-bridge::before {
-          content: none !important;
-        }
+        .s-bridge::before,
         .s-times::after,
         .s-bridge::after,
         .s-heart::after {
@@ -288,14 +286,8 @@ export default function Vivko() {
           z-index: 2;
           max-width: min(980px, 86vw);
           margin-left: clamp(24px, 6.2vw, 80px);
-          padding-top: clamp(24px, 6vw, 72px); /* SAFE headroom */
-          padding-bottom: 80px; /* room for buttons on s-draw */
-        }
-
-        /* Slightly more top room on slides 1 & 2 */
-        .s-heart .text,
-        .s-times .text {
-          padding-top: clamp(16px, 4vw, 56px);
+          padding-top: clamp(28px, 7vw, 84px);
+          padding-bottom: 120px; /* general bottom safety */
         }
 
         .title {
@@ -392,12 +384,15 @@ export default function Vivko() {
           text-decoration: underline;
         }
 
-        /* -------- Slide 4 scrolling & safe buttons -------- */
+        /* -------- Slide 4 scrolling & button safety -------- */
         .s-draw .sub {
-          max-height: calc(100vh - 280px);
+          /* Make the paragraph its own scroller and leave
+             room at the bottom so text never hides under buttons */
+          max-height: calc(100vh - 320px);
           overflow: auto;
           -webkit-overflow-scrolling: touch;
           padding-right: 4px;
+          padding-bottom: 120px; /* EXTRA padding so last lines clear the buttons */
         }
         .s-draw .row {
           position: sticky;
@@ -412,33 +407,44 @@ export default function Vivko() {
           padding-top: 6px;
           margin-top: 10px;
         }
+        /* Move HU/EN chip away from the text on slide 4 only */
+        .s-draw .lang {
+          left: clamp(12px, 2.4vw, 20px);
+          right: auto;
+          top: clamp(12px, 2vw, 20px);
+        }
+
+        /* ---------- Laptop/Desktop extra top room (avoid head overlap) ---------- */
+        @media (min-width: 901px) {
+          .s-heart .text { padding-top: 140px; }
+          .s-times .text { padding-top: 140px; }
+          .s-bridge .text { padding-top: 140px; }
+        }
 
         /* ---------- Mobile tweaks ---------- */
         @media (max-width: 900px) {
           .text {
             max-width: 92vw;
             margin: 0 auto;
-            padding-top: clamp(22px, 9vw, 44px);
+            padding-top: clamp(26px, 9vw, 52px);
             text-align: left;
           }
-          .script {
-            font-size: clamp(44px, 10vw, 66px);
-          }
-          .strong {
-            font-size: clamp(32px, 8.5vw, 48px);
-          }
+          /* Extra headroom on mobile for slide 3 to avoid head overlap */
+          .s-bridge .text { padding-top: clamp(60px, 18vw, 120px); }
+
+          .script { font-size: clamp(44px, 10vw, 66px); }
+          .strong { font-size: clamp(32px, 8.5vw, 48px); }
           .phase {
             font-size: clamp(16px, 4.6vw, 22px);
             white-space: normal;
           }
-          .sub {
-            font-size: clamp(16px, 4.4vw, 20px);
-          }
+          .sub { font-size: clamp(16px, 4.4vw, 20px); }
           .row { gap: 10px; }
           .btn { font-size: 12px; padding: 12px 20px; }
 
-          /* keep lang button off the text on mobile */
+          /* Keep HU/EN chip inside safe zone on mobile generally */
           .lang { top: 10px; right: 10px; }
+          /* and on slide 4 we already moved it to top-left above */
         }
       `}</style>
     </main>
