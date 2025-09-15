@@ -1,15 +1,18 @@
 // pages/api/get-questions.js
 import { createClient } from '@supabase/supabase-js';
 
+/** ---------- Version tag to verify live code ---------- */
+const VERSION = 'v3.1-topic-mix-unique-50';
+
 /** ---------- Supabase client (Vercel + local) ---------- */
 const SUPABASE_URL =
-  process.env.SUPABASE_URL ||
-  process.env.NEXT_PUBLIC_SUPABASE_URL;
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  process.env.SUPABASE_URL;
 
 const SUPABASE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.SUPABASE_ANON_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.SUPABASE_ANON_KEY;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -61,7 +64,7 @@ function inferTopicFromText(txt) {
   if (/(literature|irodalom|novel|regény|poet|költő|writer|író)/i.test(s)) return 'culture';
   if (/(math|matek|algebra|geometry|prím|prime|sum|összeg|percentage|százalék)/i.test(s)) return 'math';
   if (/(physics|chemistry|biology|fizika|kémia|biológia|atom|molecule|cell)/i.test(s)) return 'science';
-  if (/(population|népesség|demography|demográfia|GDP|economy|gazdaság)/i.test(s)) return 'demography';
+  if (/(population|népesség|demography|demográfia|gdp|economy|gazdaság)/i.test(s)) return 'demography';
   return 'general';
 }
 
@@ -113,9 +116,6 @@ const FALLBACK = {
     { id: 'f3',  text: 'Melyik ország fővárosa Budapest?', choices: ['Románia', 'Magyarország', 'Szlovákia'], correct_idx: 1, topic: 'geography' },
     { id: 'f4',  text: 'Melyik a legnagyobb óceán?', choices: ['Csendes-óceán', 'Atlanti-óceán', 'Indiai-óceán'], correct_idx: 0, topic: 'geography' },
     { id: 'f5',  text: 'Mennyi 2 + 2?', choices: ['3', '4', '5'], correct_idx: 1, topic: 'math' },
-    { id: 'f6',  text: 'Melyik kontinensen van Magyarország?', choices: ['Ázsia', 'Európa', 'Afrika'], correct_idx: 1, topic: 'geography' },
-    { id: 'f7',  text: 'Melyik a Föld természetes kísérője?', choices: ['Mars', 'Hold', 'Vénusz'], correct_idx: 1, topic: 'science' },
-    { id: 'f8',  text: 'Melyik évszak követi a tavaszt?', choices: ['Ősz', 'Tél', 'Nyár'], correct_idx: 2, topic: 'general' },
   ],
   en: [
     { id: 'e1', text: 'What is the capital of the USA?', choices: ['Washington, D.C.', 'New York', 'Los Angeles'], correct_idx: 0, topic: 'history' },
@@ -126,7 +126,7 @@ const FALLBACK = {
   ],
 };
 
-/** ---------- Fetch all pages from Supabase (1k/page) ---------- */
+/** ---------- Fetch all pages from Supabase (1k/page), then filter is_active in JS ---------- */
 async function fetchAllActiveQuestions(lang) {
   const pageSize = 1000;
   const cols = 'id,prompt,choices,correct_idx,lang,is_active,topic';
@@ -135,15 +135,13 @@ async function fetchAllActiveQuestions(lang) {
 
   while (from < 12000) { // safety cap ~12k
     const to = from + pageSize - 1;
-    const query = supabase
+    const { data, error } = await supabase
       .from('trivia_questions')
       .select(cols)
       .ilike('lang', lang)
-      .or('is_active.is.null,is_active.eq.true,is_active.eq.TRUE,is_active.eq.1')
       .order('id', { ascending: false })
       .range(from, to);
 
-    const { data, error } = await query;
     if (error) throw error;
     if (!data || data.length === 0) break;
 
@@ -152,7 +150,15 @@ async function fetchAllActiveQuestions(lang) {
     from += pageSize;
   }
 
-  return rows;
+  // Accept truthy-ish is_active; allow null = active (older rows)
+  return rows.filter((q) => {
+    const v = q.is_active;
+    if (v === null || typeof v === 'undefined') return true;
+    if (v === true) return true;
+    if (v === 1) return true;
+    if (typeof v === 'string' && v.toLowerCase() === 'true') return true;
+    return false;
+  });
 }
 
 /** ---------- Main handler ---------- */
@@ -194,6 +200,8 @@ export default async function handler(req, res) {
   /** Load from DB */
   let items = [];
   let dbError = null;
+  let envOk = Boolean(SUPABASE_URL && SUPABASE_KEY);
+
   try {
     const rows = await fetchAllActiveQuestions(lang);
     items = rows.map((q) => {
@@ -202,13 +210,14 @@ export default async function handler(req, res) {
       if (!choices.length && typeof q.choices === 'string') {
         try { choices = JSON.parse(q.choices); } catch { choices = []; }
       }
-      const text = (q.prompt || '').trim();
+      const text = (q.prompt || '').trim() || (q.text || '').trim();
+      const topicRaw = q.topic && String(q.topic).trim();
       return {
         id: q.id,
         text,
         choices,
-        correct_idx: (typeof q.correct_idx === 'number' && q.correct_idx >= 0) ? q.correct_idx : 0,
-        topic: (q.topic && String(q.topic).trim()) || inferTopicFromText(text),
+        correct_idx: (Number.isInteger(q.correct_idx) && q.correct_idx >= 0) ? q.correct_idx : 0,
+        topic: topicRaw || inferTopicFromText(text),
       };
     }).filter(validQuestion);
   } catch (e) {
@@ -223,7 +232,8 @@ export default async function handler(req, res) {
   const seen = new Set();
   const unique = [];
   for (const q of pool) {
-    const key = q.text.trim().toLowerCase().replace(/\s+/g, ' ');
+    const key = (q.text || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    if (!key) continue;
     if (seen.has(key)) continue;
     seen.add(key);
     unique.push(q);
@@ -236,6 +246,7 @@ export default async function handler(req, res) {
     : seededSample(unique, TARGET_N, seed);
 
   return res.status(200).json({
+    version: VERSION,
     questions: chosen,
     size: chosen.length,
     fallback: !haveDbPool,
@@ -244,9 +255,11 @@ export default async function handler(req, res) {
     meta: {
       env_url: !!SUPABASE_URL,
       env_key: !!SUPABASE_KEY,
+      env_ok: envOk,
       db_error: dbError || null,
       pool_unique: unique.length,
       topics: [...new Set(unique.map(q => q.topic))],
+      used_lang: lang,
     },
   });
 }
