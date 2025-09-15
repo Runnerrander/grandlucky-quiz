@@ -92,7 +92,8 @@ export default async function handler(req, res) {
     } catch {}
   }
 
-  const seedKey = `${username || 'anon'}|${round_id || 'local'}|${lang}|v4`;
+  const version = 'v5.2-balanced-topic-rr';
+  const seedKey = `${username || 'anon'}|${round_id || 'local'}|${lang}|${version}`;
   const seed = hashStringToInt(seedKey);
   const rng = mulberry32(seed);
 
@@ -105,7 +106,7 @@ export default async function handler(req, res) {
     // Do NOT reference non-existent columns; just grab * and map safely
     const { data, error } = await supabase
       .from('trivia_questions')
-      .select('*')                // tolerant to schema differences
+      .select('*')
       .ilike('lang', lang)       // case-insensitive match on hu/en
       .eq('is_active', true)
       .limit(5000);
@@ -141,55 +142,85 @@ export default async function handler(req, res) {
     byTopic.get(t).push(q);
   }
 
-  // Shuffle each bucket deterministically (per-user)
+  // Seeded shuffle each bucket and rotate starting cursor by a seed-based offset
+  const cursors = {};
   for (const [t, arr] of byTopic) {
-    byTopic.set(t, seededShuffle(arr, hashStringToInt(`${seedKey}|${t}`)));
+    const tSeed = hashStringToInt(`${seedKey}|bucket|${t}`);
+    const shuffled = seededShuffle(arr, tSeed);
+    byTopic.set(t, shuffled);
+    cursors[t] = Math.floor(mulberry32(tSeed)() * shuffled.length); // start deeper in bucket
   }
 
-  // Topic order: shuffle the topic list deterministically
-  const topics = seededShuffle(Array.from(byTopic.keys()), seed);
+  // Seeded topic order
+  const topics = seededShuffle(Array.from(byTopic.keys()), hashStringToInt(`${seedKey}|topics`));
 
+  // round-robin with “no immediate repeat” guarantee
   const chosen = [];
-  const used = new Set();
-  // round-robin pull from topics until we have `limit`
-  let ti = 0;
-  let safety = 0;
-  const perTopicCursor = Object.fromEntries(topics.map(t => [t, 0]));
+  const usedIds = new Set();
+  const perTopicUsed = {};
+  let lastTopic = null;
+  let stepsWithoutPick = 0;
 
-  while (chosen.length < limit && safety < limit * 20 && topics.length) {
-    safety++;
-    const t = topics[ti % topics.length];
-    const bucket = byTopic.get(t) || [];
-    let idx = perTopicCursor[t] || 0;
+  function takeFromTopic(topicName) {
+    const bucket = byTopic.get(topicName) || [];
+    if (!bucket.length) return null;
 
-    // advance cursor until we find an unused question
-    while (idx < bucket.length && used.has(bucket[idx].id)) idx++;
-    perTopicCursor[t] = idx + 1;
-
-    if (idx < bucket.length) {
-      const q = bucket[idx];
-      chosen.push(q);
-      used.add(q.id);
-    }
-
-    ti++;
-    // if the whole cycle yields nothing new, break
-    if (ti > topics.length * (limit + 2)) break;
-  }
-
-  // If we still have fewer than `limit`, fill from the whole pool (no replacement)
-  if (chosen.length < limit) {
-    const flat = seededShuffle(pool, hashStringToInt(seedKey + '|fill'));
-    for (const q of flat) {
-      if (chosen.length >= limit) break;
-      if (!used.has(q.id)) {
-        chosen.push(q);
-        used.add(q.id);
+    // advance cursor until unused id
+    let idx = cursors[topicName] ?? 0;
+    for (let tries = 0; tries < bucket.length; tries++) {
+      const q = bucket[idx % bucket.length];
+      idx++;
+      if (!usedIds.has(q.id)) {
+        cursors[topicName] = idx; // persist cursor
+        usedIds.add(q.id);
+        perTopicUsed[topicName] = (perTopicUsed[topicName] || 0) + 1;
+        return q;
       }
     }
+    cursors[topicName] = idx;
+    return null;
   }
 
-  // Final trim
+  // primary pass: strict round-robin, avoid repeating the immediate previous topic
+  while (chosen.length < limit && stepsWithoutPick < limit * 10) {
+    let madePick = false;
+
+    for (let i = 0; i < topics.length && chosen.length < limit; i++) {
+      const t = topics[(i + chosen.length) % topics.length];
+
+      // try avoid immediate repeat topic if we have >1 topics overall
+      if (lastTopic && t === lastTopic && topics.length > 1) continue;
+
+      const q = takeFromTopic(t);
+      if (q) {
+        chosen.push(q);
+        lastTopic = t;
+        madePick = true;
+      }
+    }
+
+    if (!madePick) {
+      stepsWithoutPick++;
+      break;
+    }
+  }
+
+  // fill phase: still avoid immediate topic repeats if possible
+  if (chosen.length < limit) {
+    const flat = seededShuffle(pool, hashStringToInt(`${seedKey}|fill`));
+    for (const q of flat) {
+      if (chosen.length >= limit) break;
+      if (usedIds.has(q.id)) continue;
+      const t = normalizeTopic(q);
+      if (lastTopic && t === lastTopic && topics.length > 1) continue; // try avoid immediate repeat
+      chosen.push(q);
+      usedIds.add(q.id);
+      lastTopic = t;
+      perTopicUsed[t] = (perTopicUsed[t] || 0) + 1;
+    }
+  }
+
+  // final trim
   const out = chosen.slice(0, limit).map(q => ({
     id: q.id,
     text: q.text,
@@ -197,9 +228,16 @@ export default async function handler(req, res) {
     correct_idx: q.correct_idx
   }));
 
+  // quick per-topic counts for debug
+  const topic_counts = {};
+  for (const q of chosen.slice(0, limit)) {
+    const t = normalizeTopic(q);
+    topic_counts[t] = (topic_counts[t] || 0) + 1;
+  }
+
   res.setHeader('Cache-Control', 'no-store');
   return res.status(200).json({
-    version: 'v4.0-topic-mix-deterministic',
+    version,
     questions: out,
     size: out.length,
     key: seedKey,
@@ -208,7 +246,9 @@ export default async function handler(req, res) {
       db_ok,
       db_error,
       pool_size: pool.length,
-      used_lang: lang
+      used_lang: lang,
+      topics: topics,
+      topic_counts
     }
   });
 }
