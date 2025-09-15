@@ -1,7 +1,12 @@
 // pages/api/get-questions.js
 import { createClient } from '@supabase/supabase-js';
 
-/* ------------------------- seeded helpers ------------------------- */
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+);
+
+// ---- tiny seeded helpers ----------------------------------------------------
 function hashStringToInt(str) {
   let h = 2166136261 >>> 0; // FNV-1a
   for (let i = 0; i < str.length; i++) {
@@ -19,28 +24,42 @@ function mulberry32(a) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
+function seededShuffle(arr, seedInt) {
+  const rng = mulberry32(seedInt);
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
-/* ------------------------- fallback bank ------------------------- */
+// ---- safer fallback (multiple per topic so it can actually vary) ------------
 const FALLBACK = [
   // history
   { id: 'f_hist_1', text: 'Ki volt az Egyesült Államok elnöke?', choices: ['George W. Bush', 'Henry Ford', 'Oprah Winfrey'], correct_idx: 0, topic: 'history', lang: 'hu' },
   { id: 'f_hist_2', text: 'Who was a U.S. President?', choices: ['George W. Bush', 'Henry Ford', 'Oprah Winfrey'], correct_idx: 0, topic: 'history', lang: 'en' },
   { id: 'f_hist_3', text: 'Ki volt római császár?', choices: ['Xenophon', 'Carus', 'Plutarch'], correct_idx: 1, topic: 'history', lang: 'hu' },
+
   // geography
   { id: 'f_geo_1', text: 'Melyik város az USA fővárosa?', choices: ['Washington, D.C.', 'New York', 'Los Angeles'], correct_idx: 0, topic: 'geography', lang: 'hu' },
   { id: 'f_geo_2', text: 'Melyik a legnagyobb óceán?', choices: ['Csendes-óceán', 'Atlanti-óceán', 'Indiai-óceán'], correct_idx: 0, topic: 'geography', lang: 'hu' },
   { id: 'f_geo_3', text: 'Which is the largest ocean?', choices: ['Pacific', 'Atlantic', 'Indian'], correct_idx: 0, topic: 'geography', lang: 'en' },
+
   // sports
   { id: 'f_sport_1', text: 'Melyik a NBA-csapat?', choices: ['Borussia Dortmund', 'Dallas Mavericks', 'AC Milan'], correct_idx: 1, topic: 'sports', lang: 'hu' },
   { id: 'f_sport_2', text: 'Which is an NBA team?', choices: ['Borussia Dortmund', 'Dallas Mavericks', 'AC Milan'], correct_idx: 1, topic: 'sports', lang: 'en' },
+
   // culture
   { id: 'f_cult_1', text: 'Ki nyert Oscar-díjat a legjobb rendező kategóriában?', choices: ['Ang Lee', 'Kobe Bryant', 'Novak Djokovic'], correct_idx: 0, topic: 'culture', lang: 'hu' },
   { id: 'f_cult_2', text: 'Who won the Academy Award for Best Director?', choices: ['Ang Lee', 'Kobe Bryant', 'Novak Djokovic'], correct_idx: 0, topic: 'culture', lang: 'en' },
-  // math
+
+  // math / general
   { id: 'f_math_1', text: 'Hány napból áll egy hét?', choices: ['5', '7', '10'], correct_idx: 1, topic: 'math', lang: 'hu' },
   { id: 'f_math_2', text: 'How many days are in a week?', choices: ['5', '7', '10'], correct_idx: 1, topic: 'math', lang: 'en' },
 ];
 
+// Normalize topic from `topic` or `category` or last-resort guess
 function normalizeTopic(q) {
   const raw = (q.topic || q.category || '').toString().toLowerCase().trim();
   if (raw) return raw;
@@ -53,20 +72,13 @@ function normalizeTopic(q) {
   return 'general';
 }
 
-/* ------------------------- supabase client ------------------------- */
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
-
-/* ------------------------- handler ------------------------- */
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const lang = String(req.query.lang || 'hu').toLowerCase();
-  const limit = Math.max(1, Math.min(50, parseInt(req.query.limit, 10) || 6));
+  const limit = Math.max(5, Math.min(50, parseInt(req.query.limit, 10) || 12));
 
-  // username / round for seeding
+  // username / round_id for seeding
   let username = String(req.query.username || req.query.u || '').trim();
   let round_id = String(req.query.round_id || '').trim();
   if (!username && req.headers?.referer) {
@@ -79,11 +91,11 @@ export default async function handler(req, res) {
     } catch {}
   }
 
-  const version = 'v5.5.user-hash-mix-norepeat';
+  const version = 'v5.5.topic-gap2-rr';
   const seedKey = `${username || 'anon'}|${round_id || 'local'}|${lang}|${version}`;
   const seed = hashStringToInt(seedKey);
 
-  /* ---------- pull pool (tolerant mapping) ---------- */
+  // ---------- fetch from DB (tolerant) ----------
   let pool = [];
   let db_ok = false;
   let db_error = null;
@@ -91,20 +103,20 @@ export default async function handler(req, res) {
   try {
     const { data, error } = await supabase
       .from('trivia_questions')
-      .select('*')
-      .ilike('lang', lang)
+      .select('*')            // tolerant to schema differences
+      .ilike('lang', lang)    // case-insensitive match on hu/en
       .eq('is_active', true)
       .limit(5000);
 
     if (error) throw error;
 
-    const mapped = (data || []).map((q) => {
+    const mapped = (data || []).map(q => {
       const text = q.prompt || q.question || q.text || '';
       const choices = Array.isArray(q.choices) ? q.choices : [];
       const correct_idx = Number.isInteger(q.correct_idx) ? q.correct_idx : 0;
       const topic = normalizeTopic({ ...q, text });
-      return { id: String(q.id), text, choices, correct_idx, topic, lang: q.lang || lang };
-    }).filter((q) => q.text && q.choices.length >= 3);
+      return { id: q.id, text, choices, correct_idx, topic, lang: q.lang || lang };
+    }).filter(q => q.text && q.choices.length >= 3);
 
     pool = mapped;
     db_ok = true;
@@ -113,80 +125,129 @@ export default async function handler(req, res) {
     db_error = String(e?.message || e) || 'db failed';
   }
 
+  // If DB empty/failed, use a language-filtered fallback
   if (!pool.length) {
-    pool = FALLBACK.filter((q) => (q.lang || 'hu').toLowerCase() === lang);
+    pool = FALLBACK.filter(q => (q.lang || 'hu').toLowerCase() === lang);
   }
 
-  /* ---------- per-user global shuffle + topic balancing ---------- */
-  // score each question by hashing (id + seedKey) to create a user-specific global order
-  const scored = pool.map((q) => ({
-    ...q,
-    __score: hashStringToInt(`${q.id}|${seedKey}`)
-  })).sort((a, b) => a.__score - b.__score);
+  // ---------- topic-mix with GAP=2 spacing, deterministic per user ----------
+  const GAP = 2; // do not repeat same topic within last 2 picks (A _ _ A minimum)
 
-  const topicsSet = new Set(scored.map((q) => normalizeTopic(q)));
-  const topicsCount = topicsSet.size || 1;
-
-  // soft cap per topic to encourage balance but still allow fill
-  const softPerTopic = Math.max(1, Math.ceil(limit / topicsCount));
-
-  const usedIds = new Set();
-  const counts = Object.create(null);
-  const chosen = [];
-
-  // Do not allow immediate same-topic back-to-back (cooldown = 1)
-  let lastTopic = null;
-
-  // Primary pass: respect cooldown + soft per-topic cap
-  for (const q of scored) {
-    if (chosen.length >= limit) break;
-    if (usedIds.has(q.id)) continue;
-
+  // Bucket by topic
+  const byTopic = new Map();
+  for (const q of pool) {
     const t = normalizeTopic(q);
-    if (topicsCount > 1 && lastTopic && t === lastTopic) continue; // no immediate repeat
-    if ((counts[t] || 0) >= softPerTopic && topicsCount > 1) continue;
-
-    chosen.push(q);
-    usedIds.add(q.id);
-    counts[t] = (counts[t] || 0) + 1;
-    lastTopic = t;
+    if (!byTopic.has(t)) byTopic.set(t, []);
+    byTopic.get(t).push(q);
   }
 
-  // Fill pass: relax per-topic cap, still try to avoid immediate repeats
-  if (chosen.length < limit) {
-    for (const q of scored) {
-      if (chosen.length >= limit) break;
-      if (usedIds.has(q.id)) continue;
-      const t = normalizeTopic(q);
-      if (topicsCount > 1 && lastTopic && t === lastTopic) continue;
-      chosen.push(q);
-      usedIds.add(q.id);
-      counts[t] = (counts[t] || 0) + 1;
-      lastTopic = t;
+  // Seeded shuffle each bucket and rotate the starting cursor
+  const cursors = {};
+  for (const [t, arr] of byTopic) {
+    const tSeed = hashStringToInt(`${seedKey}|bucket|${t}`);
+    const shuffled = seededShuffle(arr, tSeed);
+    byTopic.set(t, shuffled);
+    // start deeper inside the bucket to reduce first-pick collisions
+    const rng = mulberry32(tSeed);
+    cursors[t] = Math.floor(rng() * shuffled.length);
+  }
+
+  // Seeded topic order
+  const topics = seededShuffle(Array.from(byTopic.keys()), hashStringToInt(`${seedKey}|topics`));
+
+  // helpers
+  const usedIds = new Set();
+  const perTopicUsed = {};
+  const lastTopics = [];
+  let activeGap = GAP; // may relax if pool is too small
+  let ring = 0;
+
+  function canUseTopic(topicName, gap = activeGap) {
+    if (gap <= 0) return true;
+    const recent = lastTopics.slice(-gap);
+    return !recent.includes(topicName);
+  }
+
+  function takeFromTopic(topicName) {
+    const bucket = byTopic.get(topicName) || [];
+    if (!bucket.length) return null;
+
+    let idx = cursors[topicName] ?? 0;
+    for (let tries = 0; tries < bucket.length; tries++) {
+      const q = bucket[idx % bucket.length];
+      idx++;
+      if (!usedIds.has(q.id)) {
+        cursors[topicName] = idx;
+        usedIds.add(q.id);
+        perTopicUsed[topicName] = (perTopicUsed[topicName] || 0) + 1;
+        return q;
+      }
+    }
+    cursors[topicName] = idx; // exhausted, keep cursor advanced
+    return null;
+  }
+
+  const chosen = [];
+  let safety = 0;
+  let stuckCycles = 0;
+
+  // primary pass: round-robin over topics, honoring GAP=2 if possible
+  while (chosen.length < limit && safety++ < limit * 50) {
+    let picked = false;
+
+    for (let i = 0; i < topics.length && chosen.length < limit; i++) {
+      const t = topics[(ring + i) % topics.length];
+      if (!canUseTopic(t)) continue;
+
+      const q = takeFromTopic(t);
+      if (q) {
+        chosen.push(q);
+        lastTopics.push(t);
+        while (lastTopics.length > GAP) lastTopics.shift();
+        ring = (ring + i + 1) % topics.length;
+        picked = true;
+      }
+    }
+
+    if (!picked) {
+      // If we couldn't pick anything due to the gap constraint,
+      // relax gradually (from 2 -> 1) so small topic pools still work.
+      stuckCycles++;
+      if (stuckCycles > topics.length * 2 && activeGap > 1) {
+        activeGap--;
+        stuckCycles = 0;
+      } else {
+        // also rotate to change starting point next loop
+        ring = (ring + 1) % Math.max(1, topics.length);
+      }
     }
   }
 
-  // Last-resort fill: take anything left (may allow repeat topic) to reach limit
+  // Fill phase: keep avoiding immediate repeats if possible
   if (chosen.length < limit) {
-    for (const q of scored) {
+    const flat = seededShuffle(pool, hashStringToInt(`${seedKey}|fill`));
+    for (const q of flat) {
       if (chosen.length >= limit) break;
       if (usedIds.has(q.id)) continue;
       const t = normalizeTopic(q);
+      if (!canUseTopic(t, Math.min(activeGap, 1)) && topics.length > 1) continue; // avoid immediate repeat if we can
       chosen.push(q);
       usedIds.add(q.id);
-      counts[t] = (counts[t] || 0) + 1;
-      lastTopic = t;
+      perTopicUsed[t] = (perTopicUsed[t] || 0) + 1;
+      lastTopics.push(t);
+      while (lastTopics.length > GAP) lastTopics.shift();
     }
   }
 
-  const out = chosen.slice(0, limit).map((q) => ({
+  // final trim & shape
+  const out = chosen.slice(0, limit).map(q => ({
     id: q.id,
     text: q.text,
     choices: q.choices.slice(0, 3),
-    correct_idx: q.correct_idx
+    correct_idx: q.correct_idx,
   }));
 
-  // debug topic counts
+  // quick per-topic counts for debug
   const topic_counts = {};
   for (const q of out) {
     const t = normalizeTopic(q);
@@ -205,7 +266,10 @@ export default async function handler(req, res) {
       db_error,
       pool_size: pool.length,
       used_lang: lang,
-      topic_counts
-    }
+      topics,
+      topic_counts,
+      gap_initial: GAP,
+      gap_final: activeGap,
+    },
   });
 }
