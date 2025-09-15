@@ -1,10 +1,17 @@
 // pages/api/get-questions.js
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+// ----- Robust env detection (works with common Vercel setups) -----
+const SUPABASE_URL =
+  process.env.SUPABASE_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+const SUPABASE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_ANON_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ---------- seeded helpers ----------
 function hashStringToInt(str) {
@@ -54,45 +61,56 @@ const FALLBACK = {
   ],
 };
 
+// --------- paged fetch helpers (newest-first; fallback to id) ----------
 async function fetchPaged(lang, orderField) {
   const PAGE = 1000;
   const MAX = 10;
   let page = 0;
   let rows = [];
+  let pages = 0;
+
   while (page < MAX) {
     const from = page * PAGE;
     const to = from + PAGE - 1;
+
     const selectCols = ['id','question','prompt','text','choices','correct_idx','is_active','lang'];
     if (orderField === 'created_at') selectCols.push('created_at');
 
-    const { data, error } = await supabase
+    const q = supabase
       .from('trivia_questions')
-      .select(selectCols.join(','))
-      .ilike('lang', lang)
-      .eq('is_active', true)
-      .order(orderField, { ascending: false })
-      .range(from, to);
+      .select(selectCols.join(','))               // include created_at when present
+      .ilike('lang', lang);                       // case-insensitive match
 
+    // Be tolerant to CSV-imported values: true | 'true' | 1
+    // Supabase JS supports .in on booleans/ints/strings.
+    q.in('is_active', [true, 'true', 'TRUE', 1]);
+
+    q.order(orderField, { ascending: false }).range(from, to);
+
+    const { data, error } = await q;
     if (error) throw error;
+
     const chunk = Array.isArray(data) ? data : [];
     rows = rows.concat(chunk);
+    pages += 1;
     if (chunk.length < PAGE) break;
     page += 1;
   }
-  return { rows, pages: page + 1, pageSize: 1000 };
+
+  return { rows, pages, pageSize: 1000 };
 }
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  // Strong no-cache
+  // Strong no-cache so Vercel/browser/CDN won’t reuse old JSON
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
 
   const lang = String(req.query.lang || 'hu').toLowerCase();
 
-  // Accept username in ?username= OR ?u=, and round in ?round_id=
+  // Accept username via ?username= OR ?u=
   let username = String(req.query.username || req.query.u || '').trim();
   let round_id = String(req.query.round_id || '').trim();
 
@@ -106,28 +124,38 @@ export default async function handler(req, res) {
   }
 
   const TARGET_N = 6;
-  let fetched = [];
-  let meta = { db_pages: 0, order: null, pool_unique: 0, note: '' };
 
-  // Try newest-first via created_at, else fall back to id if created_at is missing
+  let fetched = [];
+  const meta = {
+    order: null,
+    db_pages: 0,
+    pool_before_dedupe: 0,
+    pool_unique: 0,
+    env_url_present: Boolean(SUPABASE_URL),
+    env_key_present: Boolean(SUPABASE_KEY),
+    fallback_reason: '',
+  };
+
   try {
-    let r = await fetchPaged(lang, 'created_at');
-    fetched = r.rows;
-    meta.db_pages = r.pages;
-    meta.order = 'created_at DESC';
-  } catch (e1) {
+    // Try newest-first via created_at; if missing, fall back to id
     try {
-      let r2 = await fetchPaged(lang, 'id');
+      const r = await fetchPaged(lang, 'created_at');
+      fetched = r.rows;
+      meta.order = 'created_at DESC';
+      meta.db_pages = r.pages;
+    } catch (e1) {
+      const r2 = await fetchPaged(lang, 'id');
       fetched = r2.rows;
-      meta.db_pages = r2.pages;
       meta.order = 'id DESC';
-      meta.note = 'created_at not available; fell back to id DESC';
-    } catch (e2) {
-      meta.note = 'Supabase select failed; using fallback pool';
+      meta.db_pages = r2.pages;
+      meta.fallback_reason = 'created_at missing or not selectable; used id';
     }
+  } catch (e) {
+    meta.fallback_reason = `Supabase error: ${e?.message || 'unknown'}`;
+    // fall through to local fallback
   }
 
-  // Normalize + filter
+  // Normalize & filter
   let items = (fetched || []).map(q => {
     let choices = q.choices;
     if (typeof choices === 'string') {
@@ -142,7 +170,9 @@ export default async function handler(req, res) {
     };
   }).filter(q => q.text && q.choices.length >= 3);
 
-  // De-duplicate by normalized text
+  meta.pool_before_dedupe = items.length;
+
+  // De-duplicate by normalized text (handles accidental double-imports)
   const seen = new Set();
   const unique = [];
   for (const q of items) {
@@ -155,7 +185,7 @@ export default async function handler(req, res) {
 
   const pool = unique.length > 0 ? unique : (FALLBACK[lang] || FALLBACK.hu);
 
-  // Seed = username | round_id | lang (accepts empty pieces but still deterministic)
+  // Seed = username | round_id | lang
   const seedKey = `${username || 'anon'}|${round_id || 'local'}|${lang}`;
   const seed = hashStringToInt(seedKey);
 
