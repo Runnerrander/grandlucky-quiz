@@ -1,7 +1,7 @@
 // pages/api/get-questions.js
 import { createClient } from '@supabase/supabase-js';
 
-// --- Supabase client (server-side) ---
+/** ---------- Supabase client (Vercel + local) ---------- */
 const SUPABASE_URL =
   process.env.SUPABASE_URL ||
   process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -13,7 +13,7 @@ const SUPABASE_KEY =
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ---------- seeded helpers ----------
+/** ---------- RNG + sampling helpers (deterministic) ---------- */
 function hashStringToInt(str) {
   let h = 2166136261 >>> 0; // FNV-1a
   for (let i = 0; i < str.length; i++) {
@@ -38,7 +38,6 @@ function shuffleInPlace(arr, rng) {
   }
   return arr;
 }
-// Deterministic sample without replacement
 function seededSample(arr, k, seedInt) {
   const rng = mulberry32(seedInt);
   const idx = Array.from({ length: arr.length }, (_, i) => i);
@@ -50,39 +49,47 @@ function seededSample(arr, k, seedInt) {
   return idx.slice(0, take).map(i => arr[i]);
 }
 
-// ------- NEW: deterministic stratified pick by topic (round-robin across topics) -------
+/** ---------- Topic inference (used if `topic` column missing) ---------- */
+function inferTopicFromText(txt) {
+  const s = (txt || '').toLowerCase();
+  if (/(president|elnök|washington|lincoln|jefferson|roosevelt|kennedy|nixon|reagan|obama|biden|trump)/i.test(s)) return 'history';
+  if (/(capital|főváros|city|város|ország|river|folyó|mount|hegy|lake|tó|continent|kontinens|ocean|óceán|balaton|danube|duna)/i.test(s)) return 'geography';
+  if (/(olympic|olimpia|olympics|tokyo|paris 2024|medal|aranyérem|silver|bronze)/i.test(s)) return 'sports';
+  if (/(formula\s?1|f1|verstappen|hamilton|ferrari|red bull|mercedes|mclaren|hungaroring)/i.test(s)) return 'sports';
+  if (/(boxing|ökölvívás|tyson|ali|mayweather|pacquiao|usyk|fury)/i.test(s)) return 'sports';
+  if (/(music|zene|film|movie|mozi|oscar|grammy|artist|singer|director|composer)/i.test(s)) return 'culture';
+  if (/(literature|irodalom|novel|regény|poet|költő|writer|író)/i.test(s)) return 'culture';
+  if (/(math|matek|algebra|geometry|prím|prime|sum|összeg|percentage|százalék)/i.test(s)) return 'math';
+  if (/(physics|chemistry|biology|fizika|kémia|biológia|atom|molecule|cell)/i.test(s)) return 'science';
+  if (/(population|népesség|demography|demográfia|GDP|economy|gazdaság)/i.test(s)) return 'demography';
+  return 'general';
+}
+
+/** ---------- Round-robin topic mix (deterministic) ---------- */
 function stratifiedDeterministicPick(items, k, seedInt) {
   const rng = mulberry32(seedInt);
-
-  // Group by normalized topic
   const buckets = new Map();
   for (const q of items) {
-    const raw = (q.topic || '').trim();
-    const topic = raw ? raw.toLowerCase() : 'general';
+    const topic = (q.topic || 'general').toString().toLowerCase().trim() || 'general';
     if (!buckets.has(topic)) buckets.set(topic, []);
     buckets.get(topic).push(q);
   }
-
-  // Shuffle topics and each bucket deterministically
   const topics = shuffleInPlace([...buckets.keys()], rng);
   for (const t of topics) shuffleInPlace(buckets.get(t), rng);
 
-  // Round-robin draw 1-by-1 from each topic until we reach k
   const result = [];
   let changed = true;
   while (result.length < k && changed) {
     changed = false;
     for (const t of topics) {
       const b = buckets.get(t);
-      if (b && b.length > 0) {
+      if (b && b.length) {
         result.push(b.shift());
         changed = true;
         if (result.length >= k) break;
       }
     }
   }
-
-  // If some buckets emptied early and we still need more, fill from remaining
   if (result.length < k) {
     const rest = [];
     for (const t of topics) {
@@ -95,11 +102,10 @@ function stratifiedDeterministicPick(items, k, seedInt) {
       result.push(q);
     }
   }
-
   return result.slice(0, k);
 }
 
-// ---------- tiny local fallback (dev-only) ----------
+/** ---------- Local tiny fallback (dev-only) ---------- */
 const FALLBACK = {
   hu: [
     { id: 'f1',  text: 'Melyik város az USA fővárosa?', choices: ['Washington, D.C.', 'New York', 'Los Angeles'], correct_idx: 0, topic: 'history' },
@@ -120,144 +126,138 @@ const FALLBACK = {
   ],
 };
 
+/** ---------- Fetch all pages from Supabase (1k/page) ---------- */
+async function fetchAllActiveQuestions(lang) {
+  const pageSize = 1000;
+  const cols = 'id,prompt,choices,correct_idx,lang,is_active,topic';
+  const rows = [];
+  let from = 0;
+
+  while (from < 12000) { // safety cap ~12k
+    const to = from + pageSize - 1;
+    const query = supabase
+      .from('trivia_questions')
+      .select(cols)
+      .ilike('lang', lang)
+      .or('is_active.is.null,is_active.eq.true,is_active.eq.TRUE,is_active.eq.1')
+      .order('id', { ascending: false })
+      .range(from, to);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    if (!data || data.length === 0) break;
+
+    rows.push(...data);
+    if (data.length < pageSize) break; // last page
+    from += pageSize;
+  }
+
+  return rows;
+}
+
+/** ---------- Main handler ---------- */
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  // never cache — we want fresh pool immediately
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  // No cache anywhere
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
 
-  const lang = String(req.query.lang || 'hu').toLowerCase();
-  const limitParam = Math.max(1, Math.min(50, parseInt(String(req.query.limit || '6'), 10) || 6));
+  const langRaw = String(req.query.lang || 'hu').toLowerCase();
+  const lang = langRaw === 'en' ? 'en' : 'hu';
+
+  // front-end passes limit=50 — we allow 1..50
+  const limitParam = Math.max(1, Math.min(50, parseInt(String(req.query.limit || '50'), 10) || 50));
   const TARGET_N = limitParam;
 
-  // Username / round
-  let username = String(req.query.username || req.query.u || '').trim();
-  let round_id = String(req.query.round_id || '').trim();
+  // Username / round_id from query or Referer
+  let username = String(req.query.username ?? req.query.u ?? '').trim();
+  let round_id = String(req.query.round_id ?? '').trim();
 
   if (!username && req.headers?.referer) {
     try {
-      const u = new URL(req.headers.referer).searchParams.get('u');
-      if (u) username = u.trim();
+      const url = new URL(req.headers.referer);
+      username = (url.searchParams.get('u') || url.searchParams.get('username') || '').trim();
     } catch {}
   }
   if (!round_id && req.headers?.referer) {
     try {
-      const r = new URL(req.headers.referer).searchParams.get('round_id');
-      if (r) round_id = r.trim();
+      const url = new URL(req.headers.referer);
+      round_id = (url.searchParams.get('round_id') || '').trim();
     } catch {}
   }
 
-  // Build per-user seed
   const seedKey = `${username || 'anon'}|${round_id || 'local'}|${lang}`;
   const seed = hashStringToInt(seedKey);
 
-  // Try Supabase: first attempt with `topic`, then fallback without if column missing
+  /** Load from DB */
   let items = [];
-  let meta = {
-    used_columns: 'id,prompt,choices,correct_idx,is_active,lang,topic?',
-    pool_before_dedupe: 0,
-    pool_unique: 0,
-    topics_found: [],
-    fallback_reason: null,
-  };
-
-  async function fetchWith(selectCols) {
-    // tolerate is_active imported as bool/string/int
-    const q = supabase
-      .from('trivia_questions')
-      .select(selectCols)
-      .ilike('lang', lang)
-      .in('is_active', [true, 'true', 'TRUE', 1])
-      .limit(5000);
-    const { data, error } = await q;
-    if (error) throw error;
-    return data || [];
-  }
-
+  let dbError = null;
   try {
-    // try including topic
-    let data = await fetchWith('id,prompt,choices,correct_idx,is_active,lang,topic');
-    items = data.map(q => ({
-      id: q.id,
-      text: (q.prompt || '').trim(),
-      choices: Array.isArray(q.choices)
-        ? q.choices
-        : (typeof q.choices === 'string'
-            ? (safeJSON(q.choices) || [])
-            : []),
-      correct_idx: (typeof q.correct_idx === 'number' && q.correct_idx >= 0) ? q.correct_idx : 0,
-      topic: q.topic || 'general',
-    })).filter(validQuestion);
-    meta.used_columns = 'id,prompt,choices,correct_idx,is_active,lang,topic';
-  } catch (e1) {
-    try {
-      // fallback without topic column
-      let data = await fetchWith('id,prompt,choices,correct_idx,is_active,lang');
-      items = data.map(q => ({
+    const rows = await fetchAllActiveQuestions(lang);
+    items = rows.map((q) => {
+      // choices can be jsonb or a stringified JSON array
+      let choices = Array.isArray(q.choices) ? q.choices : [];
+      if (!choices.length && typeof q.choices === 'string') {
+        try { choices = JSON.parse(q.choices); } catch { choices = []; }
+      }
+      const text = (q.prompt || '').trim();
+      return {
         id: q.id,
-        text: (q.prompt || '').trim(),
-        choices: Array.isArray(q.choices)
-          ? q.choices
-          : (typeof q.choices === 'string'
-              ? (safeJSON(q.choices) || [])
-              : []),
+        text,
+        choices,
         correct_idx: (typeof q.correct_idx === 'number' && q.correct_idx >= 0) ? q.correct_idx : 0,
-        topic: 'general',
-      })).filter(validQuestion);
-      meta.used_columns = 'id,prompt,choices,correct_idx,is_active,lang';
-      meta.fallback_reason = 'topic column not present; all treated as "general"';
-    } catch (e2) {
-      meta.fallback_reason = `Supabase error: ${e2?.message || 'unknown'}`;
-    }
+        topic: (q.topic && String(q.topic).trim()) || inferTopicFromText(text),
+      };
+    }).filter(validQuestion);
+  } catch (e) {
+    dbError = e?.message || String(e);
   }
 
-  // De-duplicate by normalized text (handles accidental double-imports)
-  meta.pool_before_dedupe = items.length;
+  /** Fallback to small local pool if DB empty */
+  const haveDbPool = items.length > 0;
+  const pool = haveDbPool ? items : (FALLBACK[lang] || FALLBACK.hu);
+
+  /** De-duplicate by normalized text */
   const seen = new Set();
   const unique = [];
-  for (const q of items) {
-    const key = q.text.trim().toLowerCase();
+  for (const q of pool) {
+    const key = q.text.trim().toLowerCase().replace(/\s+/g, ' ');
     if (seen.has(key)) continue;
     seen.add(key);
     unique.push(q);
   }
-  items = unique;
-  meta.pool_unique = items.length;
-  meta.topics_found = [...new Set(items.map(q => (q.topic || 'general').toString().toLowerCase()))];
 
-  const haveDbPool = items.length > 0;
-  const pool = haveDbPool ? items : (FALLBACK[lang] || FALLBACK.hu);
-
-  // ----- PICK: prefer stratified by topic; if no topics, normal seeded sample -----
-  let chosen;
-  const anyTopic = haveDbPool && items.some(q => q.topic && q.topic !== 'general');
-  if (anyTopic) {
-    chosen = stratifiedDeterministicPick(pool, TARGET_N, seed);
-  } else {
-    chosen = seededSample(pool, TARGET_N, seed);
-  }
+  /** Deterministic mixed-topic pick (or plain seeded sample if topics not useful) */
+  const anyTopic = unique.some(q => q.topic && q.topic !== 'general');
+  const chosen = anyTopic
+    ? stratifiedDeterministicPick(unique, TARGET_N, seed)
+    : seededSample(unique, TARGET_N, seed);
 
   return res.status(200).json({
     questions: chosen,
+    size: chosen.length,
     fallback: !haveDbPool,
     seed,
     key: seedKey,
-    size: chosen.length,
-    meta,
+    meta: {
+      env_url: !!SUPABASE_URL,
+      env_key: !!SUPABASE_KEY,
+      db_error: dbError || null,
+      pool_unique: unique.length,
+      topics: [...new Set(unique.map(q => q.topic))],
+    },
   });
 }
 
-// -------- helpers --------
-function safeJSON(s) {
-  try { return JSON.parse(s); } catch { return null; }
-}
+/** ---------- Validate a question ---------- */
 function validQuestion(q) {
   return (
-    q.text &&
+    q && q.text &&
     Array.isArray(q.choices) &&
     q.choices.length >= 3 &&
+    Number.isInteger(q.correct_idx) &&
     q.correct_idx >= 0 &&
     q.correct_idx < q.choices.length
   );
