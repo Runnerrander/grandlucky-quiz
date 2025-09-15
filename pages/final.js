@@ -54,6 +54,14 @@ export default function Final() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(false);
 
+  // Display helper: format milliseconds as mm:ss (e.g., 1:07)
+  const elapsedPretty = useMemo(() => {
+    const total = Math.max(0, msNum);
+    const m = Math.floor(total / 60000);
+    const s = Math.floor((total % 60000) / 1000);
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }, [msNum]);
+
   // Auto-save to Supabase via POST -> /api/saveResult
   useEffect(() => {
     if (!username || !ms) return;
@@ -65,7 +73,7 @@ export default function Final() {
         setSaveError(false);
         const body = {
           username,
-          ms: msNum,
+          ms: msNum, // keep storing raw milliseconds
           correct,
           round_id: typeof round_id === "string" ? round_id : "",
         };
@@ -93,7 +101,7 @@ export default function Final() {
     const lines = [
       `${T.labels.username} ${username}`,
       `${T.labels.correct} ${correct} / 5`,
-      `${T.labels.elapsed} ${msNum} ms`,
+      `${T.labels.elapsed} ${elapsedPretty} (${msNum} ms)`,
     ];
     const blob = new Blob([lines.join("\n")], {
       type: "text/plain;charset=utf-8",
@@ -131,7 +139,15 @@ export default function Final() {
         <div className="rows">
           <Row label={T.labels.username} value={username || "—"} />
           <Row label={T.labels.correct} value={`${correct} / 5`} />
-          <Row label={T.labels.elapsed} value={`${msNum} ms`} />
+          <Row
+            label={T.labels.elapsed}
+            value={
+              <>
+                <div className="time-main">{elapsedPretty}</div>
+                <div className="time-sub">{msNum.toLocaleString()} ms</div>
+              </>
+            }
+          />
           {/* No "Forduló" row */}
         </div>
 
@@ -207,6 +223,17 @@ export default function Final() {
         }
         .value {
           font-weight: 700;
+        }
+        /* New: elapsed time styles */
+        .time-main {
+          font-weight: 800;
+          font-size: 20px;
+          line-height: 1.1;
+        }
+        .time-sub {
+          margin-top: 2px;
+          font-size: 13px;
+          opacity: 0.9;
         }
         .actions {
           display: flex;
@@ -287,26 +314,20 @@ function Row({ label, value }) {
 <style jsx global>{`
   /* Mobile-only tweaks for the FINAL page */
   @media (max-width: 520px) {
-    /* Make the main heading scale nicely on phones */
     .final-page h1,
     h1 {
       font-size: clamp(1.4rem, 5.2vw + 0.6rem, 2rem);
       line-height: 1.2;
       margin-bottom: 12px;
     }
-
-    /* If your content sits in a centered wrapper, give it breathing room */
     .final-page,
     .results,
     .container,
     .content,
-    body .__next > div { /* safe catch-alls for common wrappers */
+    body .__next > div {
       padding-left: 16px !important;
       padding-right: 16px !important;
     }
-
-    /* Stack ALL buttons on the page vertically and full width.
-       (Only applies on this page because the style is scoped here.) */
     .final-page button,
     button {
       width: 100%;
@@ -316,16 +337,12 @@ function Row({ label, value }) {
       font-size: 1rem;
       justify-content: center;
     }
-
-    /* Make small text more compact so it doesn’t wrap awkwardly */
     .final-page p,
     .final-page li,
     .final-page span {
       font-size: 0.98rem;
       line-height: 1.35;
     }
-
-    /* If you’re still using a translucent panel, keep it readable on bright BGs */
     .final-page .panel,
     .panel {
       background: rgba(0, 0, 0, 0.45);
