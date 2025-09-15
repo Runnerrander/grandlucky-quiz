@@ -177,10 +177,10 @@ export default function TriviaPage() {
     try {
       const qs = new URLSearchParams({
         lang,
-        limit: '50',
+        limit: '12',               // ⬅️ best: tight balanced set from API
         username,
         round_id: round.id,
-        ts: String(Date.now()), // cache-bust to avoid stale fetches
+        ts: String(Date.now()),    // cache-bust to avoid stale fetches
       });
       const r = await fetch(`/api/get-questions?${qs}`, { cache: 'no-store' });
       if (!r.ok) throw new Error('get-questions missing');
@@ -193,16 +193,7 @@ export default function TriviaPage() {
         return;
       }
 
-      // 🔒 De-duplicate by id to avoid any accidental repeats from the API
-      const seen = new Set();
-      const uniq = got.filter((q) => {
-        const key = q?.id ?? `${q?.text}|${(q?.choices||[]).join('|')}`;
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-
-      setQuestions(uniq);
+      setQuestions(got);
       setQIdx(0);
       setCorrectCount(0);
       setFeedback(null);
@@ -221,8 +212,7 @@ export default function TriviaPage() {
 
   const curr = questions[qIdx];
 
-  // ✅ One attempt per question; after answering, REMOVE it to avoid wrap/repeat.
-  // End quiz when 5 correct OR we run out of questions.
+  // One attempt per question, then advance. End at 5 correct.
   const choose = (idx) => {
     if (!curr || locked) return;
     setLocked(true);
@@ -235,23 +225,13 @@ export default function TriviaPage() {
     setTimeout(() => {
       setFeedback(null);
 
-      // Remove the current question so we never see it again
-      const nextQuestions = questions.filter((_, i) => i !== qIdx);
-
       if (nextCorrect >= 5) {
         setCorrectCount(nextCorrect);
         return finishQuiz(nextCorrect);
       }
 
-      if (nextQuestions.length === 0) {
-        // No more questions available — finish with whatever we have
-        setCorrectCount(nextCorrect);
-        return finishQuiz(nextCorrect);
-      }
-
-      setQuestions(nextQuestions);
       setCorrectCount(nextCorrect);
-      setQIdx(0); // move to the next remaining question (no wrap-around)
+      setQIdx((q) => (q + 1) % Math.max(questions.length, 1));
       setLocked(false);
     }, 350);
   };
