@@ -1,12 +1,14 @@
 // pages/api/get-questions.js
 import { createClient } from '@supabase/supabase-js';
 
+// --- Supabase client (no session persistence) ---
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  { auth: { persistSession: false } }
 );
 
-// ---------- deterministic helpers ----------
+// ---------- deterministic RNG helpers ----------
 function hashStringToInt(str) {
   let h = 2166136261 >>> 0; // FNV-1a
   for (let i = 0; i < str.length; i++) {
@@ -24,105 +26,161 @@ function mulberry32(a) {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
 }
-// sample k items without replacement using seeded partial Fisher–Yates
-function seededSample(arr, k, seedInt) {
-  const rng = mulberry32(seedInt);
-  const idx = Array.from({ length: arr.length }, (_, i) => i);
-  const take = Math.min(k, idx.length);
-  for (let i = 0; i < take; i++) {
-    const j = i + Math.floor(rng() * (idx.length - i));
-    [idx[i], idx[j]] = [idx[j], idx[i]];
+// Fisher–Yates with seeded RNG
+function seededShuffle(arr, seedInt) {
+  const a = arr.slice();
+  const r = mulberry32(seedInt);
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(r() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return idx.slice(0, take).map(i => arr[i]);
+  return a;
+}
+function seededSample(arr, k, seedInt) {
+  if (k >= arr.length) return seededShuffle(arr, seedInt);
+  const sh = seededShuffle(arr, seedInt);
+  return sh.slice(0, k);
 }
 
-// ---------- tiny local fallback (dev-only) ----------
+// ---------- small local fallback pool (multi-topic) ----------
 const FALLBACK = {
   hu: [
-    { id: 'f1', text: 'Melyik város az USA fővárosa?', choices: ['Washington, D.C.', 'New York', 'Los Angeles'], correct_idx: 0 },
-    { id: 'f2', text: 'Hány napból áll egy hét?', choices: ['5', '7', '10'], correct_idx: 1 },
-    { id: 'f3', text: 'Melyik ország fővárosa Budapest?', choices: ['Románia', 'Magyarország', 'Szlovákia'], correct_idx: 1 },
-    { id: 'f4', text: 'Melyik a legnagyobb óceán?', choices: ['Csendes-óceán', 'Atlanti-óceán', 'Indiai-óceán'], correct_idx: 0 },
-    { id: 'f5', text: 'Mennyi 2 + 2?', choices: ['3', '4', '5'], correct_idx: 1 },
+    { id: 'f_math_1',  text: 'Hány napból áll egy hét?', choices: ['5', '7', '10'], correct_idx: 1, topic: 'math' },
+    { id: 'f_hist_1',  text: 'Ki volt az Egyesült Államok elnöke?', choices: ['George W. Bush', 'Henry Ford', 'Oprah Winfrey'], correct_idx: 0, topic: 'history' },
+    { id: 'f_geo_1',   text: 'Melyik város az USA fővárosa?', choices: ['Washington, D.C.', 'New York', 'Los Angeles'], correct_idx: 0, topic: 'geography' },
+    { id: 'f_geo_2',   text: 'Melyik a legnagyobb óceán?', choices: ['Csendes-óceán', 'Atlanti-óceán', 'Indiai-óceán'], correct_idx: 0, topic: 'geography' },
+    { id: 'f_sport_1', text: 'Melyik a NBA-csapat?', choices: ['Borussia Dortmund', 'Dallas Mavericks', 'AC Milan'], correct_idx: 1, topic: 'sports' },
+    { id: 'f_cult_1',  text: 'Ki nyert Oscar-díjat a legjobb rendező kategóriában?', choices: ['Ang Lee', 'Kobe Bryant', 'Novak Djokovic'], correct_idx: 0, topic: 'culture' },
   ],
   en: [
-    { id: 'e1', text: 'What is the capital of the USA?', choices: ['Washington, D.C.', 'New York', 'Los Angeles'], correct_idx: 0 },
-    { id: 'e2', text: 'How many days are in a week?', choices: ['5', '7', '10'], correct_idx: 1 },
-    { id: 'e3', text: 'Which country has Budapest as its capital?', choices: ['Romania', 'Hungary', 'Slovakia'], correct_idx: 1 },
-    { id: 'e4', text: 'Which is the largest ocean?', choices: ['Pacific', 'Atlantic', 'Indian'], correct_idx: 0 },
-    { id: 'e5', text: 'What is 2 + 2?', choices: ['3', '4', '5'], correct_idx: 1 },
+    { id: 'e_math_1',  text: 'How many days are in a week?', choices: ['5', '7', '10'], correct_idx: 1, topic: 'math' },
+    { id: 'e_hist_1',  text: 'Who was a President of the USA?', choices: ['George W. Bush', 'Henry Ford', 'Oprah Winfrey'], correct_idx: 0, topic: 'history' },
+    { id: 'e_geo_1',   text: 'What is the capital of the USA?', choices: ['Washington, D.C.', 'New York', 'Los Angeles'], correct_idx: 0, topic: 'geography' },
+    { id: 'e_geo_2',   text: 'Which is the largest ocean?', choices: ['Pacific', 'Atlantic', 'Indian'], correct_idx: 0, topic: 'geography' },
+    { id: 'e_sport_1', text: 'Which is an NBA team?', choices: ['Borussia Dortmund', 'Dallas Mavericks', 'AC Milan'], correct_idx: 1, topic: 'sports' },
+    { id: 'e_cult_1',  text: 'Who won the Academy Award for Best Director?', choices: ['Ang Lee', 'Kobe Bryant', 'Novak Djokovic'], correct_idx: 0, topic: 'culture' },
   ],
 };
+
+// ---------- sampler with light topic-mix (tolerant) ----------
+function pickWithTopicMix(pool, takeN, seedInt) {
+  // De-dupe by normalized prompt to avoid near-identical repeats
+  const seen = new Set();
+  const cleaned = [];
+  for (const q of pool) {
+    const key = (q.text || '').trim().toLowerCase();
+    if (!key) continue;
+    if (seen.has(key)) continue;
+    if (!Array.isArray(q.choices) || q.choices.length < 3) continue;
+    cleaned.push(q);
+    seen.add(key);
+  }
+  if (cleaned.length === 0) return [];
+
+  // Build topic buckets (fallback to 'general')
+  const buckets = new Map();
+  for (const q of cleaned) {
+    const t = (q.topic || q.category || 'general').toString().toLowerCase();
+    if (!buckets.has(t)) buckets.set(t, []);
+    buckets.get(t).push(q);
+  }
+
+  const rng = mulberry32(seedInt);
+  const topics = Array.from(buckets.keys());
+  // Shuffle topics deterministically
+  const topicOrder = seededShuffle(topics, seedInt);
+
+  const chosen = [];
+  // Try to pull at most 1 from the first few topics to ensure variety (up to 4)
+  for (const t of topicOrder.slice(0, 4)) {
+    const bucket = buckets.get(t) || [];
+    if (bucket.length === 0) continue;
+    const pick = bucket[Math.floor(rng() * bucket.length)];
+    chosen.push(pick);
+  }
+
+  // Fill the rest from the whole pool (deterministic order)
+  const remaining = takeN - chosen.length;
+  if (remaining > 0) {
+    const poolShuffled = seededShuffle(cleaned, seedInt ^ 0x9E3779B1);
+    // filter out already taken by id
+    const takenIds = new Set(chosen.map(q => q.id));
+    for (const q of poolShuffled) {
+      if (takenIds.has(q.id)) continue;
+      chosen.push(q);
+      if (chosen.length >= takeN) break;
+    }
+  }
+
+  return chosen.slice(0, takeN);
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-
-  // never cache – we want fresh rotation per request
+  // Always disable caching for this endpoint
   res.setHeader('Cache-Control', 'no-store');
 
   const lang = String(req.query.lang || 'hu').toLowerCase();
-  const username = String(req.query.username || req.query.u || '').trim();
-  const round_id = String(req.query.round_id || '').trim();
-  const limit = Math.max(1, Math.min(50, parseInt(String(req.query.limit || '6'), 10)));
+  const limitParam = Math.max(1, Math.min(50, parseInt(req.query.limit, 10) || 6));
+  const TAKE_N = limitParam >= 6 ? 6 : limitParam; // we serve 6 (game uses 5 to win)
 
-  // stable per-user seed
-  const key = `${username || 'anon'}|${round_id || 'R'}|${lang}`;
-  const seed = hashStringToInt(key);
+  // username / round_id for deterministic but user-unique sets
+  const username = String(req.query.username || req.query.u || '').trim() || 'anon';
+  const round_id = String(req.query.round_id || 'local').trim();
 
+  const seedKey = `${username}|${round_id}|${lang}|v4`;
+  const seed = hashStringToInt(seedKey);
+
+  // ---- try database first ----
+  let pool = [];
   let db_ok = false;
   let db_error = null;
-  let items = [];
 
   try {
-    // ✅ SIMPLE, BROAD QUERY — pull everything active for this language
     const { data, error } = await supabase
       .from('trivia_questions')
-      .select('id, prompt, choices, correct_idx, is_active, lang')
+      .select('id, prompt, text, choices, correct_idx, is_active, lang, topic, category')
+      .ilike('lang', lang)           // case-insensitive language
       .eq('is_active', true)
-      .ilike('lang', lang)
       .limit(5000);
 
     if (error) throw error;
 
-    // map/validate
-    items = (data || [])
+    db_ok = true;
+
+    pool = (data || [])
       .map(q => ({
         id: q.id,
-        text: q.prompt || '',
-        choices: Array.isArray(q.choices) ? q.choices : [],
+        text: q.prompt || q.text || '',
+        choices: q.choices || [],
         correct_idx: typeof q.correct_idx === 'number' ? q.correct_idx : 0,
+        topic: q.topic || q.category || 'general',
       }))
-      .filter(q => q.text && q.choices.length >= 3);
-
-    // de-dupe identical prompts to avoid repeats
-    const seen = new Set();
-    items = items.filter(q => {
-      const k = q.text.trim().toLowerCase();
-      if (seen.has(k)) return false;
-      seen.add(k);
-      return true;
-    });
-
-    db_ok = true;
+      .filter(q => q.text && Array.isArray(q.choices) && q.choices.length >= 3);
   } catch (e) {
+    db_ok = false;
     db_error = e?.message || String(e);
   }
 
-  const pool = db_ok && items.length > 0 ? items : (FALLBACK[lang] || FALLBACK.hu);
-  const chosen = seededSample(pool, limit, seed);
+  // Fallback if DB empty/broken
+  if (!db_ok || pool.length === 0) {
+    pool = (FALLBACK[lang] || FALLBACK.hu).slice();
+  }
+
+  // Final deterministic pick with light topic mix
+  const chosen = pickWithTopicMix(pool, TAKE_N, seed);
 
   return res.status(200).json({
-    version: 'v3.5-simple-pool',
+    version: 'v4.0-topic-mix-deterministic',
     questions: chosen,
-    fallback: !(db_ok && items.length > 0),
-    seed,
-    key,
     size: chosen.length,
+    key: seedKey,
+    seed,
     meta: {
       db_ok,
-      db_error,
+      db_error: db_error || null,
       pool_size: pool.length,
       used_lang: lang,
     },
