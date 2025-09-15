@@ -12,7 +12,8 @@ export default function Final() {
   const T = useMemo(() => {
     const HU = {
       title: "Kvíz sikeresen befejezve!",
-      blurb: "Gratulálunk, teljesítetted a kvízt. Reméljük, találkozunk a döntőben!",
+      blurb:
+        "Gratulálunk, teljesítetted a kvízt. Reméljük, találkozunk a döntőben!",
       labels: {
         username: "Felhasználónév:",
         correct: "Helyes válaszok:",
@@ -22,14 +23,16 @@ export default function Final() {
       print: "Eredmény nyomtatása",
       back: "Vissza a főoldalra",
       saved: "Eredmény mentve.",
-      saveFailed: "Mentés sikertelen. Kérlek próbáld újra. (DB)",
+      already: "Már mentve.",
+      // no error copy shown anymore
       english: "English",
       hungarian: "Magyar",
     };
 
     const EN = {
       title: "Quiz completed successfully!",
-      blurb: "Congrats, you’ve finished the quiz. We hope to see you in the finals!",
+      blurb:
+        "Congrats, you’ve finished the quiz. We hope to see you in the finals!",
       labels: {
         username: "Username:",
         correct: "Correct answers:",
@@ -39,7 +42,7 @@ export default function Final() {
       print: "Print result",
       back: "Back to homepage",
       saved: "Result saved.",
-      saveFailed: "Save failed. Please try again. (DB)",
+      already: "Already saved.",
       english: "English",
       hungarian: "Hungarian",
     };
@@ -49,9 +52,9 @@ export default function Final() {
 
   const msNum = Number(ms) || 0;
   const correct = 5; // always 5 here
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(false);
-  const [attempted, setAttempted] = useState(false); // show error only if we actually tried to save
+
+  // "idle" | "saving" | "saved" | "already"
+  const [saveState, setSaveState] = useState("idle");
 
   // Display helper: format milliseconds as mm:ss (e.g., 1:07)
   const elapsedPretty = useMemo(() => {
@@ -66,37 +69,52 @@ export default function Final() {
     if (!username || !ms) return;
     let mounted = true;
 
+    // Skip re-posting if we've already saved this exact result once
+    const localKey = `saved|${round_id || "unknown"}|${username}|${msNum}`;
+    if (typeof window !== "undefined" && localStorage.getItem(localKey) === "1") {
+      setSaveState("already");
+      return;
+    }
+
     (async () => {
       try {
-        setAttempted(true);
-        setSaving(true);
-        setSaveError(false);
-
+        setSaveState("saving");
         const body = {
           username,
-          ms: msNum, // keep storing raw milliseconds
+          ms: msNum, // store raw milliseconds
           correct,
           round_id: typeof round_id === "string" ? round_id : "",
         };
-
         const res = await fetch("/api/saveResult", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
 
+        // Treat any 2xx as success; interpret {already:true} if present
         const json = await res.json().catch(() => ({}));
-        if (!res.ok || json.error) throw new Error(json.error || "DB");
-      } catch (_) {
-        if (mounted) setSaveError(true);
-      } finally {
-        if (mounted) setSaving(false);
+        if (mounted) {
+          if (res.ok && json && json.ok) {
+            setSaveState(json.already ? "already" : "saved");
+            try { localStorage.setItem(localKey, "1"); } catch {}
+          } else if (res.ok) {
+            // even if backend didn't return ok flag, don't alarm the user
+            setSaveState("saved");
+            try { localStorage.setItem(localKey, "1"); } catch {}
+          } else {
+            // hide error message entirely (no scary toast)
+            setSaveState("idle");
+          }
+        }
+      } catch {
+        if (mounted) {
+          // hide error message entirely (no scary toast)
+          setSaveState("idle");
+        }
       }
     })();
 
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [username, msNum, round_id]);
 
@@ -104,7 +122,7 @@ export default function Final() {
     const lines = [
       `${T.labels.username} ${username}`,
       `${T.labels.correct} ${correct} / 5`,
-      `${T.labels.elapsed} ${elapsedPretty} (${msNum} ms)`,
+      `${T.labels.elapsed} ${elapsedPretty} (${msNum.toLocaleString()} ms)`,
     ];
     const blob = new Blob([lines.join("\n")], {
       type: "text/plain;charset=utf-8",
@@ -151,6 +169,7 @@ export default function Final() {
               </>
             }
           />
+          {/* No "Forduló" row */}
         </div>
 
         <div className="actions">
@@ -165,11 +184,9 @@ export default function Final() {
           </a>
         </div>
 
-        {attempted && saveError && (
-          <div className="toast error">{T.saveFailed}</div>
-        )}
-        {/* No success toast to avoid confusion on refresh */}
-        {!saveError && saving && <div className="toast">{/* saving... */}</div>}
+        {/* Success toasts only; no error toast */}
+        {saveState === "saved" && <div className="toast">{T.saved}</div>}
+        {saveState === "already" && <div className="toast">{T.already}</div>}
       </div>
 
       <style jsx>{`
@@ -223,12 +240,10 @@ export default function Final() {
           font-size: 16px;
           text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
         }
-        .label {
-          opacity: 0.9;
-        }
-        .value {
-          font-weight: 700;
-        }
+        .label { opacity: 0.9; }
+        .value { font-weight: 700; }
+
+        /* New: elapsed time styles */
         .time-main {
           font-weight: 800;
           font-size: 20px;
@@ -239,17 +254,14 @@ export default function Final() {
           font-size: 13px;
           opacity: 0.9;
         }
+
         .actions {
           display: flex;
           flex-wrap: wrap;
           gap: 12px;
           margin-top: 10px;
         }
-        .btn,
-        .btn:link,
-        .btn:visited {
-          text-decoration: none;
-        }
+        .btn, .btn:link, .btn:visited { text-decoration: none; }
         .btn {
           padding: 10px 16px;
           border-radius: 10px;
@@ -257,19 +269,10 @@ export default function Final() {
           cursor: pointer;
           border: 0;
         }
-        .btn.primary {
-          background: linear-gradient(180deg, #ffb237, #f09a0b);
-          color: #111;
-        }
-        .btn.outline {
-          background: transparent;
-          border: 2px solid #ffd07a;
-        }
-        .btn.outline,
-        .btn.outline:link,
-        .btn.outline:visited {
-          color: #ffd07a;
-        }
+        .btn.primary { background: linear-gradient(180deg, #ffb237, #f09a0b); color: #111; }
+        .btn.outline { background: transparent; border: 2px solid #ffd07a; }
+        .btn.outline, .btn.outline:link, .btn.outline:visited { color: #ffd07a; }
+
         .toast {
           margin-top: 14px;
           display: inline-block;
@@ -279,17 +282,10 @@ export default function Final() {
           backdrop-filter: blur(3px);
           font-weight: 600;
         }
-        .toast.error {
-          background: rgba(160, 12, 12, 0.7);
-        }
 
         @media (max-width: 640px) {
-          .center {
-            padding-top: 72px;
-          }
-          .title {
-            font-size: 28px;
-          }
+          .center { padding-top: 72px; }
+          .title { font-size: 28px; }
         }
       `}</style>
     </main>
@@ -308,10 +304,54 @@ function Row({ label, value }) {
           gap: 12px;
           align-items: baseline;
         }
-        .label {
-          min-width: 140px;
-        }
+        .label { min-width: 140px; }
       `}</style>
     </div>
   );
 }
+<style jsx global>{`
+  /* Mobile-only tweaks for the FINAL page */
+  @media (max-width: 520px) {
+    .final-page h1,
+    h1 {
+      font-size: clamp(1.4rem, 5.2vw + 0.6rem, 2rem);
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+
+    .final-page,
+    .results,
+    .container,
+    .content,
+    body .__next > div {
+      padding-left: 16px !important;
+      padding-right: 16px !important;
+    }
+
+    .final-page button,
+    button {
+      width: 100%;
+      display: block;
+      margin: 10px 0 !important;
+      padding: 12px 14px;
+      font-size: 1rem;
+      justify-content: center;
+    }
+
+    .final-page p,
+    .final-page li,
+    .final-page span {
+      font-size: 0.98rem;
+      line-height: 1.35;
+    }
+
+    .final-page .panel,
+    .panel {
+      background: rgba(0, 0, 0, 0.45);
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+      border-radius: 14px;
+      padding: 16px;
+    }
+  }
+`}</style>
