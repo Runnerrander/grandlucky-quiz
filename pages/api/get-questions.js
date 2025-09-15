@@ -2,9 +2,9 @@
 import { createClient } from '@supabase/supabase-js';
 
 /** ---------- Version tag to verify live code ---------- */
-const VERSION = 'v3.1-topic-mix-unique-50';
+const VERSION = 'v3.2-topic-tolerant-unique-50';
 
-/** ---------- Supabase client (Vercel + local) ---------- */
+/** ---------- Supabase client ---------- */
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
   process.env.SUPABASE_URL;
@@ -52,7 +52,7 @@ function seededSample(arr, k, seedInt) {
   return idx.slice(0, take).map(i => arr[i]);
 }
 
-/** ---------- Topic inference (used if `topic` column missing) ---------- */
+/** ---------- Topic inference (DB topic column not required) ---------- */
 function inferTopicFromText(txt) {
   const s = (txt || '').toLowerCase();
   if (/(president|elnök|washington|lincoln|jefferson|roosevelt|kennedy|nixon|reagan|obama|biden|trump)/i.test(s)) return 'history';
@@ -108,7 +108,7 @@ function stratifiedDeterministicPick(items, k, seedInt) {
   return result.slice(0, k);
 }
 
-/** ---------- Local tiny fallback (dev-only) ---------- */
+/** ---------- Tiny local fallback (dev-only) ---------- */
 const FALLBACK = {
   hu: [
     { id: 'f1',  text: 'Melyik város az USA fővárosa?', choices: ['Washington, D.C.', 'New York', 'Los Angeles'], correct_idx: 0, topic: 'history' },
@@ -126,14 +126,15 @@ const FALLBACK = {
   ],
 };
 
-/** ---------- Fetch all pages from Supabase (1k/page), then filter is_active in JS ---------- */
+/** ---------- Fetch all pages from Supabase (no `topic` column required) ---------- */
 async function fetchAllActiveQuestions(lang) {
   const pageSize = 1000;
-  const cols = 'id,prompt,choices,correct_idx,lang,is_active,topic';
+  // intentionally NOT requesting "topic" or "text" to avoid missing-column errors
+  const cols = 'id,prompt,choices,correct_idx,lang,is_active';
   const rows = [];
   let from = 0;
 
-  while (from < 12000) { // safety cap ~12k
+  while (from < 12000) {
     const to = from + pageSize - 1;
     const { data, error } = await supabase
       .from('trivia_questions')
@@ -146,11 +147,11 @@ async function fetchAllActiveQuestions(lang) {
     if (!data || data.length === 0) break;
 
     rows.push(...data);
-    if (data.length < pageSize) break; // last page
+    if (data.length < pageSize) break;
     from += pageSize;
   }
 
-  // Accept truthy-ish is_active; allow null = active (older rows)
+  // Accept truthy-ish is_active; allow null/undefined = active
   return rows.filter((q) => {
     const v = q.is_active;
     if (v === null || typeof v === 'undefined') return true;
@@ -200,7 +201,7 @@ export default async function handler(req, res) {
   /** Load from DB */
   let items = [];
   let dbError = null;
-  let envOk = Boolean(SUPABASE_URL && SUPABASE_KEY);
+  const envOk = Boolean(SUPABASE_URL && SUPABASE_KEY);
 
   try {
     const rows = await fetchAllActiveQuestions(lang);
@@ -210,14 +211,13 @@ export default async function handler(req, res) {
       if (!choices.length && typeof q.choices === 'string') {
         try { choices = JSON.parse(q.choices); } catch { choices = []; }
       }
-      const text = (q.prompt || '').trim() || (q.text || '').trim();
-      const topicRaw = q.topic && String(q.topic).trim();
+      const text = (q.prompt || '').trim(); // we selected prompt only
       return {
         id: q.id,
         text,
         choices,
         correct_idx: (Number.isInteger(q.correct_idx) && q.correct_idx >= 0) ? q.correct_idx : 0,
-        topic: topicRaw || inferTopicFromText(text),
+        topic: inferTopicFromText(text),
       };
     }).filter(validQuestion);
   } catch (e) {
@@ -239,7 +239,7 @@ export default async function handler(req, res) {
     unique.push(q);
   }
 
-  /** Deterministic mixed-topic pick (or plain seeded sample if topics not useful) */
+  /** Deterministic mixed-topic pick */
   const anyTopic = unique.some(q => q.topic && q.topic !== 'general');
   const chosen = anyTopic
     ? stratifiedDeterministicPick(unique, TARGET_N, seed)
