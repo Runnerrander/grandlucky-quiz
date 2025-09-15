@@ -1,10 +1,10 @@
 // pages/final.js
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 export default function Final() {
   const router = useRouter();
-  const { username = "", ms = "", round_id = "", lang: rawLang } = router.query;
+  const { username = "", ms = "", lang: rawLang } = router.query;
 
   // default HU, allow ?lang=en to switch
   const lang = rawLang === "en" ? "en" : "hu";
@@ -22,10 +22,9 @@ export default function Final() {
       save: "Eredmény mentése",
       print: "Eredmény nyomtatása",
       back: "Vissza a főoldalra",
-      saved: "Eredmény mentve.",
-      saveFailed: "Mentés sikertelen. Kérlek próbáld újra. (DB)",
       english: "English",
       hungarian: "Magyar",
+      ms_unit: "ms",
     };
 
     const EN = {
@@ -40,10 +39,9 @@ export default function Final() {
       save: "Save result",
       print: "Print result",
       back: "Back to homepage",
-      saved: "Result saved.",
-      saveFailed: "Save failed. Please try again. (DB)",
       english: "English",
       hungarian: "Hungarian",
+      ms_unit: "ms",
     };
 
     return lang === "en" ? EN : HU;
@@ -51,57 +49,17 @@ export default function Final() {
 
   const msNum = Number(ms) || 0;
   const correct = 5; // always 5 here
-  const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState(false);
 
-  // Display helper: format milliseconds as mm:ss (e.g., 1:07)
-  const elapsedPretty = useMemo(() => {
-    const total = Math.max(0, msNum);
-    const m = Math.floor(total / 60000);
-    const s = Math.floor((total % 60000) / 1000);
-    return `${m}:${String(s).padStart(2, "0")}`;
-  }, [msNum]);
-
-  // Auto-save to Supabase via POST -> /api/saveResult
-  useEffect(() => {
-    if (!username || !ms) return;
-    let mounted = true;
-
-    (async () => {
-      try {
-        setSaving(true);
-        setSaveError(false);
-        const body = {
-          username,
-          ms: msNum, // keep storing raw milliseconds
-          correct,
-          round_id: typeof round_id === "string" ? round_id : "",
-        };
-        const res = await fetch("/api/saveResult", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok || json.error) throw new Error(json.error || "DB");
-      } catch (_) {
-        if (mounted) setSaveError(true);
-      } finally {
-        if (mounted) setSaving(false);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [username, msNum, round_id]);
+  // Format mm:ss and show ms underneath
+  const mm = Math.floor(msNum / 60000);
+  const ss = Math.floor((msNum % 60000) / 1000);
+  const mmss = `${mm}:${String(ss).padStart(2, "0")}`;
 
   const onSaveToDevice = () => {
     const lines = [
       `${T.labels.username} ${username}`,
       `${T.labels.correct} ${correct} / 5`,
-      `${T.labels.elapsed} ${elapsedPretty} (${msNum} ms)`,
+      `${T.labels.elapsed} ${mmss} (${msNum} ${T.ms_unit})`,
     ];
     const blob = new Blob([lines.join("\n")], {
       type: "text/plain;charset=utf-8",
@@ -143,12 +101,13 @@ export default function Final() {
             label={T.labels.elapsed}
             value={
               <>
-                <div className="time-main">{elapsedPretty}</div>
-                <div className="time-sub">{msNum.toLocaleString()} ms</div>
+                <span>{mmss}</span>
+                <div className="subms">
+                  ({msNum} {T.ms_unit})
+                </div>
               </>
             }
           />
-          {/* No "Forduló" row */}
         </div>
 
         <div className="actions">
@@ -162,9 +121,6 @@ export default function Final() {
             {T.back}
           </a>
         </div>
-
-        {saveError && <div className="toast error">{T.saveFailed}</div>}
-        {!saveError && saving && <div className="toast">{/* saving... */}</div>}
       </div>
 
       <style jsx>{`
@@ -220,20 +176,16 @@ export default function Final() {
         }
         .label {
           opacity: 0.9;
+          min-width: 140px;
         }
         .value {
           font-weight: 700;
         }
-        /* New: elapsed time styles */
-        .time-main {
-          font-weight: 800;
-          font-size: 20px;
-          line-height: 1.1;
-        }
-        .time-sub {
+        .subms {
+          font-weight: 600;
+          opacity: 0.85;
+          font-size: 0.9em;
           margin-top: 2px;
-          font-size: 13px;
-          opacity: 0.9;
         }
         .actions {
           display: flex;
@@ -265,18 +217,6 @@ export default function Final() {
         .btn.outline:link,
         .btn.outline:visited {
           color: #ffd07a;
-        }
-        .toast {
-          margin-top: 14px;
-          display: inline-block;
-          padding: 8px 12px;
-          border-radius: 8px;
-          background: rgba(0, 0, 0, 0.5);
-          backdrop-filter: blur(3px);
-          font-weight: 600;
-        }
-        .toast.error {
-          background: rgba(160, 12, 12, 0.7);
         }
 
         @media (max-width: 640px) {
@@ -311,45 +251,14 @@ function Row({ label, value }) {
     </div>
   );
 }
-<style jsx global>{`
-  /* Mobile-only tweaks for the FINAL page */
-  @media (max-width: 520px) {
-    .final-page h1,
-    h1 {
-      font-size: clamp(1.4rem, 5.2vw + 0.6rem, 2rem);
-      line-height: 1.2;
-      margin-bottom: 12px;
-    }
-    .final-page,
-    .results,
-    .container,
-    .content,
-    body .__next > div {
-      padding-left: 16px !important;
-      padding-right: 16px !important;
-    }
-    .final-page button,
-    button {
-      width: 100%;
-      display: block;
-      margin: 10px 0 !important;
-      padding: 12px 14px;
-      font-size: 1rem;
-      justify-content: center;
-    }
-    .final-page p,
-    .final-page li,
-    .final-page span {
-      font-size: 0.98rem;
-      line-height: 1.35;
-    }
-    .final-page .panel,
-    .panel {
-      background: rgba(0, 0, 0, 0.45);
-      -webkit-backdrop-filter: blur(2px);
-      backdrop-filter: blur(2px);
-      border-radius: 14px;
-      padding: 16px;
-    }
-  }
-`}</style>
+
+// Force no-cache so refresh never shows stale bundles
+export async function getServerSideProps({ res }) {
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate"
+  );
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  return { props: {} };
+}
