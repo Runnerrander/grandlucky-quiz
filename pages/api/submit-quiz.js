@@ -1,106 +1,259 @@
-// pages/api/submit-quiz.js
-// Idempotently store quiz completion into public.quiz_results.
-// On duplicate (same round_id + username), return ok:true and the existing row id.
+// pages/final.js
+import { useRouter } from "next/router";
+import { useMemo } from "react";
 
-const { createClient } = require("@supabase/supabase-js");
+export default function Final() {
+  const router = useRouter();
+  const {
+    username = "",
+    ms = "",
+    round_id = "",
+    lang: rawLang,
+  } = router.query;
 
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-const serviceKey =
-  process.env.SUPABASE_SERVICE_ROLE ||
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY; // last resort (should be service role on server)
+  // default HU, allow ?lang=en to switch
+  const lang = rawLang === "en" ? "en" : "hu";
 
-const supabase = supabaseUrl && serviceKey
-  ? createClient(supabaseUrl, serviceKey)
-  : null;
+  const T = useMemo(() => {
+    const HU = {
+      title: "Kvíz sikeresen befejezve!",
+      blurb:
+        "Gratulálunk, teljesítetted a kvízt. Reméljük, találkozunk a döntőben!",
+      labels: {
+        username: "Felhasználónév:",
+        correct: "Helyes válaszok:",
+        elapsed: "Eltelt idő:",
+      },
+      save: "Eredmény mentése",
+      print: "Eredmény nyomtatása",
+      back: "Vissza a főoldalra",
+      english: "English",
+      hungarian: "Magyar",
+      ms_unit: "ms",
+    };
 
-function asInt(v) {
-  if (v === null || v === undefined || v === "") return NaN;
-  const n = Number(v);
-  return Number.isFinite(n) ? Math.trunc(n) : NaN;
+    const EN = {
+      title: "Quiz completed successfully!",
+      blurb:
+        "Congrats, you’ve finished the quiz. We hope to see you in the finals!",
+      labels: {
+        username: "Username:",
+        correct: "Correct answers:",
+        elapsed: "Elapsed time:",
+      },
+      save: "Save result",
+      print: "Print result",
+      back: "Back to homepage",
+      english: "English",
+      hungarian: "Hungarian",
+      ms_unit: "ms",
+    };
+
+    return lang === "en" ? EN : HU;
+  }, [lang]);
+
+  const msNum = Number(ms) || 0;
+  const correct = 5; // always 5 here
+
+  // Format mm:ss and show ms underneath
+  const mm = Math.floor(msNum / 60000);
+  const ss = Math.floor((msNum % 60000) / 1000);
+  const mmss = `${mm}:${String(ss).padStart(2, "0")}`;
+
+  const onSaveToDevice = () => {
+    const lines = [
+      `${T.labels.username} ${username}`,
+      `${T.labels.correct} ${correct} / 5`,
+      `${T.labels.elapsed} ${mmss} (${msNum} ${T.ms_unit})`,
+    ];
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/plain;charset=utf-8",
+    });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `result-${username || "player"}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(a.href);
+  };
+
+  const onPrint = () => window.print();
+
+  const toggleLang = () => {
+    const next = lang === "hu" ? "en" : "hu";
+    router.replace(
+      { pathname: router.pathname, query: { ...router.query, lang: next } },
+      undefined,
+      { shallow: true }
+    );
+  };
+
+  return (
+    <main className="page">
+      <button className="lang" onClick={toggleLang}>
+        {lang === "hu" ? T.english : T.hungarian}
+      </button>
+
+      <div className="center">
+        <h1 className="title">{T.title}</h1>
+        <p className="blurb">{T.blurb}</p>
+
+        <div className="rows">
+          <Row label={T.labels.username} value={username || "—"} />
+          <Row label={T.labels.correct} value={`${correct} / 5`} />
+          <Row
+            label={T.labels.elapsed}
+            value={
+              <>
+                <span>{mmss}</span>
+                <div className="subms">
+                  ({msNum} {T.ms_unit})
+                </div>
+              </>
+            }
+          />
+        </div>
+
+        <div className="actions">
+          <button className="btn primary" onClick={onSaveToDevice}>
+            {T.save}
+          </button>
+          <button className="btn primary" onClick={onPrint}>
+            {T.print}
+          </button>
+          <a className="btn outline" href="/">
+            {T.back}
+          </a>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .page {
+          position: relative;
+          min-height: 100vh;
+          background: url("/bg-final.jpg") center/cover no-repeat fixed;
+          color: #fff;
+        }
+        .lang {
+          position: fixed;
+          right: 16px;
+          top: 16px;
+          padding: 8px 14px;
+          border-radius: 999px;
+          border: none;
+          background: rgba(0, 0, 0, 0.55);
+          color: #fff;
+          cursor: pointer;
+          font-weight: 600;
+          backdrop-filter: blur(4px);
+        }
+        .center {
+          max-width: 860px;
+          margin: 0 auto;
+          padding: 96px 16px 40px;
+          text-align: left;
+        }
+        .title {
+          font-size: 40px;
+          line-height: 1.15;
+          margin: 0 0 10px;
+          text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
+        }
+        .blurb {
+          margin: 0 0 24px;
+          font-size: 16px;
+          opacity: 0.95;
+          text-shadow: 0 1px 12px rgba(0, 0, 0, 0.5);
+        }
+        .rows {
+          display: grid;
+          gap: 10px;
+          margin-bottom: 22px;
+        }
+        .row {
+          display: grid;
+          grid-template-columns: auto 1fr;
+          gap: 12px;
+          align-items: baseline;
+          font-size: 16px;
+          text-shadow: 0 1px 10px rgba(0, 0, 0, 0.55);
+        }
+        .label {
+          opacity: 0.9;
+          min-width: 140px;
+        }
+        .value {
+          font-weight: 700;
+        }
+        .subms {
+          font-weight: 600;
+          opacity: 0.85;
+          font-size: 0.9em;
+          margin-top: 2px;
+        }
+        .actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin-top: 10px;
+        }
+        .btn,
+        .btn:link,
+        .btn:visited {
+          text-decoration: none;
+        }
+        .btn {
+          padding: 10px 16px;
+          border-radius: 10px;
+          font-weight: 700;
+          cursor: pointer;
+          border: 0;
+        }
+        .btn.primary {
+          background: linear-gradient(180deg, #ffb237, #f09a0b);
+          color: #111;
+        }
+        .btn.outline {
+          background: transparent;
+          border: 2px solid #ffd07a;
+        }
+        .btn.outline,
+        .btn.outline:link,
+        .btn.outline:visited {
+          color: #ffd07a;
+        }
+
+        /* Mobile tweaks */
+        @media (max-width: 640px) {
+          .center {
+            padding-top: 72px;
+          }
+          .title {
+            font-size: 28px;
+          }
+        }
+      `}</style>
+    </main>
+  );
 }
 
-module.exports = async function handler(req, res) {
-  try {
-    if (req.method !== "GET" && req.method !== "POST") {
-      return res.status(405).json({ ok: false, error: "Method not allowed" });
-    }
-    if (!supabase) {
-      return res
-        .status(500)
-        .json({ ok: false, error: "Server misconfigured: Supabase env missing" });
-    }
-
-    // Accept GET query or JSON POST body
-    const src =
-      req.method === "POST" &&
-      req.headers["content-type"]?.includes("application/json")
-        ? (req.body || {})
-        : (req.query || {});
-
-    const username = String(src.username || src.user || "").trim();
-    const round_id = String(src.round_id || src.roundId || "unknown").trim();
-
-    // Support multiple key names (various callers)
-    const ms = asInt(src.ms ?? src.time_ms ?? src.total_time_ms);
-    const correct = asInt(src.correct ?? src.correct_count ?? src.cc);
-
-    if (!username) {
-      return res.status(400).json({ ok: false, error: "Missing username" });
-    }
-    if (!round_id) {
-      return res.status(400).json({ ok: false, error: "Missing round_id" });
-    }
-    if (!Number.isFinite(ms) || ms < 0) {
-      return res.status(400).json({ ok: false, error: "Invalid ms" });
-    }
-    if (!Number.isFinite(correct) || correct < 0) {
-      return res.status(400).json({ ok: false, error: "Invalid correct" });
-    }
-
-    // Try insert
-    const { data, error } = await supabase
-      .from("quiz_results")
-      .insert([{ username, time_ms: ms, correct, round_id }])
-      .select("id")
-      .maybeSingle();
-
-    // Success on first write
-    if (!error) {
-      return res.status(200).json({
-        ok: true,
-        id: data?.id ?? null,
-        message: "saved",
-      });
-    }
-
-    // If duplicate (unique violation), treat as success and return existing row id
-    const isUniqueViolation =
-      error?.code === "23505" ||
-      /duplicate key|unique constraint/i.test(error?.message || "");
-
-    if (isUniqueViolation) {
-      const { data: existing } = await supabase
-        .from("quiz_results")
-        .select("id, time_ms, correct")
-        .eq("round_id", round_id)
-        .eq("username", username)
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-
-      return res.status(200).json({
-        ok: true,
-        alreadySaved: true,
-        id: existing?.id ?? null,
-        message: "already saved",
-      });
-    }
-
-    // Other errors
-    return res.status(500).json({ ok: false, error: error.message || "save failed" });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err?.message || "Unknown server error" });
-  }
-};
+function Row({ label, value }) {
+  return (
+    <div className="row">
+      <div className="label">{label}</div>
+      <div className="value">{value}</div>
+      <style jsx>{`
+        .row {
+          display: grid;
+          grid-template-columns: auto 1fr;
+          gap: 12px;
+          align-items: baseline;
+        }
+        .label {
+          min-width: 140px;
+        }
+      `}</style>
+    </div>
+  );
+}
