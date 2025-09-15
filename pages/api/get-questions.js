@@ -59,46 +59,16 @@ const FALLBACK = [
   { id: 'f_math_2', text: 'How many days are in a week?', choices: ['5', '7', '10'], correct_idx: 1, topic: 'math', lang: 'en' },
 ];
 
-// ---- HU/EN topic detection helpers -----------------------------------------
-function stripAccents(s) {
-  try { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
-  catch { return s; }
-}
-
-// Normalize topic from `topic` or `category` or last-resort guess (HU + EN)
+// Normalize topic from `topic` or `category` or last-resort guess
 function normalizeTopic(q) {
   const raw = (q.topic || q.category || '').toString().toLowerCase().trim();
   if (raw) return raw;
-
-  const text = (q.text || q.prompt || q.question || '').toString();
-  const t = text.toLowerCase();
-  const tn = stripAccents(t);
-
-  // math
-  if (/(?:\bhow many\b|\bhany\b|\bmennyi\b|[0-9]\s*\+\s*[0-9]|[0-9]\s*-\s*[0-9]|osszeg|kulonbseg|szorzat|hany nap|hany ev)/i.test(tn)) {
-    return 'math';
-  }
-
-  // sports (F1/Formula1/olimpia/boxing/foci/NBA/FIFA etc.)
-  if (/(?:\bnba\b|\bnfl\b|\bmlb\b|\buefa\b|\bfifa\b|vilagbajnoksag|olimpia|olimpiai|tenisz|grand\s*slam|formula[\s-]*1|\bf1\b|boxing|\bokolvivas\b|\bfoci\b|labdarugas|bajnoksag|liga|kupa|csapat|grand prix)/i.test(tn)) {
-    return 'sports';
-  }
-
-  // geography (capitals, oceans, rivers, cities, countries, continents, counties)
-  if (/(fovaros|varos|orszag|megye|ocean|tenger|folyo|\bto\b|hegy|continent|island|capital|city|country|river|lake|sea|mountain|county|province)/i.test(tn)) {
-    return 'geography';
-  }
-
-  // history (president, emperor, king, wars, revolutions, dynasties, Nobel)
-  if (/(elnok|csaszar|kiraly|nobel|haboru|forradalom|uralkodo|dinasztia|president|emperor|king|war|revolution|dynasty)/i.test(tn)) {
-    return 'history';
-  }
-
-  // culture / arts / media
-  if (/(oscar|academy award|film|movie|director|rendezo|szinesz|regeny|iro|kolto|festo|muvesz|zene|zeneszerzo|opera|szinhaz|konyv|irodalom|muzeum|painter|composer|novel|author|poet|museum|book|literature|art|music)/i.test(tn)) {
-    return 'culture';
-  }
-
+  const t = (q.text || '').toLowerCase();
+  if (/oscar|film|novel|composer|painter|museum/.test(t)) return 'culture';
+  if (/nba|world cup|grand prix|f1|olympic|boxing|tennis/.test(t)) return 'sports';
+  if (/capital|river|ocean|continent|city|country/.test(t)) return 'geography';
+  if (/president|king|emperor|war|revolution|nobel/.test(t)) return 'history';
+  if (/plus|minus|sum|how many|hány/.test(t)) return 'math';
   return 'general';
 }
 
@@ -121,10 +91,9 @@ export default async function handler(req, res) {
     } catch {}
   }
 
-  const version = 'v5.3-hu-balanced-topic-rr';
+  const version = 'v5.4.hu-balanced+pad-rr';
   const seedKey = `${username || 'anon'}|${round_id || 'local'}|${lang}|${version}`;
   const seed = hashStringToInt(seedKey);
-  const rng = mulberry32(seed);
 
   // ---------- fetch from DB (tolerant) ----------
   let pool = [];
@@ -132,11 +101,10 @@ export default async function handler(req, res) {
   let db_error = null;
 
   try {
-    // Do NOT reference non-existent columns; just grab * and map safely
     const { data, error } = await supabase
       .from('trivia_questions')
       .select('*')
-      .ilike('lang', lang)       // case-insensitive match on hu/en
+      .ilike('lang', lang)       // case-insensitive 'hu'/'en'
       .eq('is_active', true)
       .limit(5000);
 
@@ -157,18 +125,37 @@ export default async function handler(req, res) {
     db_error = String(e?.message || e) || 'db failed';
   }
 
-  // If DB empty/failed, use a language-filtered fallback
+  // If DB empty/failed, use language-filtered fallback
+  const fbPoolLang = FALLBACK.filter(q => (q.lang || 'hu').toLowerCase() === lang);
   if (!pool.length) {
-    pool = FALLBACK.filter(q => (q.lang || 'hu').toLowerCase() === lang);
+    pool = fbPoolLang.slice();
   }
 
-  // ---------- topic-mix, deterministic per user/round/lang ----------
-  // Bucket by topic
+  // ---------- topic-mix, then pad missing topics with fallback ----------
+  // Bucket by topic from DB
   const byTopic = new Map();
   for (const q of pool) {
     const t = normalizeTopic(q);
     if (!byTopic.has(t)) byTopic.set(t, []);
     byTopic.get(t).push(q);
+  }
+
+  const targetDistinctTopics = 4; // ensure at least this many topics appear
+  const topicPriority = ['geography', 'history', 'sports', 'culture', 'math', 'general'];
+
+  // If we have too few distinct topics, add fallback topics that are missing
+  if (byTopic.size < targetDistinctTopics) {
+    const present = new Set(byTopic.keys());
+    for (const tp of topicPriority) {
+      if (present.size >= targetDistinctTopics) break;
+      if (present.has(tp)) continue;
+      const adds = fbPoolLang.filter(q => normalizeTopic(q) === tp);
+      if (adds.length) {
+        byTopic.set(tp, adds.slice());     // add a bucket purely from fallback
+        for (const q of adds) pool.push(q); // also let fill-phase see them
+        present.add(tp);
+      }
+    }
   }
 
   // Seeded shuffle each bucket and rotate starting cursor by a seed-based offset
@@ -177,7 +164,8 @@ export default async function handler(req, res) {
     const tSeed = hashStringToInt(`${seedKey}|bucket|${t}`);
     const shuffled = seededShuffle(arr, tSeed);
     byTopic.set(t, shuffled);
-    cursors[t] = Math.floor(mulberry32(tSeed)() * shuffled.length); // start deeper in bucket
+    const startOffset = Math.floor(mulberry32(tSeed)() * Math.max(1, shuffled.length));
+    cursors[t] = startOffset; // start deeper in bucket so users differ more
   }
 
   // Seeded topic order
@@ -194,13 +182,12 @@ export default async function handler(req, res) {
     const bucket = byTopic.get(topicName) || [];
     if (!bucket.length) return null;
 
-    // advance cursor until unused id
     let idx = cursors[topicName] ?? 0;
     for (let tries = 0; tries < bucket.length; tries++) {
       const q = bucket[idx % bucket.length];
       idx++;
       if (!usedIds.has(q.id)) {
-        cursors[topicName] = idx; // persist cursor
+        cursors[topicName] = idx;
         usedIds.add(q.id);
         perTopicUsed[topicName] = (perTopicUsed[topicName] || 0) + 1;
         return q;
@@ -210,14 +197,11 @@ export default async function handler(req, res) {
     return null;
   }
 
-  // primary pass: strict round-robin, avoid repeating the immediate previous topic
   while (chosen.length < limit && stepsWithoutPick < limit * 10) {
     let madePick = false;
 
     for (let i = 0; i < topics.length && chosen.length < limit; i++) {
       const t = topics[(i + chosen.length) % topics.length];
-
-      // try avoid immediate repeat topic if we have >1 topics overall
       if (lastTopic && t === lastTopic && topics.length > 1) continue;
 
       const q = takeFromTopic(t);
@@ -241,7 +225,7 @@ export default async function handler(req, res) {
       if (chosen.length >= limit) break;
       if (usedIds.has(q.id)) continue;
       const t = normalizeTopic(q);
-      if (lastTopic && t === lastTopic && topics.length > 1) continue; // try avoid immediate repeat
+      if (lastTopic && t === lastTopic && topics.length > 1) continue;
       chosen.push(q);
       usedIds.add(q.id);
       lastTopic = t;
@@ -276,7 +260,7 @@ export default async function handler(req, res) {
       db_error,
       pool_size: pool.length,
       used_lang: lang,
-      topics: topics,
+      topics,
       topic_counts
     }
   });
