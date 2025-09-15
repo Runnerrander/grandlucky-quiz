@@ -76,7 +76,7 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const lang = String(req.query.lang || 'hu').toLowerCase();
-  const limit = Math.max(1, Math.min(50, parseInt(req.query.limit, 10) || 6));
+  const limit = Math.max(5, Math.min(50, parseInt(req.query.limit, 10) || 12));
 
   // username / round_id for seeding
   let username = String(req.query.username || req.query.u || '').trim();
@@ -91,7 +91,7 @@ export default async function handler(req, res) {
     } catch {}
   }
 
-  const version = 'v5.4.hu-balanced+pad-rr';
+  const version = 'v5.5.topic-gap2-rr';
   const seedKey = `${username || 'anon'}|${round_id || 'local'}|${lang}|${version}`;
   const seed = hashStringToInt(seedKey);
 
@@ -103,8 +103,8 @@ export default async function handler(req, res) {
   try {
     const { data, error } = await supabase
       .from('trivia_questions')
-      .select('*')
-      .ilike('lang', lang)       // case-insensitive 'hu'/'en'
+      .select('*')            // tolerant to schema differences
+      .ilike('lang', lang)    // case-insensitive match on hu/en
       .eq('is_active', true)
       .limit(5000);
 
@@ -125,14 +125,15 @@ export default async function handler(req, res) {
     db_error = String(e?.message || e) || 'db failed';
   }
 
-  // If DB empty/failed, use language-filtered fallback
-  const fbPoolLang = FALLBACK.filter(q => (q.lang || 'hu').toLowerCase() === lang);
+  // If DB empty/failed, use a language-filtered fallback
   if (!pool.length) {
-    pool = fbPoolLang.slice();
+    pool = FALLBACK.filter(q => (q.lang || 'hu').toLowerCase() === lang);
   }
 
-  // ---------- topic-mix, then pad missing topics with fallback ----------
-  // Bucket by topic from DB
+  // ---------- topic-mix with GAP=2 spacing, deterministic per user ----------
+  const GAP = 2; // do not repeat same topic within last 2 picks (A _ _ A minimum)
+
+  // Bucket by topic
   const byTopic = new Map();
   for (const q of pool) {
     const t = normalizeTopic(q);
@@ -140,43 +141,32 @@ export default async function handler(req, res) {
     byTopic.get(t).push(q);
   }
 
-  const targetDistinctTopics = 4; // ensure at least this many topics appear
-  const topicPriority = ['geography', 'history', 'sports', 'culture', 'math', 'general'];
-
-  // If we have too few distinct topics, add fallback topics that are missing
-  if (byTopic.size < targetDistinctTopics) {
-    const present = new Set(byTopic.keys());
-    for (const tp of topicPriority) {
-      if (present.size >= targetDistinctTopics) break;
-      if (present.has(tp)) continue;
-      const adds = fbPoolLang.filter(q => normalizeTopic(q) === tp);
-      if (adds.length) {
-        byTopic.set(tp, adds.slice());     // add a bucket purely from fallback
-        for (const q of adds) pool.push(q); // also let fill-phase see them
-        present.add(tp);
-      }
-    }
-  }
-
-  // Seeded shuffle each bucket and rotate starting cursor by a seed-based offset
+  // Seeded shuffle each bucket and rotate the starting cursor
   const cursors = {};
   for (const [t, arr] of byTopic) {
     const tSeed = hashStringToInt(`${seedKey}|bucket|${t}`);
     const shuffled = seededShuffle(arr, tSeed);
     byTopic.set(t, shuffled);
-    const startOffset = Math.floor(mulberry32(tSeed)() * Math.max(1, shuffled.length));
-    cursors[t] = startOffset; // start deeper in bucket so users differ more
+    // start deeper inside the bucket to reduce first-pick collisions
+    const rng = mulberry32(tSeed);
+    cursors[t] = Math.floor(rng() * shuffled.length);
   }
 
   // Seeded topic order
   const topics = seededShuffle(Array.from(byTopic.keys()), hashStringToInt(`${seedKey}|topics`));
 
-  // round-robin with “no immediate repeat” guarantee
-  const chosen = [];
+  // helpers
   const usedIds = new Set();
   const perTopicUsed = {};
-  let lastTopic = null;
-  let stepsWithoutPick = 0;
+  const lastTopics = [];
+  let activeGap = GAP; // may relax if pool is too small
+  let ring = 0;
+
+  function canUseTopic(topicName, gap = activeGap) {
+    if (gap <= 0) return true;
+    const recent = lastTopics.slice(-gap);
+    return !recent.includes(topicName);
+  }
 
   function takeFromTopic(topicName) {
     const bucket = byTopic.get(topicName) || [];
@@ -193,57 +183,73 @@ export default async function handler(req, res) {
         return q;
       }
     }
-    cursors[topicName] = idx;
+    cursors[topicName] = idx; // exhausted, keep cursor advanced
     return null;
   }
 
-  while (chosen.length < limit && stepsWithoutPick < limit * 10) {
-    let madePick = false;
+  const chosen = [];
+  let safety = 0;
+  let stuckCycles = 0;
+
+  // primary pass: round-robin over topics, honoring GAP=2 if possible
+  while (chosen.length < limit && safety++ < limit * 50) {
+    let picked = false;
 
     for (let i = 0; i < topics.length && chosen.length < limit; i++) {
-      const t = topics[(i + chosen.length) % topics.length];
-      if (lastTopic && t === lastTopic && topics.length > 1) continue;
+      const t = topics[(ring + i) % topics.length];
+      if (!canUseTopic(t)) continue;
 
       const q = takeFromTopic(t);
       if (q) {
         chosen.push(q);
-        lastTopic = t;
-        madePick = true;
+        lastTopics.push(t);
+        while (lastTopics.length > GAP) lastTopics.shift();
+        ring = (ring + i + 1) % topics.length;
+        picked = true;
       }
     }
 
-    if (!madePick) {
-      stepsWithoutPick++;
-      break;
+    if (!picked) {
+      // If we couldn't pick anything due to the gap constraint,
+      // relax gradually (from 2 -> 1) so small topic pools still work.
+      stuckCycles++;
+      if (stuckCycles > topics.length * 2 && activeGap > 1) {
+        activeGap--;
+        stuckCycles = 0;
+      } else {
+        // also rotate to change starting point next loop
+        ring = (ring + 1) % Math.max(1, topics.length);
+      }
     }
   }
 
-  // fill phase: still avoid immediate topic repeats if possible
+  // Fill phase: keep avoiding immediate repeats if possible
   if (chosen.length < limit) {
     const flat = seededShuffle(pool, hashStringToInt(`${seedKey}|fill`));
     for (const q of flat) {
       if (chosen.length >= limit) break;
       if (usedIds.has(q.id)) continue;
       const t = normalizeTopic(q);
-      if (lastTopic && t === lastTopic && topics.length > 1) continue;
+      if (!canUseTopic(t, Math.min(activeGap, 1)) && topics.length > 1) continue; // avoid immediate repeat if we can
       chosen.push(q);
       usedIds.add(q.id);
-      lastTopic = t;
       perTopicUsed[t] = (perTopicUsed[t] || 0) + 1;
+      lastTopics.push(t);
+      while (lastTopics.length > GAP) lastTopics.shift();
     }
   }
 
-  // final trim
+  // final trim & shape
   const out = chosen.slice(0, limit).map(q => ({
     id: q.id,
     text: q.text,
     choices: q.choices.slice(0, 3),
-    correct_idx: q.correct_idx
+    correct_idx: q.correct_idx,
   }));
 
   // quick per-topic counts for debug
   const topic_counts = {};
-  for (const q of chosen.slice(0, limit)) {
+  for (const q of out) {
     const t = normalizeTopic(q);
     topic_counts[t] = (topic_counts[t] || 0) + 1;
   }
@@ -261,7 +267,9 @@ export default async function handler(req, res) {
       pool_size: pool.length,
       used_lang: lang,
       topics,
-      topic_counts
-    }
+      topic_counts,
+      gap_initial: GAP,
+      gap_final: activeGap,
+    },
   });
 }
