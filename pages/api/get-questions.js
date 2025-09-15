@@ -18,7 +18,7 @@ function hashStringToInt(str) {
 function mulberry32(a) {
   return function () {
     a |= 0;
-    a = (a + 0x6D2B79F5) | 0;
+    a = (a + 0x6d2b79f5) | 0;
     let t = Math.imul(a ^ (a >>> 15), 1 | a);
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
@@ -26,6 +26,7 @@ function mulberry32(a) {
 }
 // Deterministic sample without replacement using a partial Fisher–Yates
 function seededSample(arr, k, seedInt) {
+  if (!arr || arr.length === 0) return [];
   const rng = mulberry32(seedInt);
   const idx = Array.from({ length: arr.length }, (_, i) => i);
   const take = Math.min(k, idx.length);
@@ -34,6 +35,16 @@ function seededSample(arr, k, seedInt) {
     [idx[i], idx[j]] = [idx[j], idx[i]];
   }
   return idx.slice(0, take).map(i => arr[i]);
+}
+// Deterministic full shuffle of indices [0..n)
+function seededShuffleIndices(n, seedInt) {
+  const rng = mulberry32(seedInt);
+  const idx = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [idx[i], idx[j]] = [idx[j], idx[i]];
+  }
+  return idx;
 }
 
 // --------- fallback so you can play locally (HU pool expanded) ----------
@@ -47,7 +58,7 @@ const FALLBACK = {
     { id: 'f6',  text: 'Melyik kontinensen van Magyarország?', choices: ['Ázsia', 'Európa', 'Afrika'], correct_idx: 1 },
     { id: 'f7',  text: 'Melyik a Föld természetes kísérője?', choices: ['Mars', 'Hold', 'Vénusz'], correct_idx: 1 },
     { id: 'f8',  text: 'Melyik évszak követi a tavaszt?', choices: ['Ősz', 'Tél', 'Nyár'], correct_idx: 2 },
-    // +50 új HU kérdés (f9–f58) — same list as before
+    // + expanded HU pool (f9–f58)
     { id: 'f9',  text: 'Hány perc van egy órában?', choices: ['45', '60', '90'], correct_idx: 1 },
     { id: 'f10', text: 'A Naprendszer legnagyobb bolygója?', choices: ['Szaturnusz', 'Jupiter', 'Neptunusz'], correct_idx: 1 },
     { id: 'f11', text: 'Melyik országban található a Balaton?', choices: ['Ausztria', 'Magyarország', 'Szlovénia'], correct_idx: 1 },
@@ -113,7 +124,7 @@ export default async function handler(req, res) {
 
   const lang = String(req.query.lang || 'hu').toLowerCase();
 
-  // Try to get username/round_id from query. If missing, try Referer (?u=…).
+  // Username / round id (from query or Referer)
   let username = String(req.query.username || '');
   let round_id = String(req.query.round_id || '');
   if (!username && req.headers?.referer) {
@@ -134,36 +145,81 @@ export default async function handler(req, res) {
       .select('id, question, prompt, text, choices, correct_idx, is_active, lang')
       .ilike('lang', lang)   // case-insensitive
       .eq('is_active', true)
-      .limit(2000);
+      .limit(5000); // allow a big pool if you add thousands
 
     if (error) throw error;
 
     items = (data || [])
-      .map(q => ({
-        id: q.id,
-        text: q.question || q.prompt || q.text || '',
-        choices: q.choices || [],
-        correct_idx: typeof q.correct_idx === 'number' ? q.correct_idx : 0,
-      }))
+      .map(q => {
+        const choices = Array.isArray(q.choices) ? q.choices : [];
+        const safeCorrect =
+          typeof q.correct_idx === 'number' && q.correct_idx >= 0 && q.correct_idx < choices.length
+            ? q.correct_idx
+            : 0;
+        return {
+          id: q.id,
+          text: q.question || q.prompt || q.text || '',
+          choices,
+          correct_idx: safeCorrect,
+        };
+      })
       .filter(q => q.text && q.choices.length >= 3);
   } catch {
     // ignore; fallback below
   }
 
   const pool = (items && items.length > 0) ? items : (FALLBACK[lang] || FALLBACK.hu);
+  const n = pool.length;
 
   // Per-user seed: username | round_id | lang (fallback safe)
   const key = `${username || 'anon'}|${round_id || 'local'}|${lang}`;
-  const seed = hashStringToInt(key);
+  const userSeed = hashStringToInt(key);
 
-  // Deterministic sample (no replacement)
-  const chosen = seededSample(pool, TARGET_N, seed);
+  // Round seed (for the global permutation), so shards change by round/lang, not by username
+  const roundKey = `${round_id || 'local'}|${lang}`;
+  const roundSeed = hashStringToInt(roundKey);
+
+  // ----- Sharded selection to reduce overlap across users -----
+  // Choose number of shards dynamically:
+  // - cap at 128
+  // - ensure each shard has ~>= TARGET_N items
+  const maxShards = 128;
+  const shards = Math.max(1, Math.min(maxShards, Math.floor(n / TARGET_N))) || 1;
+
+  // Map user to a shard
+  const shardIndex = shards > 1 ? (userSeed % shards) : 0;
+
+  // Create a round-stable permutation of the pool indices
+  const perm = seededShuffleIndices(n, roundSeed);
+
+  // Take all indices whose position in the permutation falls into this shard
+  // i.e., positions p where (p % shards) === shardIndex
+  const bucketIdx = [];
+  for (let p = shardIndex; p < perm.length; p += shards) {
+    bucketIdx.push(perm[p]);
+  }
+  let bucket = bucketIdx.map(i => pool[i]);
+
+  // Safety: if bucket smaller than TARGET_N (tiny pools), fall back to entire pool
+  if (bucket.length < TARGET_N) {
+    bucket = pool.slice();
+  }
+
+  // Deterministic sample from the user's bucket
+  const chosen = seededSample(bucket, TARGET_N, userSeed);
 
   return res.status(200).json({
     questions: chosen,
     fallback: !(items && items.length > 0),
-    seed,
+    seed: userSeed,
     key,
     size: chosen.length,
+    // extra debug (non-breaking; frontend ignores):
+    meta: {
+      poolSize: n,
+      shards,
+      shardIndex,
+      bucketSize: bucket.length,
+    },
   });
 }
