@@ -35,18 +35,10 @@ module.exports = async function handler(req, res) {
     const correct  = asInt(src.correct);
     const round_id = String(src.round_id || "unknown").trim();
 
-    if (!username) {
-      return res.status(400).json({ ok: false, error: "Missing username" });
-    }
-    if (!Number.isFinite(ms) || ms < 0) {
-      return res.status(400).json({ ok: false, error: "Invalid ms" });
-    }
-    if (!Number.isFinite(correct) || correct < 0) {
-      return res.status(400).json({ ok: false, error: "Invalid correct" });
-    }
-    if (!round_id) {
-      return res.status(400).json({ ok: false, error: "Missing round_id" });
-    }
+    if (!username)  return res.status(400).json({ ok: false, error: "Missing username" });
+    if (!Number.isFinite(ms) || ms < 0) return res.status(400).json({ ok: false, error: "Invalid ms" });
+    if (!Number.isFinite(correct) || correct < 0) return res.status(400).json({ ok: false, error: "Invalid correct" });
+    if (!round_id)  return res.status(400).json({ ok: false, error: "Missing round_id" });
 
     const { data, error } = await supabase
       .from("quiz_results")
@@ -55,6 +47,10 @@ module.exports = async function handler(req, res) {
       .maybeSingle();
 
     if (error) {
+      // Treat unique-violation (duplicate result) as success
+      if (error.code === "23505" || /duplicate key value/i.test(error.message)) {
+        return res.status(200).json({ ok: true, alreadySaved: true, message: "already saved" });
+      }
       return res.status(500).json({ ok: false, error: error.message });
     }
 
