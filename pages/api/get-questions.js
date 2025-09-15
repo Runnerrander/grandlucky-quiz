@@ -59,17 +59,46 @@ const FALLBACK = [
   { id: 'f_math_2', text: 'How many days are in a week?', choices: ['5', '7', '10'], correct_idx: 1, topic: 'math', lang: 'en' },
 ];
 
-// Normalize topic from `topic` or `category` or last-resort guess
+// ---- HU/EN topic detection helpers -----------------------------------------
+function stripAccents(s) {
+  try { return s.normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+  catch { return s; }
+}
+
+// Normalize topic from `topic` or `category` or last-resort guess (HU + EN)
 function normalizeTopic(q) {
   const raw = (q.topic || q.category || '').toString().toLowerCase().trim();
   if (raw) return raw;
-  // crude guess if needed:
-  const t = (q.text || '').toLowerCase();
-  if (/oscar|film|novel|composer|painter|museum/.test(t)) return 'culture';
-  if (/nba|world cup|grand prix|f1|olympic|boxing|tennis/.test(t)) return 'sports';
-  if (/capital|river|ocean|continent|city|country/.test(t)) return 'geography';
-  if (/president|king|emperor|war|revolution|nobel/.test(t)) return 'history';
-  if (/plus|minus|sum|how many|hány/.test(t)) return 'math';
+
+  const text = (q.text || q.prompt || q.question || '').toString();
+  const t = text.toLowerCase();
+  const tn = stripAccents(t);
+
+  // math
+  if (/(?:\bhow many\b|\bhany\b|\bmennyi\b|[0-9]\s*\+\s*[0-9]|[0-9]\s*-\s*[0-9]|osszeg|kulonbseg|szorzat|hany nap|hany ev)/i.test(tn)) {
+    return 'math';
+  }
+
+  // sports (F1/Formula1/olimpia/boxing/foci/NBA/FIFA etc.)
+  if (/(?:\bnba\b|\bnfl\b|\bmlb\b|\buefa\b|\bfifa\b|vilagbajnoksag|olimpia|olimpiai|tenisz|grand\s*slam|formula[\s-]*1|\bf1\b|boxing|\bokolvivas\b|\bfoci\b|labdarugas|bajnoksag|liga|kupa|csapat|grand prix)/i.test(tn)) {
+    return 'sports';
+  }
+
+  // geography (capitals, oceans, rivers, cities, countries, continents, counties)
+  if (/(fovaros|varos|orszag|megye|ocean|tenger|folyo|\bto\b|hegy|continent|island|capital|city|country|river|lake|sea|mountain|county|province)/i.test(tn)) {
+    return 'geography';
+  }
+
+  // history (president, emperor, king, wars, revolutions, dynasties, Nobel)
+  if (/(elnok|csaszar|kiraly|nobel|haboru|forradalom|uralkodo|dinasztia|president|emperor|king|war|revolution|dynasty)/i.test(tn)) {
+    return 'history';
+  }
+
+  // culture / arts / media
+  if (/(oscar|academy award|film|movie|director|rendezo|szinesz|regeny|iro|kolto|festo|muvesz|zene|zeneszerzo|opera|szinhaz|konyv|irodalom|muzeum|painter|composer|novel|author|poet|museum|book|literature|art|music)/i.test(tn)) {
+    return 'culture';
+  }
+
   return 'general';
 }
 
@@ -92,7 +121,7 @@ export default async function handler(req, res) {
     } catch {}
   }
 
-  const version = 'v5.2-balanced-topic-rr';
+  const version = 'v5.3-hu-balanced-topic-rr';
   const seedKey = `${username || 'anon'}|${round_id || 'local'}|${lang}|${version}`;
   const seed = hashStringToInt(seedKey);
   const rng = mulberry32(seed);
