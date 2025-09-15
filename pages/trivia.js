@@ -65,19 +65,16 @@ export default function TriviaPage() {
 
     const q = router.query;
 
-    // Language from URL ?lang=
+    // Language
     const qLang = String(q.lang || '').toLowerCase();
     if (qLang === 'en' || qLang === 'hu') setLang(qLang);
 
     // Username
     const qUser = typeof q.u === 'string' ? q.u.trim() : '';
-    const stored =
-      typeof window !== 'undefined' ? localStorage.getItem('gl_username') : '';
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('gl_username') : '';
     const useUser = qUser || stored || '';
     if (qUser) {
-      try {
-        localStorage.setItem('gl_username', qUser);
-      } catch {}
+      try { localStorage.setItem('gl_username', qUser); } catch {}
     }
     setUsername(useUser);
 
@@ -91,17 +88,11 @@ export default function TriviaPage() {
           // Check if already played (if we have a username)
           if (useUser) {
             try {
-              const qs = new URLSearchParams({
-                username: useUser,
-                round_id: roundIdFromQuery,
-              });
+              const qs = new URLSearchParams({ username: useUser, round_id: roundIdFromQuery });
               const sResp = await fetch(`/api/submission-status?${qs}`);
               if (sResp.ok) {
                 const s = await sResp.json();
-                if (s?.hasPlayed) {
-                  setStatus('blocked');
-                  return;
-                }
+                if (s?.hasPlayed) { setStatus('blocked'); return; }
               }
             } catch {}
           }
@@ -110,25 +101,14 @@ export default function TriviaPage() {
         }
 
         // fallback: fetch active round from server (cache-busted + no-store)
-        const url = `/api/active-round?lang=${encodeURIComponent(
-          lang
-        )}&ts=${Date.now()}`;
-        const resp = await fetch(url, {
-          method: 'GET',
-          cache: 'no-store',
-          headers: { Accept: 'application/json' },
-        });
+        const url = `/api/active-round?lang=${encodeURIComponent(lang)}&ts=${Date.now()}`;
+        const resp = await fetch(url, { method: 'GET', cache: 'no-store', headers: { Accept: 'application/json' } });
         if (!resp.ok) throw new Error('active-round missing');
         const data = await resp.json();
 
         // Accept multiple shapes from the API
         const activeRoundId =
-          (data &&
-            (data.round_id ||
-              data.roundId ||
-              data.id ||
-              data?.round?.id)) ||
-          null;
+          (data && (data.round_id || data.roundId || data.id || data?.round?.id)) || null;
 
         if (!activeRoundId) {
           setStatus('no-round');
@@ -140,17 +120,11 @@ export default function TriviaPage() {
 
         if (useUser) {
           try {
-            const qs = new URLSearchParams({
-              username: useUser,
-              round_id: activeRoundId,
-            });
+            const qs = new URLSearchParams({ username: useUser, round_id: activeRoundId });
             const sResp = await fetch(`/api/submission-status?${qs}`);
             if (sResp.ok) {
               const s = await sResp.json();
-              if (s?.hasPlayed) {
-                setStatus('blocked');
-                return;
-              }
+              if (s?.hasPlayed) { setStatus('blocked'); return; }
             }
           } catch {}
         }
@@ -164,7 +138,6 @@ export default function TriviaPage() {
 
     // If no username, still let them see the page (with note)
     if (!useUser) {
-      // still attempt to resolve round so the Start button can be enabled after they set a user
       if (roundIdFromQuery) {
         setRound({ id: roundIdFromQuery });
         setStatus('ready');
@@ -177,26 +150,22 @@ export default function TriviaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.isReady]); // eslint-disable-line
 
-  // 🔁 NEW: when the user toggles HU/EN, clear any loaded questions and
-  // put the page back to "ready" (without touching "blocked" or "no-round").
-  // Also update the URL ?lang=... shallowly so share links reflect choice.
+  // ✅ NEW: on HU↔EN toggle, clear any loaded questions and return to "ready".
+  // Also reflect the choice in the URL (?lang=...) without a full reload.
   useEffect(() => {
     if (!router.isReady) return;
-    // reflect in URL (no reload)
+    // Update URL shallowly so share links keep the chosen language.
     const nextQuery = { ...router.query, lang };
-    router.replace(
-      { pathname: router.pathname, query: nextQuery },
-      undefined,
-      { shallow: true }
-    );
+    router.replace({ pathname: router.pathname, query: nextQuery }, undefined, { shallow: true });
 
+    // If we were mid-quiz or already loaded a set, reset to ready so next Start pulls the correct lang.
     if (status === 'playing' || status === 'ready') {
       setQuestions([]);
       setQIdx(0);
       setCorrectCount(0);
       setFeedback(null);
       setLocked(false);
-      if (round) setStatus('ready'); // remain ready so Start fetches the new lang
+      if (round) setStatus('ready');
     }
     // do not override 'blocked' or 'no-round'
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -209,13 +178,12 @@ export default function TriviaPage() {
     setStatus('loading');
 
     try {
-      // Pass username + round_id so server can seed shuffle
       const qs = new URLSearchParams({
         lang,
         limit: '50',
         username,
         round_id: round.id,
-        ts: String(Date.now()), // cache-bust
+        ts: String(Date.now()), // cache-bust to avoid stale fetches
       });
       const r = await fetch(`/api/get-questions?${qs}`, { cache: 'no-store' });
       if (!r.ok) throw new Error('get-questions missing');
@@ -284,17 +252,13 @@ export default function TriviaPage() {
           correct_count: cc,
           total_time_ms: elapsed,
         }),
-      })
-        .then((r) => r.json())
-        .catch(() => ({}));
+      }).then((r) => r.json()).catch(() => ({}));
     } catch {}
 
     Router.push(
-      `/final?cc=${encodeURIComponent(cc)}&ms=${encodeURIComponent(
-        elapsed
-      )}&round_id=${encodeURIComponent(round?.id || '')}&username=${encodeURIComponent(
-        username
-      )}&lang=${encodeURIComponent(lang)}`
+      `/final?cc=${encodeURIComponent(cc)}&ms=${encodeURIComponent(elapsed)}&round_id=${encodeURIComponent(
+        round?.id || ''
+      )}&username=${encodeURIComponent(username)}&lang=${encodeURIComponent(lang)}`
     );
   };
 
@@ -303,7 +267,20 @@ export default function TriviaPage() {
       <Head>
         <title>{t.title}</title>
         <meta name="robots" content="noindex" />
+        {/* Prevent mobile text auto-enlargement / font boosting */}
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
+
+      {/* ✅ Global reset to stop mobile right-shift/overflow */}
+      <style jsx global>{`
+        html {
+          box-sizing: border-box;
+          -webkit-text-size-adjust: 100%;
+          text-size-adjust: 100%;
+        }
+        *, *::before, *::after { box-sizing: inherit; }
+        body { margin: 0; overflow-x: hidden; }
+      `}</style>
 
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: '#111', color: '#fff' }}>
         {/* Top bar */}
@@ -313,8 +290,6 @@ export default function TriviaPage() {
             <button
               onClick={() => setLang((l) => (l === 'hu' ? 'en' : 'hu'))}
               style={{ background: '#faaf3b', color: '#111', border: 'none', borderRadius: 999, padding: '6px 12px', fontWeight: 700 }}
-              aria-label="Toggle language"
-              title="Toggle language"
             >
               {lang.toUpperCase()}
             </button>
@@ -332,11 +307,23 @@ export default function TriviaPage() {
             </div>
           )}
 
-          {/* Username display */}
+          {/* Username display (keep right, but prevent overflow) */}
           {username && (
-            <div style={{ marginBottom: 12, opacity: 0.9, textAlign: 'right' }}>
-              <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 1 }}>{t.your_user}</div>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>{username}</div>
+            <div style={{ marginTop: 8, marginBottom: 12, opacity: 0.9, textAlign: 'right' }}>
+              <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>{t.your_user}</div>
+              <div
+                style={{
+                  fontSize: 16,
+                  fontWeight: 700,
+                  maxWidth: '100%',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+                title={username}
+              >
+                {username}
+              </div>
             </div>
           )}
 
@@ -365,7 +352,6 @@ export default function TriviaPage() {
           {status === 'blocked' && (
             <div style={{ background: '#222', padding: 16, borderRadius: 12, lineHeight: 1.5 }}>
               <div style={{ marginBottom: 8, fontWeight: 700 }}>{t.played_block}</div>
-              {/* Bigger + whiter + moved down */}
               <div style={{ marginTop: 18, fontSize: 18, color: '#fff', lineHeight: 1.6 }}>{t.tie_rule}</div>
               <div style={{ marginTop: 12 }}>
                 <Link href="/" style={{ color: '#faaf3b', textDecoration: 'underline' }}>
@@ -382,7 +368,7 @@ export default function TriviaPage() {
                 style={{
                   background: '#000',
                   color: '#fff',
-                  border: '2px solid #fff',
+                  border: '2px solid '#fff',
                   borderRadius: 12,
                   padding: '14px 24px',
                   fontSize: 18,
@@ -392,8 +378,7 @@ export default function TriviaPage() {
               >
                 {t.start}
               </button>
-              {/* Bigger + whiter + moved down */}
-              <div style={{ marginTop: 24, fontSize: 18, color: '#fff', lineHeight: 1.6 }}>{t.tie_rule}</div>
+              <div style={{ marginTop: 24, fontSize: 18, color: '#fff', lineHeight: 1.6, textAlign: 'center' }}>{t.tie_rule}</div>
             </div>
           )}
 
@@ -418,6 +403,7 @@ export default function TriviaPage() {
                         fontWeight: 600,
                         cursor: locked ? 'not-allowed' : 'pointer',
                         opacity: locked ? 0.6 : 1,
+                        width: '100%',
                       }}
                     >
                       {c}
