@@ -368,7 +368,7 @@ export default function TriviaPage() {
                 style={{
                   background: '#000',
                   color: '#fff',
-                  border: '2px solid '#fff',
+                  border: '2px solid #fff',
                   borderRadius: 12,
                   padding: '14px 24px',
                   fontSize: 18,
