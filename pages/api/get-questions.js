@@ -1,7 +1,7 @@
 // pages/api/get-questions.js
 import { createClient } from '@supabase/supabase-js';
 
-/* ------------------------- helpers ------------------------- */
+/* ------------------------- helpers (fallback only) ------------------------- */
 function hashStringToInt(str) {
   let h = 2166136261 >>> 0; // FNV-1a
   for (let i = 0; i < str.length; i++) {
@@ -19,8 +19,8 @@ function normalizeTopic(q) {
   const t = (q.text || '').toLowerCase();
   if (/oscar|film|novel|composer|painter|museum/.test(t)) return 'culture';
   if (/nba|world cup|grand prix|f1|olympic|boxing|tennis/.test(t)) return 'sports';
-  if (/capital|river|ocean|continent|city|country/.test(t)) return 'geography';
-  if (/president|king|emperor|war|revolution|nobel/.test(t)) return 'history';
+  if (/capital|river|ocean|continent|city|country|főváros/.test(t)) return 'geography';
+  if (/president|king|emperor|war|revolution|nobel|elnök/.test(t)) return 'history';
   if (/plus|minus|sum|how many|hány/.test(t)) return 'math';
   return 'general';
 }
@@ -53,13 +53,14 @@ export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const lang = String(req.query.lang || 'hu').toLowerCase();
+  // support both ?limit and ?n
   const limit = Math.max(1, Math.min(50, parseInt(req.query.limit ?? req.query.n, 10) || 6));
 
-  // username / round for RPC and fallback seeding
+  // username / round for RPC (normal post-payment flow)
   let username = String(req.query.username || req.query.u || '').trim();
   let round_id = String(req.query.round_id || '').trim();
 
-  // Also try Referer for u/round_id (keeps old behavior)
+  // Also try Referer (keeps your previous behavior)
   if (!username && req.headers?.referer) {
     try {
       const url = new URL(req.headers.referer);
@@ -70,38 +71,16 @@ export default async function handler(req, res) {
     } catch {}
   }
 
-  // Autodetect active round if missing
-  try {
-    if (!round_id) {
-      const { data: rounds } = await supabase
-        .from('trivia_rounds')
-        .select('id')
-        .eq('is_active', true)
-        .order('start_at', { ascending: false })
-        .limit(1);
-      if (rounds && rounds.length) {
-        round_id = String(rounds[0].id);
-      }
-    }
-  } catch {}
-
-  // Create a safe guest username if still missing
-  if (!username) {
-    const ip = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim()
-      || req.socket?.remoteAddress?.toString() || '0.0.0.0';
-    username = `guest-${hashStringToInt(ip + Date.now())}`;
-  }
-
-  const version = 'v6.rpc-or-fallback-auto';
-  const seedKey = `${username}|${round_id || 'no-round'}|${lang}|${version}`;
+  const version = 'v6.rpc-when-available';
+  const seedKey = `${username || 'anon'}|${round_id || 'local'}|${lang}|${version}`;
   const seed = hashStringToInt(seedKey);
 
-  /* ---------- Prefer RPC if we have a round_id ---------- */
+  /* ---------- Prefer RPC when username & round_id are present ---------- */
   let rpc_used = false;
   let rpc_error = null;
 
-  if (round_id) {
-    try {
+  try {
+    if (username && round_id) {
       const { data, error } = await supabase.rpc('get_diverse_questions', {
         p_round_id: round_id,
         p_username: username,
@@ -112,6 +91,7 @@ export default async function handler(req, res) {
 
       if (Array.isArray(data) && data.length) {
         rpc_used = true;
+
         const out = data.slice(0, limit).map((q) => {
           const choices =
             Array.isArray(q.choices) ? q.choices :
@@ -134,12 +114,12 @@ export default async function handler(req, res) {
           meta: { rpc_used, rpc_error, used_lang: lang, pool_size: data.length, round_id, username },
         });
       }
-    } catch (e) {
-      rpc_error = String(e?.message || e);
     }
+  } catch (e) {
+    rpc_error = String(e?.message || e);
   }
 
-  /* ---------- Fallback path (original logic) ---------- */
+  /* ---------- Fallback (your original behavior) ---------- */
   let pool = [];
   let db_ok = false;
   let db_error = null;
