@@ -1,21 +1,65 @@
 // pages/api/get-questions.js
 import { createClient } from '@supabase/supabase-js';
 
+/* ------------------------- helpers ------------------------- */
+function hashStringToInt(str) {
+  let h = 2166136261 >>> 0; // FNV-1a
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function safeJsonParse(s, defVal) {
+  try { return JSON.parse(s); } catch { return defVal; }
+}
+function normalizeTopic(q) {
+  const raw = (q.topic || q.category || '').toString().toLowerCase().trim();
+  if (raw) return raw;
+  const t = (q.text || '').toLowerCase();
+  if (/oscar|film|novel|composer|painter|museum/.test(t)) return 'culture';
+  if (/nba|world cup|grand prix|f1|olympic|boxing|tennis/.test(t)) return 'sports';
+  if (/capital|river|ocean|continent|city|country/.test(t)) return 'geography';
+  if (/president|king|emperor|war|revolution|nobel/.test(t)) return 'history';
+  if (/plus|minus|sum|how many|hány/.test(t)) return 'math';
+  return 'general';
+}
+
+/* ------------------------- fallback bank (unchanged) ------------------------- */
+const FALLBACK = [
+  { id: 'f_hist_1', text: 'Ki volt az Egyesült Államok elnöke?', choices: ['George W. Bush', 'Henry Ford', 'Oprah Winfrey'], correct_idx: 0, topic: 'history', lang: 'hu' },
+  { id: 'f_hist_2', text: 'Who was a U.S. President?', choices: ['George W. Bush', 'Henry Ford', 'Oprah Winfrey'], correct_idx: 0, topic: 'history', lang: 'en' },
+  { id: 'f_hist_3', text: 'Ki volt római császár?', choices: ['Xenophon', 'Carus', 'Plutarch'], correct_idx: 1, topic: 'history', lang: 'hu' },
+  { id: 'f_geo_1', text: 'Melyik város az USA fővárosa?', choices: ['Washington, D.C.', 'New York', 'Los Angeles'], correct_idx: 0, topic: 'geography', lang: 'hu' },
+  { id: 'f_geo_2', text: 'Melyik a legnagyobb óceán?', choices: ['Csendes-óceán', 'Atlanti-óceán', 'Indiai-óceán'], correct_idx: 0, topic: 'geography', lang: 'hu' },
+  { id: 'f_geo_3', text: 'Which is the largest ocean?', choices: ['Pacific', 'Atlantic', 'Indian'], correct_idx: 0, topic: 'geography', lang: 'en' },
+  { id: 'f_sport_1', text: 'Melyik a NBA-csapat?', choices: ['Borussia Dortmund', 'Dallas Mavericks', 'AC Milan'], correct_idx: 1, topic: 'sports', lang: 'hu' },
+  { id: 'f_sport_2', text: 'Which is an NBA team?', choices: ['Borussia Dortmund', 'Dallas Mavericks', 'AC Milan'], correct_idx: 1, topic: 'sports', lang: 'en' },
+  { id: 'f_cult_1', text: 'Ki nyert Oscar-díjat a legjobb rendező kategóriában?', choices: ['Ang Lee', 'Kobe Bryant', 'Novak Djokovic'], correct_idx: 0, topic: 'culture', lang: 'hu' },
+  { id: 'f_cult_2', text: 'Who won the Academy Award for Best Director?', choices: ['Ang Lee', 'Kobe Bryant', 'Novak Djokovic'], correct_idx: 0, topic: 'culture', lang: 'en' },
+  { id: 'f_math_1', text: 'Hány napból áll egy hét?', choices: ['5', '7', '10'], correct_idx: 1, topic: 'math', lang: 'hu' },
+  { id: 'f_math_2', text: 'How many days are in a week?', choices: ['5', '7', '10'], correct_idx: 1, topic: 'math', lang: 'en' },
+];
+
+/* ------------------------- supabase client ------------------------- */
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SERVICE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 const supabase = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
+/* ------------------------- handler ------------------------- */
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const lang = String(req.query.lang || 'hu').toLowerCase();
-  const n = Math.max(1, Math.min(50, parseInt(req.query.n ?? req.query.limit, 10) || 6));
+  const limit = Math.max(1, Math.min(50, parseInt(req.query.limit ?? req.query.n, 10) || 6));
 
-  // Read username/round_id from query or Referer (like your original)
+  // username / round for RPC and fallback seeding
   let username = String(req.query.username || req.query.u || '').trim();
   let round_id = String(req.query.round_id || '').trim();
+
+  // Also try Referer for u/round_id (keeps old behavior)
   if (!username && req.headers?.referer) {
     try {
       const url = new URL(req.headers.referer);
@@ -26,49 +70,187 @@ export default async function handler(req, res) {
     } catch {}
   }
 
-  // Strict requirement: both are mandatory
-  if (!username || !round_id) {
-    return res.status(400).json({
-      error: 'Missing required params: username and round_id',
-      hint: 'Call like: /api/get-questions?round_id=<UUID>&username=<name>&lang=hu&n=5'
-    });
+  // Autodetect active round if missing
+  try {
+    if (!round_id) {
+      const { data: rounds } = await supabase
+        .from('trivia_rounds')
+        .select('id')
+        .eq('is_active', true)
+        .order('start_at', { ascending: false })
+        .limit(1);
+      if (rounds && rounds.length) {
+        round_id = String(rounds[0].id);
+      }
+    }
+  } catch {}
+
+  // Create a safe guest username if still missing
+  if (!username) {
+    const ip = (req.headers['x-forwarded-for'] || '').toString().split(',')[0].trim()
+      || req.socket?.remoteAddress?.toString() || '0.0.0.0';
+    username = `guest-${hashStringToInt(ip + Date.now())}`;
   }
+
+  const version = 'v6.rpc-or-fallback-auto';
+  const seedKey = `${username}|${round_id || 'no-round'}|${lang}|${version}`;
+  const seed = hashStringToInt(seedKey);
+
+  /* ---------- Prefer RPC if we have a round_id ---------- */
+  let rpc_used = false;
+  let rpc_error = null;
+
+  if (round_id) {
+    try {
+      const { data, error } = await supabase.rpc('get_diverse_questions', {
+        p_round_id: round_id,
+        p_username: username,
+        p_lang: lang,
+        p_n: limit,
+      });
+      if (error) throw error;
+
+      if (Array.isArray(data) && data.length) {
+        rpc_used = true;
+        const out = data.slice(0, limit).map((q) => {
+          const choices =
+            Array.isArray(q.choices) ? q.choices :
+            typeof q.choices === 'string' ? safeJsonParse(q.choices, []) : [];
+          return {
+            id: String(q.id),
+            text: String(q.question ?? ''),
+            choices: choices.slice(0, 3),
+            correct_idx: Number.isInteger(q.correct_idx) ? q.correct_idx : 0,
+          };
+        });
+
+        res.setHeader('Cache-Control', 'no-store');
+        return res.status(200).json({
+          version,
+          questions: out,
+          size: out.length,
+          key: seedKey,
+          seed,
+          meta: { rpc_used, rpc_error, used_lang: lang, pool_size: data.length, round_id, username },
+        });
+      }
+    } catch (e) {
+      rpc_error = String(e?.message || e);
+    }
+  }
+
+  /* ---------- Fallback path (original logic) ---------- */
+  let pool = [];
+  let db_ok = false;
+  let db_error = null;
 
   try {
-    const { data, error } = await supabase.rpc('get_diverse_questions', {
-      p_round_id: round_id,
-      p_username: username,
-      p_lang: lang,
-      p_n: n,
-    });
+    const { data, error } = await supabase
+      .from('trivia_questions')
+      .select('*')
+      .ilike('lang', lang)
+      .eq('is_active', true)
+      .limit(5000);
+
     if (error) throw error;
 
-    const questions = (data || []).slice(0, n).map((q) => {
-      const choices =
-        Array.isArray(q.choices) ? q.choices :
-        typeof q.choices === 'string' ? safeJsonParse(q.choices, []) : [];
-      return {
-        id: String(q.id),
-        text: String(q.question ?? ''),
-        choices: choices.slice(0, 3),
-        correct_idx: Number.isInteger(q.correct_idx) ? q.correct_idx : 0,
-      };
-    });
+    const mapped = (data || [])
+      .map((q) => {
+        const text = q.prompt || q.question || q.text || '';
+        const rawChoices = q.choices;
+        const choices = Array.isArray(rawChoices)
+          ? rawChoices
+          : typeof rawChoices === 'string'
+            ? safeJsonParse(rawChoices, [])
+            : [];
+        const correct_idx = Number.isInteger(q.correct_idx) ? q.correct_idx : 0;
+        const topic = normalizeTopic({ ...q, text });
+        return { id: String(q.id), text, choices, correct_idx, topic, lang: q.lang || lang };
+      })
+      .filter((q) => q.text && q.choices.length >= 3);
 
-    res.setHeader('Cache-Control', 'no-store');
-    return res.status(200).json({
-      version: 'v6.rpc-only-diverse-norepeat',
-      questions,
-      size: questions.length,
-      meta: { rpc_used: true, used_lang: lang }
-    });
-  } catch (err) {
-    console.error('get-questions RPC error:', err);
-    return res.status(500).json({ error: String(err?.message ?? err) });
+    pool = mapped;
+    db_ok = true;
+  } catch (e) {
+    db_ok = false;
+    db_error = String(e?.message || e) || 'db failed';
   }
-}
 
-/* util */
-function safeJsonParse(s, defVal) {
-  try { return JSON.parse(s); } catch { return defVal; }
+  if (!pool.length) {
+    pool = FALLBACK.filter((q) => (q.lang || 'hu').toLowerCase() === lang);
+  }
+
+  // per-user global shuffle + soft topic balance + cooldown(1)
+  const scored = pool
+    .map((q) => ({ ...q, __score: hashStringToInt(`${q.id}|${seedKey}`) }))
+    .sort((a, b) => a.__score - b.__score);
+
+  const topicsSet = new Set(scored.map((q) => normalizeTopic(q)));
+  const topicsCount = topicsSet.size || 1;
+  const softPerTopic = Math.max(1, Math.ceil(limit / topicsCount));
+
+  const usedIds = new Set();
+  const counts = Object.create(null);
+  const chosen = [];
+  let lastTopic = null;
+
+  for (const q of scored) {
+    if (chosen.length >= limit) break;
+    if (usedIds.has(q.id)) continue;
+    const t = normalizeTopic(q);
+    if (topicsCount > 1 && lastTopic && t === lastTopic) continue;              // cooldown(1)
+    if ((counts[t] || 0) >= softPerTopic && topicsCount > 1) continue;          // soft cap
+    chosen.push(q);
+    usedIds.add(q.id);
+    counts[t] = (counts[t] || 0) + 1;
+    lastTopic = t;
+  }
+
+  if (chosen.length < limit) {
+    for (const q of scored) {
+      if (chosen.length >= limit) break;
+      if (usedIds.has(q.id)) continue;
+      const t = normalizeTopic(q);
+      if (topicsCount > 1 && lastTopic && t === lastTopic) continue;
+      chosen.push(q);
+      usedIds.add(q.id);
+      counts[t] = (counts[t] || 0) + 1;
+      lastTopic = t;
+    }
+  }
+
+  if (chosen.length < limit) {
+    for (const q of scored) {
+      if (chosen.length >= limit) break;
+      if (usedIds.has(q.id)) continue;
+      chosen.push(q);
+      usedIds.add(q.id);
+    }
+  }
+
+  const out = chosen.slice(0, limit).map((q) => ({
+    id: q.id,
+    text: q.text,
+    choices: q.choices.slice(0, 3),
+    correct_idx: q.correct_idx,
+  }));
+
+  res.setHeader('Cache-Control', 'no-store');
+  return res.status(200).json({
+    version,
+    questions: out,
+    size: out.length,
+    key: seedKey,
+    seed,
+    meta: {
+      rpc_used,
+      rpc_error,
+      db_ok,
+      db_error,
+      pool_size: pool.length,
+      used_lang: lang,
+      round_id,
+      username,
+    },
+  });
 }
