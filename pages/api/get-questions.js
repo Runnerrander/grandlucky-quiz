@@ -1,7 +1,7 @@
 // pages/api/get-questions.js
 import { createClient } from '@supabase/supabase-js';
 
-/* ------------------------- seeded helpers ------------------------- */
+/* ------------------------- seeded helpers (kept for fallback) ------------------------- */
 function hashStringToInt(str) {
   let h = 2166136261 >>> 0; // FNV-1a
   for (let i = 0; i < str.length; i++) {
@@ -10,17 +10,8 @@ function hashStringToInt(str) {
   }
   return h >>> 0;
 }
-function mulberry32(a) {
-  return function () {
-    a |= 0;
-    a = (a + 0x6D2B79F5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
 
-/* ------------------------- fallback bank ------------------------- */
+/* ------------------------- fallback bank (unchanged) ------------------------- */
 const FALLBACK = [
   // history
   { id: 'f_hist_1', text: 'Ki volt az Egyesült Államok elnöke?', choices: ['George W. Bush', 'Henry Ford', 'Oprah Winfrey'], correct_idx: 0, topic: 'history', lang: 'hu' },
@@ -54,21 +45,24 @@ function normalizeTopic(q) {
 }
 
 /* ------------------------- supabase client ------------------------- */
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SERVICE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+const supabase = createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
 
 /* ------------------------- handler ------------------------- */
 export default async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const lang = String(req.query.lang || 'hu').toLowerCase();
-  const limit = Math.max(1, Math.min(50, parseInt(req.query.limit, 10) || 6));
+  // keep supporting both ?limit and ?n
+  const limit = Math.max(1, Math.min(50, parseInt(req.query.limit ?? req.query.n, 10) || 6));
 
-  // username / round for seeding
+  // username / round for RPC and fallback seeding
   let username = String(req.query.username || req.query.u || '').trim();
   let round_id = String(req.query.round_id || '').trim();
+
   if (!username && req.headers?.referer) {
     try {
       const url = new URL(req.headers.referer);
@@ -79,11 +73,62 @@ export default async function handler(req, res) {
     } catch {}
   }
 
-  const version = 'v5.5.user-hash-mix-norepeat';
+  const version = 'v6.rpc-diverse-norepeat';
   const seedKey = `${username || 'anon'}|${round_id || 'local'}|${lang}|${version}`;
   const seed = hashStringToInt(seedKey);
 
-  /* ---------- pull pool (tolerant mapping) ---------- */
+  let rpc_used = false;
+  let rpc_error = null;
+
+  try {
+    // If we have both username and round_id, prefer the RPC
+    if (username && round_id) {
+      const { data, error } = await supabase.rpc('get_diverse_questions', {
+        p_round_id: round_id,
+        p_username: username,
+        p_lang: lang,
+        p_n: limit,
+      });
+
+      if (error) throw error;
+
+      if (Array.isArray(data) && data.length) {
+        rpc_used = true;
+
+        const out = data.slice(0, limit).map((q) => {
+          // RPC returns { id, question, choices(jsonb), correct_idx, category }
+          const choices =
+            Array.isArray(q.choices) ? q.choices :
+            typeof q.choices === 'string' ? safeJsonParse(q.choices, []) : [];
+          return {
+            id: String(q.id),
+            text: String(q.question ?? ''),   // map to "text" for frontend
+            choices: choices.slice(0, 3),
+            correct_idx: Number.isInteger(q.correct_idx) ? q.correct_idx : 0,
+          };
+        });
+
+        res.setHeader('Cache-Control', 'no-store');
+        return res.status(200).json({
+          version,
+          questions: out,
+          size: out.length,
+          key: seedKey,
+          seed,
+          meta: {
+            rpc_used,
+            rpc_error,
+            pool_size: data.length,
+            used_lang: lang,
+          },
+        });
+      }
+    }
+  } catch (e) {
+    rpc_error = String(e?.message || e);
+  }
+
+  // ---------- Fallback path (your original logic) ----------
   let pool = [];
   let db_ok = false;
   let db_error = null;
@@ -98,13 +143,15 @@ export default async function handler(req, res) {
 
     if (error) throw error;
 
-    const mapped = (data || []).map((q) => {
-      const text = q.prompt || q.question || q.text || '';
-      const choices = Array.isArray(q.choices) ? q.choices : [];
-      const correct_idx = Number.isInteger(q.correct_idx) ? q.correct_idx : 0;
-      const topic = normalizeTopic({ ...q, text });
-      return { id: String(q.id), text, choices, correct_idx, topic, lang: q.lang || lang };
-    }).filter((q) => q.text && q.choices.length >= 3);
+    const mapped = (data || [])
+      .map((q) => {
+        const text = q.prompt || q.question || q.text || '';
+        const choices = Array.isArray(q.choices) ? q.choices : [];
+        const correct_idx = Number.isInteger(q.correct_idx) ? q.correct_idx : 0;
+        const topic = normalizeTopic({ ...q, text });
+        return { id: String(q.id), text, choices, correct_idx, topic, lang: q.lang || lang };
+      })
+      .filter((q) => q.text && q.choices.length >= 3);
 
     pool = mapped;
     db_ok = true;
@@ -117,42 +164,32 @@ export default async function handler(req, res) {
     pool = FALLBACK.filter((q) => (q.lang || 'hu').toLowerCase() === lang);
   }
 
-  /* ---------- per-user global shuffle + topic balancing ---------- */
-  // score each question by hashing (id + seedKey) to create a user-specific global order
-  const scored = pool.map((q) => ({
-    ...q,
-    __score: hashStringToInt(`${q.id}|${seedKey}`)
-  })).sort((a, b) => a.__score - b.__score);
+  // per-user global shuffle + soft topic balancing (same as your original)
+  const scored = pool
+    .map((q) => ({ ...q, __score: hashStringToInt(`${q.id}|${seedKey}`) }))
+    .sort((a, b) => a.__score - b.__score);
 
   const topicsSet = new Set(scored.map((q) => normalizeTopic(q)));
   const topicsCount = topicsSet.size || 1;
-
-  // soft cap per topic to encourage balance but still allow fill
   const softPerTopic = Math.max(1, Math.ceil(limit / topicsCount));
 
   const usedIds = new Set();
   const counts = Object.create(null);
   const chosen = [];
-
-  // Do not allow immediate same-topic back-to-back (cooldown = 1)
   let lastTopic = null;
 
-  // Primary pass: respect cooldown + soft per-topic cap
   for (const q of scored) {
     if (chosen.length >= limit) break;
     if (usedIds.has(q.id)) continue;
-
     const t = normalizeTopic(q);
-    if (topicsCount > 1 && lastTopic && t === lastTopic) continue; // no immediate repeat
+    if (topicsCount > 1 && lastTopic && t === lastTopic) continue;
     if ((counts[t] || 0) >= softPerTopic && topicsCount > 1) continue;
-
     chosen.push(q);
     usedIds.add(q.id);
     counts[t] = (counts[t] || 0) + 1;
     lastTopic = t;
   }
 
-  // Fill pass: relax per-topic cap, still try to avoid immediate repeats
   if (chosen.length < limit) {
     for (const q of scored) {
       if (chosen.length >= limit) break;
@@ -166,16 +203,12 @@ export default async function handler(req, res) {
     }
   }
 
-  // Last-resort fill: take anything left (may allow repeat topic) to reach limit
   if (chosen.length < limit) {
     for (const q of scored) {
       if (chosen.length >= limit) break;
       if (usedIds.has(q.id)) continue;
-      const t = normalizeTopic(q);
       chosen.push(q);
       usedIds.add(q.id);
-      counts[t] = (counts[t] || 0) + 1;
-      lastTopic = t;
     }
   }
 
@@ -183,15 +216,8 @@ export default async function handler(req, res) {
     id: q.id,
     text: q.text,
     choices: q.choices.slice(0, 3),
-    correct_idx: q.correct_idx
+    correct_idx: q.correct_idx,
   }));
-
-  // debug topic counts
-  const topic_counts = {};
-  for (const q of out) {
-    const t = normalizeTopic(q);
-    topic_counts[t] = (topic_counts[t] || 0) + 1;
-  }
 
   res.setHeader('Cache-Control', 'no-store');
   return res.status(200).json({
@@ -201,11 +227,21 @@ export default async function handler(req, res) {
     key: seedKey,
     seed,
     meta: {
+      rpc_used,
+      rpc_error,
       db_ok,
       db_error,
       pool_size: pool.length,
       used_lang: lang,
-      topic_counts
-    }
+    },
   });
+}
+
+/* ------------------------- util ------------------------- */
+function safeJsonParse(s, defVal) {
+  try {
+    return JSON.parse(s);
+  } catch {
+    return defVal;
+  }
 }
