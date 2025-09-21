@@ -252,8 +252,8 @@ export default function Vivko() {
         <footer className="legal">
           <p className="contact">
             {F.contact}
-            <a href="mailto:support@gradluckytravel.com">
-              support@gradluckytravel.com
+            <a href="mailto:support@grandluckytravel.com">
+              support@grandluckytravel.com
             </a>
           </p>
           <p className="rights">
