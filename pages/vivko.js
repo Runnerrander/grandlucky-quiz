@@ -255,6 +255,13 @@ export default function Vivko() {
             <a href="mailto:support@grandluckytravel.com">
               support@grandluckytravel.com
             </a>
+            <span> &nbsp;|&nbsp; </span>
+            <a
+              href="tel:+18553047263"
+              aria-label={lang === "hu" ? "Hívás: GrandLucky Travel ügyfélszolgálat" : "Call: GrandLucky Travel support"}
+            >
+              +1 855-304-7263
+            </a>
           </p>
           <p className="rights">
             <span>{F.rights1}</span>
