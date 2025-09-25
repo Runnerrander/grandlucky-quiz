@@ -154,11 +154,13 @@ export default function Vivko() {
       contact: "Ha kérdésed vagy észrevételed van, kérjük, írj nekünk: ",
       rights1: "Minden jog fenntartva – Grandlucky Travel",
       rights2: "3495 US Highway 1 STE34#1217 Princeton, NJ 08540",
+      phoneLabel: "Telefon:",
     },
     en: {
       contact: "If you have any questions or concerns please contact us at: ",
       rights1: "All rights reserved to Grandlucky Travel",
       rights2: "3495 US Highway 1 STE34#1217 Princeton, NJ 08540",
+      phoneLabel: "Phone:",
     },
   };
 
@@ -256,9 +258,14 @@ export default function Vivko() {
               support@grandluckytravel.com
             </a>
             <span> &nbsp;|&nbsp; </span>
+            <strong>{F.phoneLabel}</strong>&nbsp;
             <a
               href="tel:+18553047263"
-              aria-label={lang === "hu" ? "Hívás: GrandLucky Travel ügyfélszolgálat" : "Call: GrandLucky Travel support"}
+              aria-label={
+                lang === "hu"
+                  ? "Telefon: GrandLucky Travel ügyfélszolgálat +1 855-304-7263"
+                  : "Phone: GrandLucky Travel support +1 855-304-7263"
+              }
             >
               +1 855-304-7263
             </a>
