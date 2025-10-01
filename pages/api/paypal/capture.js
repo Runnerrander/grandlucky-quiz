@@ -1,6 +1,8 @@
-// /pages/api/paypal/capture.js
+/* eslint-env node */
+/* global fetch */
 
-import { createClient } from '@supabase/supabase-js';
+// pages/api/paypal/capture.js  (captures the order, then stores rows)
+const { createClient } = require('@supabase/supabase-js');
 
 /** ---------- Supabase (server) ---------- */
 const SUPABASE_URL =
@@ -39,7 +41,6 @@ async function getAccessToken() {
     },
     body: new URLSearchParams({ grant_type: 'client_credentials' }),
   });
-
   if (!r.ok) {
     const txt = await r.text().catch(() => '');
     throw new Error(`PayPal token error (${r.status}): ${txt}`);
@@ -61,7 +62,7 @@ function makePassword() {
   return s;
 }
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ ok: false, message: 'Method not allowed' });
@@ -74,45 +75,54 @@ export default async function handler(req, res) {
   }
 
   try {
-    const body =
-      typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     const token = body.token || body.orderID || body.orderId || '';
     if (!token || typeof token !== 'string') {
       return res.status(400).json({ ok: false, message: 'Missing PayPal order token.' });
     }
 
-    // Verify order with PayPal
+    // 1) Get access token
     const accessToken = await getAccessToken();
-    const orderRes = await fetch(
-      `${PAYPAL_API_BASE}/v2/checkout/orders/${encodeURIComponent(token)}`,
-      { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    if (!orderRes.ok) {
-      const txt = await orderRes.text().catch(() => '');
-      return res.status(400).json({
-        ok: false,
-        message: 'Failed to verify PayPal order.',
-        details: { status: orderRes.status, body: txt },
-      });
-    }
 
-    const order = await orderRes.json();
-    const orderStatus = order?.status ?? 'UNKNOWN';
-    const captureStatus = order?.purchase_units?.[0]?.payments?.captures?.[0]?.status ?? 'UNKNOWN';
-    const paid = orderStatus === 'COMPLETED' || captureStatus === 'COMPLETED';
+    // 2) CAPTURE the order (this is the missing piece)
+    const capRes = await fetch(
+      `${PAYPAL_API_BASE}/v2/checkout/orders/${encodeURIComponent(token)}/capture`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=representation',
+        },
+        body: JSON.stringify({}),
+      }
+    );
+
+    // If order already captured, PayPal may return 201/200; for conflicts it may still include status
+    const capText = await capRes.text().catch(() => '');
+    let capJson = {};
+    try { capJson = capText ? JSON.parse(capText) : {}; } catch (_e) {}
+
+    const orderStatus = capJson?.status ?? 'UNKNOWN';
+    const captureStatus =
+      capJson?.purchase_units?.[0]?.payments?.captures?.[0]?.status ?? 'UNKNOWN';
+
+    const paid =
+      orderStatus === 'COMPLETED' || captureStatus === 'COMPLETED';
+
     if (!paid) {
       return res.status(400).json({
         ok: false,
         message: 'Payment not completed',
-        details: { orderStatus, captureStatus },
+        details: { orderStatus, captureStatus, raw: capJson },
       });
     }
 
-    // Generate credentials
+    // 3) Generate creds
     const username = makeUsername();
     const password = makePassword();
 
-    // registrations row
+    // 4) registrations
     const { error: regErr } = await supabase
       .from('registrations')
       .insert([{
@@ -130,7 +140,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // quiz_results row (DEFAULTs will fill in created_at; we set 0s)
+    // 5) quiz_results
     const { error: qrErr } = await supabase
       .from('quiz_results')
       .insert([{
@@ -148,6 +158,7 @@ export default async function handler(req, res) {
       });
     }
 
+    // 6) Done
     return res.status(200).json({
       ok: true,
       message: 'Payment captured & row stored.',
@@ -161,3 +172,6 @@ export default async function handler(req, res) {
     });
   }
 }
+
+module.exports = handler;
+module.exports.default = handler;
