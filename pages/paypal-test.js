@@ -2,7 +2,7 @@ import Head from "next/head";
 import { useEffect, useRef, useState } from "react";
 
 export default function PaypalTest() {
-  const CLIENT_ID = "<EHSmD1M21rZ3Q7LbSu0IJcYGnUq9QVsN88h019r_DZxQmIR343y-C-XHL5WyeTOH4TDl6LMj7Z-flvBv>";
+  const CLIENT_ID = "EHSmD1M21rZ3Q7LbSu0IJcYGnUq9QVsN88h019r_DZxQmIR343y-C-XHL5WyeTOH4TDl6LMj7Z-flvBv";
   const btnRef = useRef(null);
   const [loaded, setLoaded] = useState(false);
 
