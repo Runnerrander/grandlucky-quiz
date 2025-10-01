@@ -108,6 +108,22 @@ export default function Success() {
     run();
   }, [router.isReady, router.query]);
 
+  // helper: decide which lang to send to /trivia
+  const pickLang = () => {
+    try {
+      const fromUrl =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("lang")
+          : null;
+      if (fromUrl === "en" || fromUrl === "hu") return fromUrl;
+    } catch {}
+    if (typeof navigator !== "undefined") {
+      const nav = (navigator.language || "").toLowerCase();
+      if (nav.startsWith("en")) return "en";
+    }
+    return "hu";
+  };
+
   return (
     <main
       style={{
@@ -152,7 +168,18 @@ export default function Success() {
           </p>
 
           <button
-            onClick={() => (window.location.href = "/trivia")}
+            onClick={() => {
+              // save for /trivia bootstrap
+              try {
+                localStorage.setItem("gl_username", creds.username);
+                localStorage.setItem("gl_creds", JSON.stringify(creds));
+              } catch {}
+
+              const lang = pickLang();
+              window.location.href = `/trivia?u=${encodeURIComponent(
+                creds.username
+              )}&lang=${encodeURIComponent(lang)}`;
+            }}
             style={{
               marginTop: 16,
               padding: "10px 16px",
