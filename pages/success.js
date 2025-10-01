@@ -1,155 +1,173 @@
 // pages/success.js
-import Head from "next/head";
-import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+
+function Copy({ label, value }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ fontFamily: "monospace", fontSize: 18 }}>
+        <strong>{label}:</strong> {value}
+      </div>
+      <button
+        onClick={() => {
+          navigator.clipboard.writeText(value).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1200);
+          });
+        }}
+        style={{
+          padding: "6px 10px",
+          borderRadius: 6,
+          border: "1px solid #ccc",
+          cursor: "pointer",
+          background: copied ? "#e6ffed" : "#fff",
+        }}
+      >
+        {copied ? "Copied!" : "Copy"}
+      </button>
+    </div>
+  );
+}
 
 export default function Success() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [creds, setCreds] = useState(null);
-  const [err, setErr] = useState(null);
+  const [error, setError] = useState("");
 
-  // Safely extract token from query (?token= or ?orderID=)
-  const token =
-    (router.query?.token || router.query?.orderID || "").toString();
-
+  // Show cached creds if user reloads
   useEffect(() => {
     if (!router.isReady) return;
 
-    if (!token) {
-      setLoading(false);
-      setErr({
-        message: "Hiányzó PayPal token. / Missing PayPal token.",
-        details: { query: router.query },
-      });
-      return;
-    }
+    const token =
+      (router.query?.token?.toString() || "").trim() ||
+      (router.query?.orderID?.toString() || "").trim() ||
+      (router.query?.orderId?.toString() || "").trim();
 
-    (async () => {
+    async function run() {
+      // If we already have cached creds (from a prior successful call), show them first
+      const cached = (() => {
+        try {
+          const raw = localStorage.getItem("gl_creds");
+          return raw ? JSON.parse(raw) : null;
+        } catch {
+          return null;
+        }
+      })();
+      if (!token && cached?.username && cached?.password) {
+        setCreds(cached);
+        setLoading(false);
+        return;
+      }
+
+      if (!token) {
+        setError("Payment token missing. If you refreshed this page, go back to the checkout.");
+        setLoading(false);
+        return;
+      }
+
       try {
+        setLoading(true);
+        setError("");
+
         const res = await fetch("/api/paypal/capture", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token }),
         });
-        const data = await res.json();
 
-        if (res.ok && data?.ok && data?.username && data?.password) {
-          setCreds({ username: data.username, password: data.password });
-          setErr(null);
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok || !data?.ok) {
+          setError(
+            data?.message ||
+              "Payment verification failed. Please contact support@grandluckytravel.com."
+          );
+          setLoading(false);
+          return;
+        }
+
+        // creds: { username, password }
+        if (data?.creds?.username && data?.creds?.password) {
+          setCreds(data.creds);
+          try {
+            localStorage.setItem("gl_creds", JSON.stringify(data.creds));
+          } catch {}
         } else {
-          setErr({
-            message:
-              data?.message ||
-              "A fizetés feldolgozása sikertelen volt. / Payment capture failed.",
-            details: data || {},
-          });
-          setCreds(null);
+          // Safety: success but no creds (shouldn't happen with current API)
+          setError("Payment completed, but credentials are unavailable. Please contact support.");
         }
       } catch (e) {
-        setErr({
-          message:
-            "Váratlan hiba történt. / Unexpected error while finalizing payment.",
-          details: String(e),
-        });
-        setCreds(null);
+        setError("Unexpected error. Please contact support@grandluckytravel.com.");
       } finally {
         setLoading(false);
       }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router.isReady, token]);
+    }
+
+    run();
+  }, [router.isReady, router.query]);
 
   return (
-    <>
-      <Head>
-        <title>Sikeres fizetés / Success — GrandLuckyTravel</title>
-        <meta name="robots" content="noindex" />
-      </Head>
+    <main
+      style={{
+        maxWidth: 760,
+        margin: "40px auto",
+        padding: "24px 20px",
+        lineHeight: 1.5,
+        color: "#222",
+      }}
+    >
+      <h1 style={{ marginTop: 0 }}>Sikeres fizetés / Payment successful</h1>
 
-      <main style={{ maxWidth: 920, margin: "40px auto", padding: "0 16px" }}>
-        <h1 style={{ fontSize: 28, marginBottom: 24 }}>
-          Sikeres fizetés / Payment successful
-        </h1>
+      {loading && <p>Processing your payment…</p>}
 
-        {loading && <p>Feldolgozás… / Processing…</p>}
+      {!loading && error && (
+        <div style={{ color: "#b00020", background: "#fde7eb", padding: 12, borderRadius: 8 }}>
+          <p style={{ margin: 0 }}>{error}</p>
+          <p style={{ margin: "6px 0 0" }}>
+            Support: <a href="mailto:support@grandluckytravel.com">support@grandluckytravel.com</a>
+          </p>
+        </div>
+      )}
 
-        {!loading && creds && (
-          <section>
-            <p style={{ marginBottom: 12 }}>
-              A fizetés sikeres volt. Az alábbi adatokkal tudsz belépni:
-              <br />
-              Payment completed. Use these credentials to start the quiz:
-            </p>
+      {!loading && creds && (
+        <div
+          style={{
+            background: "#eef9f0",
+            border: "1px solid #cde9d6",
+            padding: 16,
+            borderRadius: 10,
+          }}
+        >
+          <p style={{ marginTop: 0, color: "#136c3b", fontWeight: 600 }}>
+            Payment captured & row stored. Your quiz login:
+          </p>
 
-            <div style={{ lineHeight: 1.8, marginBottom: 16 }}>
-              <div>
-                <b>Felhasználónév / Username:</b>{" "}
-                <span style={{ fontFamily: "monospace" }}>{creds.username}</span>
-              </div>
-              <div>
-                <b>Jelszó / Password:</b>{" "}
-                <span style={{ fontFamily: "monospace" }}>{creds.password}</span>
-              </div>
-            </div>
+          <Copy label="Username" value={creds.username} />
+          <Copy label="Password" value={creds.password} />
 
-            <button
-              onClick={() => (window.location.href = "/trivia")}
-              style={{
-                background: "#111",
-                color: "#fff",
-                padding: "10px 18px",
-                borderRadius: 8,
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              Kvíz indítása / Start Quiz
-            </button>
+          <p style={{ marginTop: 14, fontSize: 14 }}>
+            Please note these down. You’ll need them to start the quiz.
+          </p>
 
-            <p style={{ marginTop: 14, fontSize: 13 }}>
-              Kérjük, jegyezd fel a fenti adatokat. / Please note down your
-              credentials.
-            </p>
-          </section>
-        )}
-
-        {!loading && !creds && (
-          <section>
-            <p style={{ color: "#b00020", marginBottom: 8 }}>
-              A fizetés feldolgozása sikertelen volt. / Payment capture failed.
-            </p>
-            <p style={{ marginBottom: 8 }}>
-              Támogatás / Support:{" "}
-              <a href="mailto:support@grandluckytravel.com">
-                support@grandluckytravel.com
-              </a>
-            </p>
-
-            {/* Diagnostic block to see exactly why it failed (safe to leave; no secrets) */}
-            {err?.message && (
-              <p style={{ marginTop: 10 }}>
-                <b>Részletek / Details:</b> {err.message}
-              </p>
-            )}
-            {err?.details && (
-              <pre
-                style={{
-                  marginTop: 8,
-                  padding: 12,
-                  background: "#f7f7f7",
-                  border: "1px solid #eee",
-                  whiteSpace: "pre-wrap",
-                  wordBreak: "break-word",
-                  fontSize: 12,
-                }}
-              >
-                {JSON.stringify(err.details, null, 2)}
-              </pre>
-            )}
-          </section>
-        )}
-      </main>
-    </>
+          <button
+            onClick={() => (window.location.href = "/trivia")}
+            style={{
+              marginTop: 16,
+              padding: "10px 16px",
+              background: "#0d6efd",
+              color: "white",
+              border: "none",
+              borderRadius: 8,
+              cursor: "pointer",
+              fontWeight: 600,
+            }}
+          >
+            Start Quiz
+          </button>
+        </div>
+      )}
+    </main>
   );
 }
