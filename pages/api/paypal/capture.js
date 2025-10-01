@@ -1,227 +1,192 @@
 // pages/api/paypal/capture.js
-//
-// Captures a PayPal order and, on success, creates credentials in `quiz_results`
-// with { username, password, status: "active", provider: "paypal" }.
-// Returns { ok: true, username, password } to the client.
-//
-// Assumes these env vars exist on Vercel:
-//   PAYPAL_ENV=live|sandbox
-//   PAYPAL_CLIENT_ID=...
-//   PAYPAL_CLIENT_SECRET=...
-//   NEXT_PUBLIC_SUPABASE_URL=...
-//   SUPABASE_SERVICE_ROLE_KEY=...   (or SUPABASE_SERVICE_ROLE)
-//
-// Notes:
-// - Tolerates real-world PayPal responses: success if order.status === "COMPLETED"
-//   OR any capture has status COMPLETED/PENDING.
-// - If capture API returns a non-2xx (e.g., already captured), we still fetch
-//   the order and decide from its final state.
-// - Uses upsert on unique(username) to avoid duplicate rows.
+import { createClient } from '@supabase/supabase-js';
 
-import { createClient } from "@supabase/supabase-js";
+const RAW_ENV = (process.env.PAYPAL_ENV || '').trim().toLowerCase();
+const PAYPAL_ENV = RAW_ENV === 'live' ? 'live' : 'sandbox';
+const PAYPAL_API_BASE =
+  PAYPAL_ENV === 'live'
+    ? 'https://api-m.paypal.com'
+    : 'https://api-m.sandbox.paypal.com';
+
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+function supaAdmin() {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error('Missing Supabase env (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).');
+  }
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
+}
+
+function makeUsername() {
+  // “GL-” + 4 random alphanumerics (bigger space to avoid duplicates)
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 4; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return `GL-${s}`;
+}
+
+function makePassword() {
+  const alphabet =
+    'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^*';
+  let s = '';
+  for (let i = 0; i < 10; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return s;
+}
+
+async function getAccessToken() {
+  const id = process.env.PAYPAL_CLIENT_ID;
+  const secret = process.env.PAYPAL_CLIENT_SECRET;
+  if (!id || !secret) throw new Error('Missing PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET');
+
+  const creds = Buffer.from(`${id}:${secret}`).toString('base64');
+  const body = new URLSearchParams({ grant_type: 'client_credentials' });
+
+  const r = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${creds}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body,
+  });
+
+  if (!r.ok) {
+    const text = await r.text().catch(() => '');
+    throw new Error(`PayPal token failed (${r.status}): ${text}`);
+  }
+  const data = await r.json();
+  return data.access_token;
+}
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    res.setHeader("Allow", "POST");
-    return res.status(405).json({ ok: false, message: "Method not allowed" });
-  }
-
   try {
-    const token = req.body?.token || req.query?.token || "";
+    // Get token (order id) from query or body
+    const token =
+      (req.query && (req.query.token || req.query.orderID)) ||
+      (req.body &&
+        (typeof req.body === 'string'
+          ? (() => {
+              try {
+                return JSON.parse(req.body).token;
+              } catch {
+                return undefined;
+              }
+            })()
+          : req.body.token));
+
     if (!token) {
-      return res.status(400).json({ ok: false, message: "Missing PayPal token" });
-    }
-
-    // ---- PayPal base + credentials -------------------------------------------------
-    const RAW_ENV = (process.env.RAW_ENV || "").trim().toLowerCase();
-    const PAYPAL_ENV = (process.env.PAYPAL_ENV || RAW_ENV || "live")
-      .trim()
-      .toLowerCase();
-    const PAYPAL_API_BASE =
-      PAYPAL_ENV === "live"
-        ? "https://api-m.paypal.com"
-        : "https://api-m.sandbox.paypal.com";
-
-    const CLIENT_ID = process.env.PAYPAL_CLIENT_ID || "";
-    const CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || "";
-    if (!CLIENT_ID || !CLIENT_SECRET) {
-      return res.status(500).json({
+      return res.status(400).json({
         ok: false,
-        message: "Server misconfigured (PayPal credentials missing)",
+        message: 'Missing PayPal token.',
+        details: { env: { RAW_ENV, PAYPAL_ENV } },
       });
     }
 
-    // ---- OAuth: client_credentials -------------------------------------------------
-    const basic = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
-    const tokRes = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
-      method: "POST",
-      headers: {
-        Authorization: `Basic ${basic}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: "grant_type=client_credentials",
-    });
-    const tokJson = await safeJson(tokRes);
-    if (!tokRes.ok) {
-      return res.status(401).json({
-        ok: false,
-        stage: "oauth",
-        message: "Failed to get PayPal access token",
-        details: scrub(tokJson),
-      });
-    }
-    const accessToken = tokJson?.access_token;
+    // Capture the order with PayPal
+    const bearer = await getAccessToken();
 
-    // ---- Attempt capture -----------------------------------------------------------
-    // Even if this returns non-2xx (e.g., already captured), we will still GET the
-    // order details and decide based on final state.
     const capRes = await fetch(
       `${PAYPAL_API_BASE}/v2/checkout/orders/${encodeURIComponent(token)}/capture`,
       {
-        method: "POST",
+        method: 'POST',
         headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
+          Authorization: `Bearer ${bearer}`,
+          'Content-Type': 'application/json',
+          Prefer: 'return=representation',
         },
+        // no body
       }
     );
-    const capJson = await safeJson(capRes);
 
-    // ---- Always fetch the order to see its final state ----------------------------
-    const ordRes = await fetch(
-      `${PAYPAL_API_BASE}/v2/checkout/orders/${encodeURIComponent(token)}`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-    const ordJson = await safeJson(ordRes);
+    const capJson = await capRes.json().catch(() => ({}));
 
-    // ---- Decide success ------------------------------------------------------------
-    const orderStatus = ordJson?.status || capJson?.status || "UNKNOWN";
-    const captures = ((ordJson?.purchase_units || []).flatMap(
-      (u) => u?.payments?.captures || []
-    )).filter(Boolean);
-    const captureStatuses = captures
-      .map((c) => c?.status)
-      .filter((s) => typeof s === "string");
-
-    const success =
-      orderStatus === "COMPLETED" ||
-      captureStatuses.includes("COMPLETED") ||
-      captureStatuses.includes("PENDING"); // some live flows briefly return PENDING
-
-    if (!success) {
-      return res.status(402).json({
+    if (!capRes.ok) {
+      return res.status(200).json({
         ok: false,
-        message: "PayPal capture not completed",
-        details: {
-          PAYPAL_ENV,
-          http_capture: capRes.status,
-          orderStatus,
-          captureStatuses,
-          capJson: scrub(capJson),
-          ordJson: scrub(ordJson),
-        },
+        message: 'PayPal capture failed.',
+        details: { status: capRes.status, body: capJson, env: { RAW_ENV, PAYPAL_ENV } },
       });
     }
 
-    // ---- Supabase: save credentials -----------------------------------------------
-    const supabaseUrl =
-      process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-    const serviceRole =
-      process.env.SUPABASE_SERVICE_ROLE_KEY ||
-      process.env.SUPABASE_SERVICE_ROLE ||
-      "";
-    if (!supabaseUrl || !serviceRole) {
-      return res.status(500).json({
+    // Verify completed
+    const pu = capJson?.purchase_units?.[0];
+    const capture = pu?.payments?.captures?.[0];
+    const orderStatus = capJson?.status || 'UNKNOWN';
+    const captureStatus = capture?.status || 'UNKNOWN';
+
+    if (!(orderStatus === 'COMPLETED' || captureStatus === 'COMPLETED')) {
+      return res.status(200).json({
         ok: false,
-        message: "Server misconfigured (Supabase env missing)",
+        message: 'Payment not completed.',
+        details: { orderStatus, captureStatus },
       });
     }
 
-    const supabase = createClient(supabaseUrl, serviceRole, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-
-    const username = await makeUniqueUsername(supabase);
+    // Generate creds and insert into DB
+    const supa = supaAdmin();
     const password = makePassword();
 
-    // Insert (or upsert) row; table has UNIQUE(username)
-    const payload = {
-      username,
-      password,
-      status: "active",
-      provider: "paypal",
-      paypal_order_id: token,
-    };
+    // Try a few times to avoid unique-username clashes
+    let username = null;
+    let lastErr = null;
 
-    const { data: saved, error: insErr } = await supabase
-      .from("quiz_results")
-      .upsert(payload, { onConflict: "username" })
-      .select()
-      .limit(1);
+    for (let i = 0; i < 5; i++) {
+      const candidate = makeUsername();
 
-    if (insErr) {
-      return res.status(500).json({
+      const { error } = await supa
+        .from('quiz_results')
+        .insert({
+          username: candidate,
+          password,
+          status: 'active',
+          provider: 'paypal',
+          // IMPORTANT: use 'order_id' (your column), not 'paypal_order_id'
+          order_id: String(token),
+        });
+
+      if (!error) {
+        username = candidate;
+        break;
+      }
+
+      // 23505 = unique violation
+      if (error.code === '23505') {
+        lastErr = error;
+        continue; // retry with a new username
+      }
+
+      // Any other DB error -> stop
+      return res.status(200).json({
         ok: false,
-        message: "DB insert failed",
-        details: { code: insErr.code, message: insErr.message },
+        message: 'DB insert failed',
+        details: error,
       });
     }
 
+    if (!username) {
+      return res.status(200).json({
+        ok: false,
+        message: 'DB insert failed (could not get a unique username).',
+        details: lastErr || null,
+      });
+    }
+
+    // Success – return credentials
     return res.status(200).json({
       ok: true,
       username,
       password,
+      provider: 'paypal',
     });
   } catch (err) {
-    console.error("[paypal/capture] fatal", err);
-    return res.status(500).json({
+    console.error('[paypal/capture] error:', err);
+    return res.status(200).json({
       ok: false,
-      message: "Internal error",
-      details: String(err?.message || err),
+      message: 'Internal error',
+      details: String(err),
     });
   }
-}
-
-// ---------- helpers ---------------------------------------------------------------
-
-async function safeJson(res) {
-  const text = await res.text();
-  try {
-    return text ? JSON.parse(text) : {};
-  } catch {
-    return { _raw: text };
-  }
-}
-
-function scrub(obj) {
-  // Remove noisy payloads from logs / responses
-  try {
-    const clone = JSON.parse(JSON.stringify(obj || {}));
-    if (clone?.links) delete clone.links;
-    return clone;
-  } catch {
-    return {};
-  }
-}
-
-function makePassword() {
-  const alpha = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-  let p = "";
-  for (let i = 0; i < 10; i++) p += alpha[Math.floor(Math.random() * alpha.length)];
-  return p;
-}
-
-async function makeUniqueUsername(supabase) {
-  const alpha = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  for (let t = 0; t < 6; t++) {
-    let u = "GL";
-    for (let i = 0; i < 6; i++) u += alpha[Math.floor(Math.random() * alpha.length)];
-    const { data, error } = await supabase
-      .from("quiz_results")
-      .select("id")
-      .eq("username", u)
-      .limit(1);
-    if (!error && (!data || data.length === 0)) return u;
-  }
-  return "GL" + Date.now().toString().slice(-6);
 }
