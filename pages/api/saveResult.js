@@ -1,84 +1,85 @@
 // pages/api/saveResult.js
-// Idempotent save: if (username, round_id) already exists in quiz_results,
-// return ok without inserting a duplicate.
+import { createClient } from '@supabase/supabase-js';
 
-const { createClient } = require("@supabase/supabase-js");
+/** ---------- Supabase (server) ---------- */
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey  = process.env.SUPABASE_SERVICE_ROLE;
+const supabase =
+  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    : null;
 
-// Lazy client init (service role is required for server-side writes)
-const supabase = supabaseUrl && serviceKey
-  ? createClient(supabaseUrl, serviceKey)
-  : null;
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ ok: false, message: 'Method not allowed' });
+  }
+  if (!supabase) {
+    return res.status(500).json({
+      ok: false,
+      message: 'Server misconfigured: missing Supabase credentials.',
+    });
+  }
 
-function asInt(v) {
-  const n = Number(v);
-  return Number.isFinite(n) ? Math.trunc(n) : NaN;
-}
-
-module.exports = async function handler(req, res) {
   try {
-    if (req.method !== "GET" && req.method !== "POST") {
-      return res.status(405).json({ ok: false, error: "Method not allowed" });
-    }
-    if (!supabase) {
-      return res.status(500).json({ ok: false, error: "Server misconfigured: Supabase env missing" });
+    const body =
+      typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    const username = (body.username || '').trim();
+    const round_id = body.round_id || '';
+    const correct = Number.isFinite(body.correct) ? Math.trunc(body.correct) : 0;
+    const time_ms = Number.isFinite(body.time_ms) ? Math.trunc(body.time_ms) : 0;
+
+    if (!username || !round_id) {
+      return res.status(400).json({ ok: false, message: 'Missing username or round_id.' });
     }
 
-    // Accept both GET query or JSON POST body
-    const src = req.method === "POST" && req.headers["content-type"]?.includes("application/json")
-      ? (req.body || {})
-      : req.query || {};
-
-    const username = String(src.username || "").trim();
-    const ms       = asInt(src.ms);
-    const correct  = asInt(src.correct);
-    const round_id = String(src.round_id || "unknown").trim();
-
-    if (!username) {
-      return res.status(400).json({ ok: false, error: "Missing username" });
-    }
-    if (!Number.isFinite(ms) || ms < 0) {
-      return res.status(400).json({ ok: false, error: "Invalid ms" });
-    }
-    if (!Number.isFinite(correct) || correct < 0) {
-      return res.status(400).json({ ok: false, error: "Invalid correct" });
-    }
-    if (!round_id) {
-      return res.status(400).json({ ok: false, error: "Missing round_id" });
-    }
-
-    // 1) Check if a result already exists for this username+round
+    // Idempotency: if a row already exists for this username+round with a nonzero time,
+    // just return OK so the button never errors on re-click.
     const { data: existing, error: selErr } = await supabase
-      .from("quiz_results")
-      .select("id")
-      .eq("username", username)
-      .eq("round_id", round_id)
-      .maybeSingle();
+      .from('quiz_results')
+      .select('id, correct, time_ms')
+      .eq('username', username)
+      .eq('round_id', round_id)
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-    if (selErr) {
-      return res.status(500).json({ ok: false, error: selErr.message });
+    if (!selErr && existing && existing.length) {
+      const row = existing[0];
+      if (row?.time_ms && row.time_ms > 0) {
+        return res.status(200).json({ ok: true, message: 'Already saved', id: row.id });
+      }
     }
 
-    if (existing?.id) {
-      // Already saved — return success without inserting a duplicate
-      return res.status(200).json({ ok: true, id: existing.id, already: true });
-    }
-
-    // 2) Insert new row
-    const { data, error } = await supabase
-      .from("quiz_results")
-      .insert([{ username, time_ms: ms, correct, round_id }])
-      .select("id")
-      .maybeSingle();
+    // Save (or first-time confirm) via RPC
+    const { data, error } = await supabase.rpc('save_quiz_result', {
+      p_username: username,
+      p_round_id: round_id,
+      p_correct: correct,
+      p_time_ms: time_ms,
+    });
 
     if (error) {
-      return res.status(500).json({ ok: false, error: error.message });
+      return res.status(500).json({
+        ok: false,
+        message: 'Save failed',
+        details: error.message,
+        code: error.code || null,
+      });
     }
 
-    return res.status(200).json({ ok: true, id: data?.id ?? null, already: false });
-  } catch (err) {
-    return res.status(500).json({ ok: false, error: err?.message || "Unknown server error" });
+    // RPC may return the inserted row id or void depending on version
+    return res.status(200).json({
+      ok: true,
+      message: 'Saved',
+      id: data?.id ?? data ?? null,
+    });
+  } catch (e) {
+    return res.status(500).json({
+      ok: false,
+      message: 'Internal error',
+      details: String(e?.message || e),
+    });
   }
-};
+}
