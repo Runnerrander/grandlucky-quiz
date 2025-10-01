@@ -1,6 +1,19 @@
 // pages/api/paypal/capture.js
+
 import { createClient } from '@supabase/supabase-js';
 
+/** ---------- Supabase (server) ---------- */
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+// (Don’t throw here; we validate again inside the handler)
+const supabase =
+  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    : null;
+
+/** ---------- PayPal (server) ---------- */
 const RAW_ENV = (process.env.PAYPAL_ENV || '').trim().toLowerCase();
 const PAYPAL_ENV = RAW_ENV === 'live' ? 'live' : 'sandbox';
 const PAYPAL_API_BASE =
@@ -8,40 +21,19 @@ const PAYPAL_API_BASE =
     ? 'https://api-m.paypal.com'
     : 'https://api-m.sandbox.paypal.com';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || '';
+const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || '';
 
-function supaAdmin() {
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error('Missing Supabase env (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).');
-  }
-  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false },
-  });
-}
-
-function makeUsername() {
-  // “GL-” + 4 random alphanumerics (bigger space to avoid duplicates)
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let s = '';
-  for (let i = 0; i < 4; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
-  return `GL-${s}`;
-}
-
-function makePassword() {
-  const alphabet =
-    'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^*';
-  let s = '';
-  for (let i = 0; i < 10; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
-  return s;
-}
-
+/** ---------- helpers ---------- */
 async function getAccessToken() {
-  const id = process.env.PAYPAL_CLIENT_ID;
-  const secret = process.env.PAYPAL_CLIENT_SECRET;
-  if (!id || !secret) throw new Error('Missing PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET');
+  if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+    throw new Error('Missing PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET');
+  }
 
-  const creds = Buffer.from(`${id}:${secret}`).toString('base64');
+  const creds = Buffer.from(
+    `${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`
+  ).toString('base64');
+
   const body = new URLSearchParams({ grant_type: 'client_credentials' });
 
   const r = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
@@ -54,139 +46,123 @@ async function getAccessToken() {
   });
 
   if (!r.ok) {
-    const text = await r.text().catch(() => '');
-    throw new Error(`PayPal token failed (${r.status}): ${text}`);
+    const txt = await r.text().catch(() => '');
+    throw new Error(`PayPal token error (${r.status}): ${txt}`);
   }
-  const data = await r.json();
-  return data.access_token;
+  const j = await r.json();
+  return j.access_token;
 }
 
-export default async function handler(req, res) {
-  try {
-    // Get token (order id) from query or body
-    const token =
-      (req.query && (req.query.token || req.query.orderID)) ||
-      (req.body &&
-        (typeof req.body === 'string'
-          ? (() => {
-              try {
-                return JSON.parse(req.body).token;
-              } catch {
-                return undefined;
-              }
-            })()
-          : req.body.token));
+function makeUsername() {
+  // GL-XXXX
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i = 0; i < 4; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return `GL-${s}`;
+}
 
-    if (!token) {
-      return res.status(400).json({
-        ok: false,
-        message: 'Missing PayPal token.',
-        details: { env: { RAW_ENV, PAYPAL_ENV } },
-      });
+function makePassword() {
+  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  let s = '';
+  for (let i = 0; i < 8; i++) s += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return s;
+}
+
+/** ---------- API handler ---------- */
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ ok: false, message: 'Method not allowed' });
+  }
+
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !supabase) {
+    return res.status(500).json({
+      ok: false,
+      message: 'Server misconfigured: missing Supabase credentials.',
+    });
+  }
+
+  try {
+    const body =
+      typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    const token = body.token || body.orderID || body.orderId || '';
+
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ ok: false, message: 'Missing PayPal order token.' });
     }
 
-    // Capture the order with PayPal
-    const bearer = await getAccessToken();
+    // 1) PayPal access token
+    const accessToken = await getAccessToken();
 
-    const capRes = await fetch(
-      `${PAYPAL_API_BASE}/v2/checkout/orders/${encodeURIComponent(token)}/capture`,
+    // 2) Verify order (PayPal may have auto-captured)
+    const orderRes = await fetch(
+      `${PAYPAL_API_BASE}/v2/checkout/orders/${encodeURIComponent(token)}`,
       {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${bearer}`,
-          'Content-Type': 'application/json',
-          Prefer: 'return=representation',
-        },
-        // no body
+        method: 'GET',
+        headers: { Authorization: `Bearer ${accessToken}` },
       }
     );
 
-    const capJson = await capRes.json().catch(() => ({}));
-
-    if (!capRes.ok) {
-      return res.status(200).json({
+    if (!orderRes.ok) {
+      const txt = await orderRes.text().catch(() => '');
+      return res.status(400).json({
         ok: false,
-        message: 'PayPal capture failed.',
-        details: { status: capRes.status, body: capJson, env: { RAW_ENV, PAYPAL_ENV } },
+        message: 'Failed to verify PayPal order.',
+        details: { status: orderRes.status, body: txt },
       });
     }
 
-    // Verify completed
-    const pu = capJson?.purchase_units?.[0];
-    const capture = pu?.payments?.captures?.[0];
-    const orderStatus = capJson?.status || 'UNKNOWN';
-    const captureStatus = capture?.status || 'UNKNOWN';
+    const order = await orderRes.json();
+    const orderStatus = order?.status ?? 'UNKNOWN';
+    const captureStatus =
+      order?.purchase_units?.[0]?.payments?.captures?.[0]?.status ?? 'UNKNOWN';
 
-    if (!(orderStatus === 'COMPLETED' || captureStatus === 'COMPLETED')) {
-      return res.status(200).json({
+    const paid = orderStatus === 'COMPLETED' || captureStatus === 'COMPLETED';
+    if (!paid) {
+      return res.status(400).json({
         ok: false,
-        message: 'Payment not completed.',
+        message: 'Payment not completed',
         details: { orderStatus, captureStatus },
       });
     }
 
-    // Generate creds and insert into DB
-    const supa = supaAdmin();
+    // 3) Credentials
+    const username = makeUsername();
     const password = makePassword();
 
-    // Try a few times to avoid unique-username clashes
-    let username = null;
-    let lastErr = null;
-
-    for (let i = 0; i < 5; i++) {
-      const candidate = makeUsername();
-
-      const { error } = await supa
-        .from('quiz_results')
-        .insert({
-          username: candidate,
-          password,
+    // 4) Store quiz result — include time_ms to satisfy NOT NULL
+    const { data, error } = await supabase
+      .from('quiz_results')
+      .insert([
+        {
+          username,
           status: 'active',
           provider: 'paypal',
-          // IMPORTANT: use 'order_id' (your column), not 'paypal_order_id'
-          order_id: String(token),
-        });
+          order_id: token,
+          time_ms: 0, // satisfy NOT NULL time_ms
+        },
+      ]) // <-- fixed: only one closing ] before )
+      .select('username');
 
-      if (!error) {
-        username = candidate;
-        break;
-      }
-
-      // 23505 = unique violation
-      if (error.code === '23505') {
-        lastErr = error;
-        continue; // retry with a new username
-      }
-
-      // Any other DB error -> stop
-      return res.status(200).json({
+    if (error) {
+      return res.status(500).json({
         ok: false,
         message: 'DB insert failed',
-        details: error,
+        details: { code: error.code, message: error.message, hint: error.hint ?? null },
       });
     }
 
-    if (!username) {
-      return res.status(200).json({
-        ok: false,
-        message: 'DB insert failed (could not get a unique username).',
-        details: lastErr || null,
-      });
-    }
-
-    // Success – return credentials
+    // 5) Return creds
     return res.status(200).json({
       ok: true,
-      username,
-      password,
-      provider: 'paypal',
+      message: 'Payment captured & row stored.',
+      creds: { username, password },
     });
   } catch (err) {
-    console.error('[paypal/capture] error:', err);
-    return res.status(200).json({
+    return res.status(500).json({
       ok: false,
       message: 'Internal error',
-      details: String(err),
+      details: String(err && err.message ? err.message : err),
     });
   }
 }
