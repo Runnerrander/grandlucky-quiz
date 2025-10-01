@@ -1,96 +1,199 @@
 // pages/api/paypal/capture.js
-// Captures a PayPal order (LIVE by default) and returns quiz credentials.
+//
+// One-file drop-in:
+// - Captures a PayPal order (sandbox or live, based on env)
+// - Mints GL-XXXX / PASS-XXXX credentials
+// - Retries on UNIQUE-constraint collision so no duplicate usernames
+// - Returns { ok, order_id, amount, username, password }
+//
+// Requirements:
+//   env: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+//        PAYPAL_CLIENT_ID, PAYPAL_CLIENT_SECRET
+//        PAYPAL_ENV   -> "live" or "sandbox"  (defaults to "sandbox")
+// Optional:
+//        NEXT_PUBLIC_ENTRY_PRICE_USD  (for sanity-check)
 
+import crypto from "crypto";
+import { createClient } from "@supabase/supabase-js";
+
+// ---------- Config ----------
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const PAYPAL_ENV = (process.env.PAYPAL_ENV || "sandbox").toLowerCase(); // "live" | "sandbox"
+const PAYPAL_BASE =
+  PAYPAL_ENV === "live" ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID;
+const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;
+
+const ENTRY_PRICE = Number(process.env.NEXT_PUBLIC_ENTRY_PRICE_USD || "9.99"); // sanity cap
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+  // Fail fast at build/runtime misconfig, clear error in logs
+  console.error("Missing Supabase env (SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY).");
+}
+if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+  console.error("Missing PayPal env (PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET).");
+}
+
+// ---------- Supabase (service role for server-side insert) ----------
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
+  auth: { persistSession: false },
+});
+
+// ---------- Helpers ----------
+function genCode(n = 4) {
+  // Avoid ambiguous chars to keep codes readable in screenshots/photos
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = crypto.randomBytes(n);
+  let s = "";
+  for (let i = 0; i < n; i++) s += alphabet[bytes[i] % alphabet.length];
+  return s;
+}
+
+/**
+ * Insert a row with unique credentials, retrying on username collision.
+ * Relies on a UNIQUE constraint:  ALTER TABLE public.quiz_results
+ *   ADD CONSTRAINT quiz_results_username_key UNIQUE (username);
+ */
+async function mintUniqueCredentials(extraCols = {}, maxTries = 8) {
+  let lastErr;
+  for (let t = 0; t < maxTries; t++) {
+    const suffix = genCode(4);
+    const username = `GL-${suffix}`;
+    const password = `PASS-${suffix}`;
+
+    const { data, error } = await supabase
+      .from("quiz_results")
+      .insert([
+        {
+          status: "active",
+          username,
+          password,
+          // keep room for caller-provided columns (like provider/order)
+          ...extraCols,
+        },
+      ])
+      .select("id, username, password")
+      .single();
+
+    if (!error) return data;
+
+    // Unique violation: Postgres code 23505 or generic wording
+    if (error.code === "23505" || /duplicate key|unique constraint/i.test(error.message || "")) {
+      lastErr = error;
+      continue; // try again with a new suffix
+    }
+
+    // Any other DB error: bail
+    throw error;
+  }
+  throw lastErr || new Error("Could not mint a unique username after several attempts.");
+}
+
+async function getPayPalAccessToken() {
+  const resp = await fetch(`${PAYPAL_BASE}/v1/oauth2/token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization:
+        "Basic " + Buffer.from(`${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`).toString("base64"),
+    },
+    body: "grant_type=client_credentials",
+  });
+  if (!resp.ok) {
+    const txt = await resp.text();
+    throw new Error(`PayPal OAuth failed: ${resp.status} ${txt}`);
+  }
+  const json = await resp.json();
+  return json.access_token;
+}
+
+async function capturePayPalOrder(orderID, accessToken) {
+  const resp = await fetch(`${PAYPAL_BASE}/v2/checkout/orders/${orderID}/capture`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  const json = await resp.json();
+  if (!resp.ok) {
+    throw new Error(`Capture failed: ${resp.status} ${JSON.stringify(json)}`);
+  }
+  return json;
+}
+
+function extractAmountFromCapture(captureJSON) {
+  try {
+    // Standard location for the first capture amount
+    const cap = captureJSON?.purchase_units?.[0]?.payments?.captures?.[0];
+    const valueStr = cap?.amount?.value;
+    return Number(valueStr || "0");
+  } catch {
+    return 0;
+  }
+}
+
+// ---------- API Handler ----------
 export default async function handler(req, res) {
   if (req.method !== "POST") {
+    res.setHeader("Allow", "POST");
     return res.status(405).json({ ok: false, error: "Method not allowed" });
   }
 
-  const { orderId } = req.body || {};
-  if (!orderId) return res.status(400).json({ ok: false, error: "Missing orderId" });
-
-  const CLIENT_ID = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID; // public
-  const CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET;     // server-only
-  const API_BASE = process.env.PAYPAL_API_BASE || "https://api-m.paypal.com"; // live
-  const EXPECTED_AMOUNT = (process.env.NEXT_PUBLIC_ENTRY_PRICE_USD || "9.99").toString();
-  const CURRENCY = "USD";
-
-  const genCred = () => {
-    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    const pick = () => alphabet[Math.floor(Math.random() * alphabet.length)];
-    const code = Array.from({ length: 4 }, pick).join("");
-    return { username: `GL-${code}`, password: `PASS-${code}` };
-  };
-
-  const basicAuth = "Basic " + Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
-
   try {
-    // 1) OAuth2 token
-    const tokRes = await fetch(`${API_BASE}/v1/oauth2/token`, {
-      method: "POST",
-      headers: { Authorization: basicAuth, "Content-Type": "application/x-www-form-urlencoded" },
-      body: "grant_type=client_credentials",
-    });
-    if (!tokRes.ok) {
-      return res.status(tokRes.status).json({ ok: false, error: "oauth_failed", detail: await tokRes.text() });
-    }
-    const { access_token } = await tokRes.json();
-    const authHeaders = { Authorization: `Bearer ${access_token}`, "Content-Type": "application/json" };
-
-    // helper to validate amount/currency from an order or capture object
-    const validAmount = (amt) =>
-      amt && amt.value?.toString() === EXPECTED_AMOUNT && (amt.currency_code || amt.currency)?.toUpperCase() === CURRENCY;
-
-    // 2) Try to CAPTURE
-    let capJson = null;
-    let capRes = await fetch(`${API_BASE}/v2/checkout/orders/${orderId}/capture`, { method: "POST", headers: authHeaders });
-
-    if (!capRes.ok) {
-      // If already captured, PayPal may return 422; fall back to GET the order
-      const txt = await capRes.text();
-      const already = txt.includes("ORDER_ALREADY_CAPTURED") || txt.includes("DUPLICATE_INVOICE_ID");
-      if (!already) {
-        // Last resort: if GET shows COMPLETED we still accept
-        const ord = await fetch(`${API_BASE}/v2/checkout/orders/${orderId}`, { headers: authHeaders });
-        const ordJson = ord.ok ? await ord.json() : null;
-        const pu = ordJson?.purchase_units?.[0];
-        const amt = pu?.amount;
-        if (ordJson?.status === "COMPLETED" && validAmount(amt)) {
-          const { username, password } = genCred();
-          return res.status(200).json({ ok: true, orderId, amount: amt.value, currency: amt.currency_code, username, password });
-        }
-        return res.status(capRes.status).json({ ok: false, error: "capture_failed", detail: txt });
-      }
-    } else {
-      capJson = await capRes.json();
+    const { orderID } = req.body || {};
+    if (!orderID || typeof orderID !== "string") {
+      return res.status(400).json({ ok: false, error: "Missing orderID" });
     }
 
-    // 3) Verify amount/currency from capture payload
-    const pu = capJson?.purchase_units?.[0];
-    const capture = pu?.payments?.captures?.[0];
-    const status = capJson?.status || capture?.status;
-    const amt = capture?.amount;
+    // 1) OAuth
+    const token = await getPayPalAccessToken();
 
-    if (status !== "COMPLETED" || !validAmount(amt)) {
+    // 2) Capture
+    const capture = await capturePayPalOrder(orderID, token);
+
+    // Basic status guard
+    const orderStatus = capture?.status || "";
+    if (!/COMPLETED/i.test(orderStatus)) {
       return res.status(400).json({
         ok: false,
-        error: "verification_failed",
-        detail: { status, amount: amt?.value, currency: amt?.currency_code },
+        error: `Order not completed (status: ${orderStatus})`,
+        raw: capture,
       });
     }
 
-    // 4) Generate credentials (same style as before). Persist comes in next step.
-    const { username, password } = genCred();
+    // 3) Amount sanity
+    const amount = extractAmountFromCapture(capture);
+    if (Number.isNaN(amount) || amount <= 0 || amount > Math.max(ENTRY_PRICE, 1000)) {
+      return res.status(400).json({
+        ok: false,
+        error: `Suspicious amount: ${amount}`,
+      });
+    }
 
+    // 4) Insert + retry on collision (NO duplicate usernames)
+    const creds = await mintUniqueCredentials({
+      provider: "paypal",
+      order_id: orderID, // safe even if this column doesn't exist (Supabase ignores extra keys without column)
+      amount_usd: amount, // optional if your table has it; harmless otherwise
+    });
+
+    // 5) Respond with credentials (frontend will show + “Start Quiz”)
     return res.status(200).json({
       ok: true,
-      orderId,
-      amount: amt.value,
-      currency: amt.currency_code,
-      username,
-      password,
+      provider: "paypal",
+      order_id: orderID,
+      amount,
+      username: creds.username,
+      password: creds.password,
     });
-  } catch (e) {
-    return res.status(500).json({ ok: false, error: "server_error", detail: String(e?.message || e) });
+  } catch (err) {
+    console.error("paypal/capture error:", err);
+    return res.status(500).json({
+      ok: false,
+      error: String(err?.message || err),
+    });
   }
 }
