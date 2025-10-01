@@ -1,293 +1,162 @@
-// pages/checkout.js
+// /pages/checkout.js
 import Head from "next/head";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState, useMemo } from "react";
 
 const BG = "/checkout-designer.jpg"; // must exist in /public
 
 export default function Checkout() {
-  const [lang, setLang] = useState("hu");
-  const [accepted, setAccepted] = useState(false);
+  const [lang, setLang] = useState("hu");            // default HU
+  const [accepted, setAccepted] = useState(false);   // accept rules
   const [busy, setBusy] = useState(false);
 
-  // price from env (0.01 while testing, 9.99 live)
-  const ENTRY = useMemo(() => {
-    const v = Number(process.env.NEXT_PUBLIC_ENTRY_PRICE_USD ?? "0.01");
-    return isNaN(v) ? "0.01" : v.toFixed(2);
+  const price = useMemo(() => {
+    const p = Number(process.env.NEXT_PUBLIC_ENTRY_PRICE_USD ?? "9.99");
+    return isFinite(p) && p > 0 ? p.toFixed(2) : "9.99";
   }, []);
 
-  // POST /api/paypal/create-order -> { approveURL } then redirect to PayPal
+  const t = useMemo(
+    () =>
+      lang === "hu"
+        ? {
+            title: "Biztonságos fizetés",
+            important: "Fontos — Kérjük, olvasd el!",
+            bullets: [
+              "A sikeres fizetés után a Felhasználónevet és a Jelszót a rendszer automatikusan létrehozza. A 2. fordulóban (élő verseny) a hitelesítéshez szükséged lesz a Felhasználónév + Jelszó kombinációra.",
+              "El tudod menteni vagy ki tudod nyomtatni a Felhasználónevedet és a Jelszavadat. Az első fordulóban a felhasználónév automatikusan bekerül a kvízbe, és a rendszer eltárolja a kvíz befejezésének idejével együtt.",
+              "Minden nevezés új Felhasználónevet és Jelszót hoz létre.",
+              "Az első fordulóban (online kvíz), ha valaki korábban pontosan ugyanannyi idő alatt teljesítette a kvízt, mint a versenyző, a versenyző két lehetőséget kap. 1. lehetőség: a befejezési időt +5 másodperccel növeltenyújtja be; vagy azonnal új kvízt indíthat további nevezési díj fizetése nélkül.",
+              "Kérjük, a Felhasználónevet és a Jelszót tartsd biztonságos helyen.",
+            ],
+            payingWith: "A fizetés a PayPal rendszerén keresztül történik.",
+            accept: "Elolvastam és elfogadom a Szabályokat és a Felhasználói Feltételeket",
+            back: "VISSZA",
+            pay: "Fizetek",
+            paying: "Folyamatban…",
+            alertFail: "Hoppá! Nem sikerült elindítani a PayPal fizetést.",
+          }
+        : {
+            title: "Secure Payment",
+            important: "Important — Please read!",
+            bullets: [
+              "After a successful payment the system will automatically create your Username and Password. For Round 2 (live event) you’ll need the Username + Password to verify.",
+              "You can Save or Print your Username and Password. In Round 1 your username automatically goes into the quiz and the system stores it together with your finish time.",
+              "Each registration creates a new Username and Password.",
+              "In Round 1 (online quiz), if someone earlier finished in exactly the same time, you will have two options: (1) submit your time with +5 seconds; or (2) immediately retake a new quiz without an extra fee.",
+              "Please keep your Username and Password in a safe place.",
+            ],
+            payingWith: "Payment is processed by PayPal.",
+            accept: "I have read and accept the Rules and the Terms of Use",
+            back: "BACK",
+            pay: "Pay",
+            paying: "Processing…",
+            alertFail: "Oops! Couldn’t start the PayPal payment.",
+          },
+    [lang]
+  );
+
+  // Create order -> redirect to PayPal
   const onPay = async (e) => {
     e.preventDefault();
     if (!accepted || busy) return;
-    setBusy(true);
+
     try {
-      const res = await fetch("/api/paypal/create-order", {
+      setBusy(true);
+
+      const res = await fetch("/api/paypal/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: ENTRY,   // "0.01" or "9.99"
-          locale: lang,    // "hu" | "en" (PayPal page language hint)
-        }),
+        body: JSON.stringify({ locale: lang }),
       });
 
-      const data = await res.json();
-      if (!res.ok || !data?.approveURL) {
-        throw new Error(data?.error || "No approve URL");
+      if (!res.ok) {
+        throw new Error(`create failed: ${res.status}`);
       }
-      // Same UX as Stripe Checkout: redirect to processor-hosted page
-      window.location.href = data.approveURL;
+
+      const json = await res.json();
+      const url = json?.approveURL;
+      if (!url) throw new Error("no approveURL");
+
+      // hard redirect to PayPal
+      window.location.href = url;
     } catch (err) {
-      console.error(err);
-      alert(
-        lang === "hu"
-          ? "Hoppá! Nem sikerült elindítani a PayPal fizetést."
-          : "Oops! Could not start the PayPal payment."
-      );
+      console.error("[checkout] start paypal error:", err);
+      alert(t.alertFail);
       setBusy(false);
     }
   };
 
-  const copy = {
-    hu: {
-      title: "Biztonságos fizetés",
-      lead: "Fontos — Kérjük, olvasd el!",
-      bullets: [
-        "A sikeres fizetés után a <strong>Felhasználónevet</strong> és a <strong>Jelszót</strong> a rendszer automatikusan létrehozza. A 2. fordulóban (élő verseny) a hitelesítéshez szükséged lesz a <strong>Felhasználónév + Jelszó</strong> kombinációra.",
-        "El tudod menteni vagy ki tudod nyomtatni a <strong>Felhasználónevedet</strong> és a <strong>Jelszavadat</strong>. Az első fordulóban a felhasználóneved automatikusan bekerül a kvízbe, és a rendszer eltárolja a kvíz befejezésének <strong>idejével együtt</strong>.",
-        "Minden <strong>nevezés</strong> <strong>új Felhasználónevet és Jelszót</strong> hoz létre.",
-        "Az első fordulóban (online kvíz), ha valaki korábban pontosan ugyanannyi idő alatt teljesítette a kvízt, mint a versenyző, a versenyző két lehetőséget kap. 1. lehetőség: a befejezési időt <strong>+5 másodperccel</strong> növelten nyújtja be; vagy azonnal <strong>új kvízt indíthat</strong> további nevezési díj fizetése nélkül.",
-        "Kérjük, a <strong>Felhasználónevet</strong> és a <strong>Jelszót</strong> tartsd biztonságos helyen.",
-      ],
-      note: "A fizetés a PayPal rendszerén keresztül történik.",
-      agree:
-        "Elolvastam és elfogadom a Szabályokat és a Felhasználói Feltételeket",
-      back: "VISSZA",
-      pay: (p) => `FIZETÉS — $${p}`,
-    },
-    en: {
-      title: "Secure Checkout",
-      lead: "Important — Please read",
-      bullets: [
-        "After successful payment, your <strong>Username</strong> and <strong>Password</strong> are created automatically by the system. You will need the Username and Password Combination at the 2nd. round (live contest) for verification.",
-        "You can save or print your Username and Password. At first round your username will be inserted to the quiz automatically and stored in the system with the time the completion of trivia.",
-        "Each entry generates a <strong>new Username and Password</strong>.",
-        "In round one (online trivia) if someone completed the trivia under earlier in the exact same time than the contestant, the contestant will get two options. Option 1: The contestant can submit the time of completion with added five second or can enter a new trivia immediately without paying the entry fee again.",
-        "Keep your <strong>Username</strong> and <strong>Password</strong> in a safe place.",
-      ],
-      note: "Payments are processed securely by PayPal.",
-      agree: "I have read and accept the Rules and User Agreement",
-      back: "BACK",
-      pay: (p) => `PAY — $${p}`,
-    },
-  };
-
-  const C = copy[lang];
-
   return (
-    <main className="checkout">
+    <>
       <Head>
         <title>Checkout — GrandLuckyTravel</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&display=swap"
-        />
+        <meta name="robots" content="noindex" />
       </Head>
 
-      {/* Language toggle chip */}
-      <button
-        className="lang"
-        onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}
+      <div
+        style={{
+          minHeight: "100vh",
+          backgroundImage: `url(${BG})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+        className="flex items-center justify-center px-4 py-8"
       >
-        {lang === "hu" ? "ANGOL" : "MAGYAR"}
-      </button>
-
-      {/* Content */}
-      <div className="wrap">
-        <h1 className="title">{C.title}</h1>
-        <h2 className="lead">{C.lead}</h2>
-
-        <ul className="list">
-          {C.bullets.map((b, i) => (
-            <li key={i} dangerouslySetInnerHTML={{ __html: b }} />
-          ))}
-        </ul>
-
-        <p className="note">{C.note}</p>
-
-        <label className="agree">
-          <input
-            type="checkbox"
-            checked={accepted}
-            onChange={(e) => setAccepted(e.target.checked)}
-          />
-          <span dangerouslySetInnerHTML={{ __html: C.agree }} />
-        </label>
-
-        {/* Sticky actions on mobile — transparent background */}
-        <div className="row actions">
-          <Link href="/user-agreement" legacyBehavior>
-            <a className="btn ghost">{C.back}</a>
-          </Link>
-
-          <button className="btn" onClick={onPay} disabled={!accepted || busy}>
-            {busy ? "…" : C.pay(ENTRY)}
+        <div className="max-w-3xl w-full bg-[#f2a93b]/90 rounded-2xl p-6 shadow-xl relative">
+          {/* Language pill */}
+          <button
+            onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}
+            className="absolute right-4 top-4 rounded-full px-4 py-2 bg-black text-white text-sm shadow-md"
+            aria-label="Toggle language"
+          >
+            {lang === "hu" ? "ANGOL" : "HUNGARIAN"}
           </button>
+
+          <h1 className="text-4xl font-extrabold mb-2">{t.title}</h1>
+          <p className="font-semibold mb-3">{t.important}</p>
+
+          <ul className="list-disc pl-6 space-y-2 mb-4">
+            {t.bullets.map((b, i) => (
+              <li key={i}>{b}</li>
+            ))}
+          </ul>
+
+          <p className="text-sm opacity-90 mb-4">
+            {t.payingWith} ({lang === "hu" ? "Ár" : "Price"}: ${price} USD)
+          </p>
+
+          <label className="flex items-start gap-3 mb-6">
+            <input
+              type="checkbox"
+              checked={accepted}
+              onChange={(e) => setAccepted(e.target.checked)}
+              className="mt-1"
+            />
+            <span>{t.accept}</span>
+          </label>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href="/vivko"
+              className="px-6 py-3 rounded-full bg-white/90 shadow hover:shadow-lg transition"
+            >
+              {t.back}
+            </Link>
+
+            <button
+              onClick={onPay}
+              disabled={!accepted || busy}
+              className={`px-6 py-3 rounded-full shadow transition ${
+                !accepted || busy
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-black text-white hover:shadow-lg"
+              }`}
+            >
+              {busy ? t.paying : t.pay}
+            </button>
+          </div>
         </div>
       </div>
-
-      <style jsx>{`
-        :global(:root) {
-          --dark: #222;
-          --muted: rgba(0, 0, 0, 0.66);
-          --yellow: #faaf3b;
-          --yellow-border: #e49b28;
-        }
-
-        /* Full-screen background; allow scrolling so sticky works */
-        .checkout {
-          position: relative;
-          min-height: 100svh;
-          height: auto;
-          overflow: visible; /* keep sticky working */
-          box-sizing: border-box;
-
-          /* space from the top bar */
-          padding-top: clamp(80px, 12vh, 140px);
-
-          font-family: "Montserrat", system-ui, sans-serif;
-          color: var(--dark);
-
-          background-image: url(${JSON.stringify(BG)});
-          background-repeat: no-repeat;
-          background-position: center;
-          background-size: cover;
-        }
-
-        .lang {
-          position: fixed;
-          top: clamp(14px, 2vw, 22px);
-          right: clamp(14px, 2vw, 22px);
-          z-index: 10;
-          padding: 12px 22px;
-          border-radius: 999px;
-          font-weight: 900;
-          border: 3px solid var(--yellow-border);
-          background: var(--yellow);
-          color: var(--dark);
-          box-shadow: 0 10px 18px rgba(0, 0, 0, 0.15),
-            inset 0 2px 0 rgba(255, 255, 255, 0.7);
-          cursor: pointer;
-        }
-
-        .wrap {
-          max-width: 960px;
-          margin: 0 auto;
-          padding: 0 clamp(18px, 3.6vw, 36px);
-          /* leave room so content never hides behind sticky actions */
-          padding-bottom: 110px;
-        }
-
-        .title {
-          margin: 0 0 8px;
-          font-size: clamp(28px, 4.2vw, 46px);
-          font-weight: 900;
-        }
-        .lead {
-          margin: 0 0 14px;
-          font-size: clamp(18px, 2.2vw, 24px);
-          font-weight: 800;
-        }
-        .list {
-          margin: 8px 0 14px;
-          padding-left: 20px;
-          color: var(--muted);
-          font-size: clamp(16px, 1.6vw, 19px);
-          line-height: 1.55;
-        }
-        .list li + li {
-          margin-top: 8px;
-        }
-
-        .note {
-          color: var(--muted);
-          font-size: clamp(14px, 1.4vw, 16px);
-          margin: 6px 0 12px;
-        }
-
-        .agree {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          margin: 12px 0 18px;
-          font-weight: 700;
-        }
-        .agree input {
-          width: 18px;
-          height: 18px;
-        }
-
-        .row {
-          display: flex;
-          gap: 12px;
-          align-items: center;
-          flex-wrap: wrap;
-        }
-
-        /* Sticky action bar: now fully transparent */
-        .actions {
-          position: sticky;
-          bottom: 0;
-          z-index: 9;
-          padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0));
-          background: transparent; /* <- no plate/gradient */
-          border-top: none;
-        }
-
-        /* Yellow pill buttons */
-        .btn {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          padding: clamp(12px, 1.1vw, 16px) clamp(22px, 2.2vw, 32px);
-          border-radius: 999px;
-          font-weight: 900;
-          text-transform: uppercase;
-          color: var(--dark);
-          background: var(--yellow);
-          border: 3px solid var(--yellow-border);
-          text-decoration: none;
-          box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18),
-            inset 0 2px 0 rgba(255, 255, 255, 0.65);
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
-          cursor: pointer;
-          touch-action: manipulation;
-        }
-        .btn:hover:not([disabled]) {
-          transform: translateY(-2px);
-          box-shadow: 0 22px 36px rgba(0, 0, 0, 0.24),
-            inset 0 2px 0 rgba(255, 255, 255, 0.7);
-        }
-        .btn[disabled] {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-        .btn.ghost {
-          background: #fff;
-          border-color: #e8e8e8;
-        }
-
-        @media (max-width: 900px) {
-          .checkout {
-            padding-top: clamp(70px, 11vh, 120px);
-          }
-          .row .btn {
-            width: 100%;
-            justify-content: center;
-          }
-        }
-      `}</style>
-    </main>
+    </>
   );
 }
