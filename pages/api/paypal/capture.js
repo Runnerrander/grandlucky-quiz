@@ -1,8 +1,7 @@
+// pages/api/paypal/capture.js
 /* eslint-env node */
-/* global fetch */
 
-// pages/api/paypal/capture.js  (captures the order, then stores rows)
-const { createClient } = require('@supabase/supabase-js');
+import { createClient } from '@supabase/supabase-js';
 
 /** ---------- Supabase (server) ---------- */
 const SUPABASE_URL =
@@ -41,6 +40,7 @@ async function getAccessToken() {
     },
     body: new URLSearchParams({ grant_type: 'client_credentials' }),
   });
+
   if (!r.ok) {
     const txt = await r.text().catch(() => '');
     throw new Error(`PayPal token error (${r.status}): ${txt}`);
@@ -62,7 +62,7 @@ function makePassword() {
   return s;
 }
 
-async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ ok: false, message: 'Method not allowed' });
@@ -75,16 +75,18 @@ async function handler(req, res) {
   }
 
   try {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    const body =
+      typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     const token = body.token || body.orderID || body.orderId || '';
+
     if (!token || typeof token !== 'string') {
       return res.status(400).json({ ok: false, message: 'Missing PayPal order token.' });
     }
 
-    // 1) Get access token
+    // 1) Get auth
     const accessToken = await getAccessToken();
 
-    // 2) CAPTURE the order (this is the missing piece)
+    // 2) Actively CAPTURE the order (this is what flips APPROVED -> COMPLETED)
     const capRes = await fetch(
       `${PAYPAL_API_BASE}/v2/checkout/orders/${encodeURIComponent(token)}/capture`,
       {
@@ -93,45 +95,72 @@ async function handler(req, res) {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
           Prefer: 'return=representation',
+          // helps make retries idempotent:
+          'PayPal-Request-Id': `cap_${token}`,
         },
         body: JSON.stringify({}),
       }
     );
 
-    // If order already captured, PayPal may return 201/200; for conflicts it may still include status
-    const capText = await capRes.text().catch(() => '');
-    let capJson = {};
-    try { capJson = capText ? JSON.parse(capText) : {}; } catch (_e) {}
+    let paid = false;
+    let captureJson = null;
 
-    const orderStatus = capJson?.status ?? 'UNKNOWN';
-    const captureStatus =
-      capJson?.purchase_units?.[0]?.payments?.captures?.[0]?.status ?? 'UNKNOWN';
+    if (capRes.ok || capRes.status === 201) {
+      captureJson = await capRes.json().catch(() => null);
+      const orderStatus = captureJson?.status || 'UNKNOWN';
+      const capStatus =
+        captureJson?.purchase_units?.[0]?.payments?.captures?.[0]?.status || 'UNKNOWN';
+      paid = orderStatus === 'COMPLETED' || capStatus === 'COMPLETED';
+    } else {
+      // If capture rejected because it was already captured,
+      // double-check the order status
+      const txt = await capRes.text().catch(() => '');
+      // Fallback: read order
+      const orderRes = await fetch(
+        `${PAYPAL_API_BASE}/v2/checkout/orders/${encodeURIComponent(token)}`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      const orderJson = await orderRes.json().catch(() => null);
+      const orderStatus = orderJson?.status || 'UNKNOWN';
+      const capStatus =
+        orderJson?.purchase_units?.[0]?.payments?.captures?.[0]?.status || 'UNKNOWN';
+      paid = orderStatus === 'COMPLETED' || capStatus === 'COMPLETED';
 
-    const paid =
-      orderStatus === 'COMPLETED' || captureStatus === 'COMPLETED';
+      if (!paid) {
+        return res.status(400).json({
+          ok: false,
+          message: 'Payment not completed',
+          details: { capture_status: capRes.status, capture_body: txt, orderStatus, capStatus },
+        });
+      }
+    }
 
     if (!paid) {
       return res.status(400).json({
         ok: false,
         message: 'Payment not completed',
-        details: { orderStatus, captureStatus, raw: capJson },
+        details: captureJson ?? null,
       });
     }
 
-    // 3) Generate creds
+    // 3) Generate credentials
     const username = makeUsername();
     const password = makePassword();
 
-    // 4) registrations
+    // 4) Store rows
+    // registrations: mirror old Stripe flow
     const { error: regErr } = await supabase
       .from('registrations')
-      .insert([{
-        session_id: `pp_${token}`,
-        password,
-        created_at: new Date().toISOString(),
-        status: 'active',
-        username,
-      }]);
+      .insert([
+        {
+          session_id: `pp_${token}`,
+          password,
+          created_at: new Date().toISOString(),
+          status: 'active',
+          username,
+        },
+      ]);
+
     if (regErr) {
       return res.status(500).json({
         ok: false,
@@ -140,16 +169,19 @@ async function handler(req, res) {
       });
     }
 
-    // 5) quiz_results
+    // quiz_results (make sure NOT NULLs are satisfied)
     const { error: qrErr } = await supabase
       .from('quiz_results')
-      .insert([{
-        username,
-        provider: 'paypal',
-        order_id: token,
-        correct: 0,
-        time_ms: 0,
-      }]);
+      .insert([
+        {
+          username,
+          provider: 'paypal',
+          order_id: token,
+          correct: 0,
+          time_ms: 0,
+        },
+      ]);
+
     if (qrErr) {
       return res.status(500).json({
         ok: false,
@@ -158,7 +190,7 @@ async function handler(req, res) {
       });
     }
 
-    // 6) Done
+    // 5) Return creds for the Success page
     return res.status(200).json({
       ok: true,
       message: 'Payment captured & row stored.',
@@ -172,6 +204,3 @@ async function handler(req, res) {
     });
   }
 }
-
-module.exports = handler;
-module.exports.default = handler;
