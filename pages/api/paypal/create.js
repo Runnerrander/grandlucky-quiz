@@ -1,106 +1,129 @@
 // pages/api/paypal/create.js
-// Creates a PayPal order and returns { approveURL }.
-// NOTE: We send users back to /success so the flow matches your old Stripe UX.
+import { NextResponse } from 'next/server'; // harmless if unused in node env
 
-const RAW_ENV = (process.env.PAYPAL_ENV || "").trim().toLowerCase();
-const PAYPAL_ENV = RAW_ENV === "live" ? "live" : "sandbox";
+/** ---------- PayPal config ---------- */
+const RAW_ENV = (process.env.PAYPAL_ENV || '').trim().toLowerCase();
+const PAYPAL_ENV = RAW_ENV === 'live' ? 'live' : 'sandbox';
 const PAYPAL_API_BASE =
-  PAYPAL_ENV === "live"
-    ? "https://api-m.paypal.com"
-    : "https://api-m.sandbox.paypal.com";
+  PAYPAL_ENV === 'live'
+    ? 'https://api-m.paypal.com'
+    : 'https://api-m.sandbox.paypal.com';
 
-const ENTRY_PRICE = Number(process.env.NEXT_PUBLIC_ENTRY_PRICE_USD || "9.99")
-  .toFixed(2);
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || '';
+const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || '';
 
-// IMPORTANT: point PayPal back to /success (not /thank-you)
-const RETURN_URL = "https://www.grandluckytravel.com/success";
-const CANCEL_URL = "https://www.grandluckytravel.com/checkout";
-const BRAND_NAME = "Grandlucky Travel";
+/** ---------- App config ---------- */
+const ENTRY_PRICE = String(process.env.NEXT_PUBLIC_ENTRY_PRICE_USD || '9.99');
+const BRAND_NAME = 'GrandLucky Travel';
 
+/** Helpers */
 async function getAccessToken() {
-  const client = process.env.PAYPAL_CLIENT_ID;
-  const secret = process.env.PAYPAL_CLIENT_SECRET;
-  if (!client || !secret) throw new Error("Missing PAYPAL_CLIENT_ID/SECRET");
-
-  const creds = Buffer.from(`${client}:${secret}`).toString("base64");
-  const body = new URLSearchParams({ grant_type: "client_credentials" });
+  if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+    throw new Error('Missing PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET');
+  }
+  const creds = Buffer.from(
+    `${PAYPAL_CLIENT_ID}:${PAYPAL_CLIENT_SECRET}`
+  ).toString('base64');
 
   const r = await fetch(`${PAYPAL_API_BASE}/v1/oauth2/token`, {
-    method: "POST",
+    method: 'POST',
     headers: {
       Authorization: `Basic ${creds}`,
-      "Content-Type": "application/x-www-form-urlencoded",
+      'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body,
+    body: new URLSearchParams({ grant_type: 'client_credentials' }),
   });
 
-  const text = await r.text();
-  if (!r.ok) throw new Error(`PayPal token error ${r.status}: ${text}`);
-  return JSON.parse(text).access_token;
+  if (!r.ok) {
+    const txt = await r.text().catch(() => '');
+    throw new Error(`PayPal token error (${r.status}): ${txt}`);
+  }
+  const j = await r.json();
+  return j.access_token;
 }
 
+function getBaseURL(req) {
+  const proto = req.headers['x-forwarded-proto'] || 'https';
+  const host = req.headers.host;
+  return `${proto}://${host}`;
+}
+
+/** API handler */
 export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ ok: false, message: 'Method not allowed' });
+  }
+
   try {
-    if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
-    }
+    const baseURL = getBaseURL(req);
+    const RETURN_URL = `${baseURL}/success`;
+    const CANCEL_URL = `${baseURL}/checkout`;
 
     const accessToken = await getAccessToken();
 
-    const orderBody = {
-      intent: "CAPTURE",
-      application_context: {
-        brand_name: BRAND_NAME,
-        return_url: RETURN_URL, // <— lands on /success
-        cancel_url: CANCEL_URL,
-        user_action: "PAY_NOW",
-      },
-      purchase_units: [
-        {
-          amount: {
-            currency_code: "USD",
-            value: ENTRY_PRICE,
-          },
-        },
-      ],
-    };
-
-    const r = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
-      method: "POST",
+    // Create the order with CAPTURE intent (this is the key fix)
+    const createRes = await fetch(`${PAYPAL_API_BASE}/v2/checkout/orders`, {
+      method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-        Prefer: "return=representation",
+        'Content-Type': 'application/json',
+        'PayPal-Request-Id': `ord-${Date.now()}-${Math.random().toString(36).slice(2)}`, // idempotency
       },
-      body: JSON.stringify(orderBody),
+      body: JSON.stringify({
+        intent: 'CAPTURE',
+        purchase_units: [
+          {
+            amount: {
+              currency_code: 'USD',
+              value: ENTRY_PRICE,
+            },
+            description: 'GrandLucky quiz entry',
+          },
+        ],
+        application_context: {
+          brand_name: BRAND_NAME,
+          user_action: 'PAY_NOW',
+          return_url: RETURN_URL,
+          cancel_url: CANCEL_URL,
+        },
+      }),
     });
 
-    const json = await r.json();
-
-    if (!r.ok) {
-      return res
-        .status(400)
-        .json({ error: "PayPal create order failed", details: json });
+    if (!createRes.ok) {
+      const txt = await createRes.text().catch(() => '');
+      return res.status(400).json({
+        ok: false,
+        message: 'Failed to create PayPal order',
+        details: { status: createRes.status, body: txt },
+      });
     }
 
+    const order = await createRes.json();
+    const orderId = order?.id || '';
     const approveURL =
-      json?.links?.find((l) => l.rel === "approve")?.href || null;
+      order?.links?.find((l) => l.rel === 'approve')?.href || '';
 
-    if (!approveURL) {
-      return res
-        .status(400)
-        .json({ error: "Missing approve URL from PayPal", details: json });
+    if (!orderId || !approveURL) {
+      return res.status(400).json({
+        ok: false,
+        message: 'Missing orderId or approve URL from PayPal',
+        details: order,
+      });
     }
 
     return res.status(200).json({
       ok: true,
-      env: PAYPAL_ENV,
-      orderId: json.id,
+      orderId,
       approveURL,
+      env: PAYPAL_ENV,
       price: ENTRY_PRICE,
     });
   } catch (err) {
-    console.error("[paypal/create] error:", err);
-    return res.status(500).json({ error: "Internal error", details: String(err) });
+    return res.status(500).json({
+      ok: false,
+      message: 'Internal error (create)',
+      details: err && err.message ? err.message : String(err),
+    });
   }
 }
