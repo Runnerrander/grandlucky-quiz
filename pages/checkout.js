@@ -63,7 +63,7 @@ export default function Checkout() {
     try {
       setBusy(true);
 
-      const res = await fetch("/api/paypal/create", {
+      const res = await fetch("/api/paypal/create", { /* ... */ });
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ locale: lang }),
