@@ -1,81 +1,63 @@
 // pages/api/submit-quiz.js
-// Stores quiz completion into public.quiz_results
+import { createClient } from '@supabase/supabase-js';
 
-const { createClient } = require('@supabase/supabase-js');
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey =
-  process.env.SUPABASE_SERVICE_ROLE || process.env.SUPABASE_SERVICE_ROLE_KEY;
+const supabase =
+  SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    : null;
 
-// Server-side Supabase client (service role required for writes)
-const supabase = supabaseUrl && serviceKey
-  ? createClient(supabaseUrl, serviceKey)
-  : null;
+// simple UUID checker
+const isUuid = (s) => typeof s === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
 
-function asInt(v) {
-  const n = Number(v);
-  return Number.isFinite(n) ? Math.trunc(n) : NaN;
-}
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    res.setHeader('Allow', 'POST');
+    return res.status(405).json({ ok: false, message: 'Method not allowed' });
+  }
+  if (!supabase) {
+    return res.status(500).json({
+      ok: false,
+      message: 'Server misconfigured: missing Supabase credentials.',
+    });
+  }
 
-module.exports = async function handler(req, res) {
   try {
-    if (req.method !== 'GET' && req.method !== 'POST') {
-      res.setHeader('Allow', ['GET', 'POST']);
-      return res.status(405).json({ ok: false, error: 'Method not allowed' });
+    const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    const username = (body.username || '').trim();
+    const round_id = isUuid(body.round_id) ? body.round_id : null;
+    const correct = Number.isFinite(body.correct_count) ? body.correct_count : 0;
+    const time_ms = Number.isFinite(body.total_time_ms) ? body.total_time_ms : 0;
+
+    if (!username) {
+      return res.status(400).json({ ok: false, message: 'Missing username' });
     }
-    if (!supabase) {
-      return res
-        .status(500)
-        .json({ ok: false, error: 'Server misconfigured: Supabase env missing' });
-    }
 
-    // Support JSON POST or querystring GET
-    const src =
-      req.method === 'POST' &&
-      (req.headers['content-type'] || '').includes('application/json')
-        ? (req.body || {})
-        : (req.query || {});
-
-    const username = String(src.username || '').trim();
-    const ms = asInt(src.ms);
-    const correct = asInt(src.correct);
-    const round_id = String(src.round_id || 'R1').trim();
-
-    if (!username) return res.status(400).json({ ok: false, error: 'Missing username' });
-    if (!Number.isFinite(ms) || ms < 0) return res.status(400).json({ ok: false, error: 'Invalid ms' });
-    if (!Number.isFinite(correct) || correct < 0) return res.status(400).json({ ok: false, error: 'Invalid correct' });
-
-    const { data, error } = await supabase
-      .from('quiz_results')
-      .insert([{ username, time_ms: ms, correct, round_id }])
-      .select('*')
-      .single();
+    // Call the secure RPC you just created
+    const { data, error } = await supabase.rpc('save_quiz_result', {
+      p_username: username,
+      p_round_id: round_id,   // null is fine if you don’t have it
+      p_correct: correct,
+      p_time_ms: time_ms,
+    });
 
     if (error) {
-      // If there happens to be a unique constraint and we hit it, return existing row instead of failing
-      if (error.code === '23505') {
-        const { data: existing } = await supabase
-          .from('quiz_results')
-          .select('*')
-          .eq('username', username)
-          .eq('round_id', round_id)
-          .order('created_at', { ascending: true })
-          .limit(1)
-          .maybeSingle();
-
-        return res.status(200).json({
-          ok: true,
-          id: existing?.id ?? null,
-          row: existing || null,
-          note: 'duplicate',
-        });
-      }
-
-      return res.status(500).json({ ok: false, error: error.message || 'DB error' });
+      return res.status(500).json({
+        ok: false,
+        message: 'Failed to save quiz result',
+        details: { code: error.code, message: error.message, hint: error.hint ?? null },
+      });
     }
 
-    return res.status(200).json({ ok: true, id: data?.id ?? null, row: data || null });
+    return res.status(200).json({ ok: true, saved: data || null });
   } catch (err) {
-    return res.status(500).json({ ok: false, error: err?.message || 'Unknown server error' });
+    return res.status(500).json({
+      ok: false,
+      message: 'Internal error',
+      details: String(err && err.message ? err.message : err),
+    });
   }
-};
+}
