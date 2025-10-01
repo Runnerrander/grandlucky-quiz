@@ -1,7 +1,7 @@
 // pages/checkout.js
 import Head from "next/head";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 const BG = "/checkout-designer.jpg"; // must exist in /public
 
@@ -10,23 +10,47 @@ export default function Checkout() {
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // POST /api/checkout -> { url } then redirect to Stripe
+  // read entry price from env (fallback 9.99)
+  const price = useMemo(() => {
+    const v = parseFloat(process.env.NEXT_PUBLIC_ENTRY_PRICE_USD || "9.99");
+    return Number.isFinite(v) ? v : 9.99;
+  }, []);
+  const payLabel = useMemo(
+    () => (lang === "hu" ? `FIZETÉS — $${price.toFixed(2)}` : `PAY — $${price.toFixed(2)}`),
+    [lang, price]
+  );
+
+  // POST /api/paypal/create-order -> { approveUrl } then redirect to PayPal
   const onPay = async (e) => {
     e.preventDefault();
     if (!accepted || busy) return;
     setBusy(true);
     try {
-      const res = await fetch("/api/checkout", {
+      const res = await fetch("/api/paypal/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ locale: lang }),
+        body: JSON.stringify({
+          locale: lang,
+          amount: price, // keep server authoritative; this is just a hint
+        }),
       });
       const data = await res.json();
-      if (!res.ok || !data?.url) throw new Error(data?.error || "No URL");
-      window.location.href = data.url; // Stripe Checkout
+
+      // Approve URL can be returned in different shapes; try common ones
+      const approveUrl =
+        data?.approveUrl ||
+        data?.url ||
+        data?.links?.find?.((l) => l.rel === "approve")?.href;
+
+      if (!res.ok || !approveUrl) throw new Error(data?.error || "No approve URL");
+      window.location.href = approveUrl; // PayPal approval page
     } catch (err) {
       console.error(err);
-      alert("Hoppá! Nem sikerült elindítani a fizetést. / Payment start failed.");
+      alert(
+        lang === "hu"
+          ? "Hoppá! Nem sikerült elindítani a PayPal fizetést."
+          : "Oops! Couldn’t start the PayPal payment."
+      );
       setBusy(false);
     }
   };
@@ -42,11 +66,9 @@ export default function Checkout() {
         "Az első fordulóban (online kvíz), ha valaki korábban pontosan ugyanannyi idő alatt teljesítette a kvízt, mint a versenyző, a versenyző két lehetőséget kap. 1. lehetőség: a befejezési időt <strong>+5 másodperccel</strong> növelten nyújtja be; vagy azonnal <strong>új kvízt indíthat</strong> további nevezési díj fizetése nélkül.",
         "Kérjük, a <strong>Felhasználónevet</strong> és a <strong>Jelszót</strong> tartsd biztonságos helyen.",
       ],
-      note: "A fizetés a Stripe rendszerén keresztül történik.",
-      agree:
-        "Elolvastam és elfogadom a Szabályokat és a Felhasználói Feltételeket",
+      note: "A fizetés a PayPal rendszerén keresztül történik.",
+      agree: "Elolvastam és elfogadom a Szabályokat és a Felhasználói Feltételeket",
       back: "VISSZA",
-      pay: "FIZETÉS — $9.99",
     },
     en: {
       title: "Secure Checkout",
@@ -58,10 +80,9 @@ export default function Checkout() {
         "In round one (online trivia) if someone completed the trivia under earlier in the exact same time than the contestant, the contestant will get two options. Option 1: The contestant can submit the time of completion with added five second or can enter a new trivia immediately without paying the entry fee again.",
         "Keep your <strong>Username</strong> and <strong>Password</strong> in a safe place.",
       ],
-      note: "Payments are processed securely by Stripe.",
+      note: "Payments are processed securely by PayPal.",
       agree: "I have read and accept the Rules and User Agreement",
       back: "BACK",
-      pay: "PAY — $9.99",
     },
   };
 
@@ -79,10 +100,7 @@ export default function Checkout() {
       </Head>
 
       {/* Language toggle chip */}
-      <button
-        className="lang"
-        onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}
-      >
+      <button className="lang" onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}>
         {lang === "hu" ? "ANGOL" : "MAGYAR"}
       </button>
 
@@ -114,8 +132,8 @@ export default function Checkout() {
             <a className="btn ghost">{C.back}</a>
           </Link>
 
-        <button className="btn" onClick={onPay} disabled={!accepted || busy}>
-            {busy ? "…" : C.pay}
+          <button className="btn" onClick={onPay} disabled={!accepted || busy}>
+            {busy ? "…" : payLabel}
           </button>
         </div>
       </div>
@@ -128,20 +146,15 @@ export default function Checkout() {
           --yellow-border: #e49b28;
         }
 
-        /* Full-screen background; allow scrolling so sticky works */
         .checkout {
           position: relative;
           min-height: 100svh;
           height: auto;
-          overflow: visible; /* keep sticky working */
+          overflow: visible;
           box-sizing: border-box;
-
-          /* space from the top bar */
           padding-top: clamp(80px, 12vh, 140px);
-
           font-family: "Montserrat", system-ui, sans-serif;
           color: var(--dark);
-
           background-image: url(${JSON.stringify(BG)});
           background-repeat: no-repeat;
           background-position: center;
@@ -168,7 +181,6 @@ export default function Checkout() {
           max-width: 960px;
           margin: 0 auto;
           padding: 0 clamp(18px, 3.6vw, 36px);
-          /* leave room so content never hides behind sticky actions */
           padding-bottom: 110px;
         }
 
@@ -189,7 +201,9 @@ export default function Checkout() {
           font-size: clamp(16px, 1.6vw, 19px);
           line-height: 1.55;
         }
-        .list li + li { margin-top: 8px; }
+        .list li + li {
+          margin-top: 8px;
+        }
 
         .note {
           color: var(--muted);
@@ -204,7 +218,10 @@ export default function Checkout() {
           margin: 12px 0 18px;
           font-weight: 700;
         }
-        .agree input { width: 18px; height: 18px; }
+        .agree input {
+          width: 18px;
+          height: 18px;
+        }
 
         .row {
           display: flex;
@@ -213,17 +230,15 @@ export default function Checkout() {
           flex-wrap: wrap;
         }
 
-        /* Sticky action bar: now fully transparent */
         .actions {
           position: sticky;
           bottom: 0;
           z-index: 9;
           padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0));
-          background: transparent; /* <- no plate/gradient */
+          background: transparent;
           border-top: none;
         }
 
-        /* Yellow pill buttons */
         .btn {
           display: inline-flex;
           align-items: center;
@@ -247,12 +262,23 @@ export default function Checkout() {
           box-shadow: 0 22px 36px rgba(0, 0, 0, 0.24),
             inset 0 2px 0 rgba(255, 255, 255, 0.7);
         }
-        .btn[disabled] { opacity: 0.6; cursor: not-allowed; }
-        .btn.ghost { background: #fff; border-color: #e8e8e8; }
+        .btn[disabled] {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        .btn.ghost {
+          background: #fff;
+          border-color: #e8e8e8;
+        }
 
         @media (max-width: 900px) {
-          .checkout { padding-top: clamp(70px, 11vh, 120px); }
-          .row .btn { width: 100%; justify-content: center; }
+          .checkout {
+            padding-top: clamp(70px, 11vh, 120px);
+          }
+          .row .btn {
+            width: 100%;
+            justify-content: center;
+          }
         }
       `}</style>
     </main>
