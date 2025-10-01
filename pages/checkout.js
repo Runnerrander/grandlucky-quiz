@@ -1,7 +1,7 @@
 // pages/checkout.js
 import Head from "next/head";
 import Link from "next/link";
-import { useState, useMemo } from "react";
+import { useMemo, useState } from "react";
 
 const BG = "/checkout-designer.jpg"; // must exist in /public
 
@@ -10,17 +10,13 @@ export default function Checkout() {
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  // read entry price from env (fallback 9.99)
-  const price = useMemo(() => {
-    const v = parseFloat(process.env.NEXT_PUBLIC_ENTRY_PRICE_USD || "9.99");
-    return Number.isFinite(v) ? v : 9.99;
+  // price from env (0.01 while testing, 9.99 live)
+  const ENTRY = useMemo(() => {
+    const v = Number(process.env.NEXT_PUBLIC_ENTRY_PRICE_USD ?? "0.01");
+    return isNaN(v) ? "0.01" : v.toFixed(2);
   }, []);
-  const payLabel = useMemo(
-    () => (lang === "hu" ? `FIZETÉS — $${price.toFixed(2)}` : `PAY — $${price.toFixed(2)}`),
-    [lang, price]
-  );
 
-  // POST /api/paypal/create-order -> { approveUrl } then redirect to PayPal
+  // POST /api/paypal/create-order -> { approveURL } then redirect to PayPal
   const onPay = async (e) => {
     e.preventDefault();
     if (!accepted || busy) return;
@@ -30,26 +26,23 @@ export default function Checkout() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          locale: lang,
-          amount: price, // keep server authoritative; this is just a hint
+          amount: ENTRY,   // "0.01" or "9.99"
+          locale: lang,    // "hu" | "en" (PayPal page language hint)
         }),
       });
+
       const data = await res.json();
-
-      // Approve URL can be returned in different shapes; try common ones
-      const approveUrl =
-        data?.approveUrl ||
-        data?.url ||
-        data?.links?.find?.((l) => l.rel === "approve")?.href;
-
-      if (!res.ok || !approveUrl) throw new Error(data?.error || "No approve URL");
-      window.location.href = approveUrl; // PayPal approval page
+      if (!res.ok || !data?.approveURL) {
+        throw new Error(data?.error || "No approve URL");
+      }
+      // Same UX as Stripe Checkout: redirect to processor-hosted page
+      window.location.href = data.approveURL;
     } catch (err) {
       console.error(err);
       alert(
         lang === "hu"
           ? "Hoppá! Nem sikerült elindítani a PayPal fizetést."
-          : "Oops! Couldn’t start the PayPal payment."
+          : "Oops! Could not start the PayPal payment."
       );
       setBusy(false);
     }
@@ -67,8 +60,10 @@ export default function Checkout() {
         "Kérjük, a <strong>Felhasználónevet</strong> és a <strong>Jelszót</strong> tartsd biztonságos helyen.",
       ],
       note: "A fizetés a PayPal rendszerén keresztül történik.",
-      agree: "Elolvastam és elfogadom a Szabályokat és a Felhasználói Feltételeket",
+      agree:
+        "Elolvastam és elfogadom a Szabályokat és a Felhasználói Feltételeket",
       back: "VISSZA",
+      pay: (p) => `FIZETÉS — $${p}`,
     },
     en: {
       title: "Secure Checkout",
@@ -83,6 +78,7 @@ export default function Checkout() {
       note: "Payments are processed securely by PayPal.",
       agree: "I have read and accept the Rules and User Agreement",
       back: "BACK",
+      pay: (p) => `PAY — $${p}`,
     },
   };
 
@@ -100,7 +96,10 @@ export default function Checkout() {
       </Head>
 
       {/* Language toggle chip */}
-      <button className="lang" onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}>
+      <button
+        className="lang"
+        onClick={() => setLang((v) => (v === "hu" ? "en" : "hu"))}
+      >
         {lang === "hu" ? "ANGOL" : "MAGYAR"}
       </button>
 
@@ -133,7 +132,7 @@ export default function Checkout() {
           </Link>
 
           <button className="btn" onClick={onPay} disabled={!accepted || busy}>
-            {busy ? "…" : payLabel}
+            {busy ? "…" : C.pay(ENTRY)}
           </button>
         </div>
       </div>
@@ -146,15 +145,20 @@ export default function Checkout() {
           --yellow-border: #e49b28;
         }
 
+        /* Full-screen background; allow scrolling so sticky works */
         .checkout {
           position: relative;
           min-height: 100svh;
           height: auto;
-          overflow: visible;
+          overflow: visible; /* keep sticky working */
           box-sizing: border-box;
+
+          /* space from the top bar */
           padding-top: clamp(80px, 12vh, 140px);
+
           font-family: "Montserrat", system-ui, sans-serif;
           color: var(--dark);
+
           background-image: url(${JSON.stringify(BG)});
           background-repeat: no-repeat;
           background-position: center;
@@ -181,6 +185,7 @@ export default function Checkout() {
           max-width: 960px;
           margin: 0 auto;
           padding: 0 clamp(18px, 3.6vw, 36px);
+          /* leave room so content never hides behind sticky actions */
           padding-bottom: 110px;
         }
 
@@ -230,15 +235,17 @@ export default function Checkout() {
           flex-wrap: wrap;
         }
 
+        /* Sticky action bar: now fully transparent */
         .actions {
           position: sticky;
           bottom: 0;
           z-index: 9;
           padding: 12px 0 calc(12px + env(safe-area-inset-bottom, 0));
-          background: transparent;
+          background: transparent; /* <- no plate/gradient */
           border-top: none;
         }
 
+        /* Yellow pill buttons */
         .btn {
           display: inline-flex;
           align-items: center;
