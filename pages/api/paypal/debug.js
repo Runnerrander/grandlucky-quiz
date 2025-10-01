@@ -1,107 +1,73 @@
-// /pages/api/paypal/debug.js
-// Open in browser after deploy: https://www.grandluckytravel.com/api/paypal/debug
-// Shows RAW_ENV (exact env string) and normalized PAYPAL_ENV, plus precise failure stage.
+// pages/api/paypal/debug.js
+export default async function handler(req, res) {
+  const {
+    PAYPAL_ENV,
+    PAYPAL_CLIENT_ID,
+    PAYPAL_CLIENT_SECRET,
+    NEXT_PUBLIC_ENTRY_PRICE_USD,
+  } = process.env;
 
-const RAW_ENV = (process.env.PAYPAL_ENV || "").trim().toLowerCase();
-const PAYPAL_ENV = RAW_ENV === "live" ? "live" : "sandbox";
-const BASE =
-  PAYPAL_ENV === "live"
+  const isLive = PAYPAL_ENV === "live";
+  const base = isLive
     ? "https://api-m.paypal.com"
     : "https://api-m.sandbox.paypal.com";
 
-export default async function handler(req, res) {
   try {
-    const id = process.env.PAYPAL_CLIENT_ID || "";
-    const secret = process.env.PAYPAL_CLIENT_SECRET || "";
-    const priceStr = String(process.env.NEXT_PUBLIC_ENTRY_PRICE_USD ?? "9.99");
+    // get token
+    const basicAuth = Buffer.from(
+      PAYPAL_CLIENT_ID + ":" + PAYPAL_CLIENT_SECRET
+    ).toString("base64");
 
-    if (!id || !secret) {
-      return res.status(200).json({
-        ok: false,
-        stage: "env",
-        message: "Missing PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET.",
-        details: { RAW_ENV, PAYPAL_ENV, price: priceStr },
-      });
-    }
-
-    // 1) Token
-    const creds = Buffer.from(`${id}:${secret}`).toString("base64");
-    const form = new URLSearchParams({ grant_type: "client_credentials" });
-
-    const tokenResp = await fetch(`${BASE}/v1/oauth2/token`, {
+    const tokenRes = await fetch(`${base}/v1/oauth2/token`, {
       method: "POST",
       headers: {
-        Authorization: `Basic ${creds}`,
+        Authorization: `Basic ${basicAuth}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: form,
+      body: "grant_type=client_credentials",
     });
 
-    const tokenText = await tokenResp.text();
-    if (!tokenResp.ok) {
+    if (!tokenRes.ok) {
+      const body = await tokenRes.text();
       return res.status(200).json({
         ok: false,
         stage: "token",
         message:
-          "Token failed. Usually ENV mismatch (live vs sandbox) or invalid live credentials.",
-        details: {
-          RAW_ENV,
-          PAYPAL_ENV,
-          status: tokenResp.status,
-          body: safeJson(tokenText),
-        },
+          "PayPal token failed. Wrong ENV or invalid client credentials.",
+        details: { PAYPAL_ENV, status: tokenRes.status, body },
       });
     }
-    const token = JSON.parse(tokenText).access_token;
 
-    // 2) Order
-    const value = normalizePrice(priceStr);
-    const orderPayload = {
-      intent: "CAPTURE",
-      purchase_units: [{ amount: { currency_code: "USD", value } }],
-      application_context: {
-        brand_name: "GrandLucky Travel",
-        user_action: "PAY_NOW",
-        return_url: "https://www.grandluckytravel.com/thank-you",
-        cancel_url: "https://www.grandluckytravel.com/checkout",
-      },
-    };
+    const { access_token } = await tokenRes.json();
 
-    const orderResp = await fetch(`${BASE}/v2/checkout/orders`, {
+    // create one test order
+    const orderRes = await fetch(`${base}/v2/checkout/orders`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${access_token}`,
         "Content-Type": "application/json",
-        Prefer: "return=representation",
       },
-      body: JSON.stringify(orderPayload),
+      body: JSON.stringify({
+        intent: "CAPTURE",
+        purchase_units: [
+          {
+            amount: {
+              currency_code: "USD",
+              value: NEXT_PUBLIC_ENTRY_PRICE_USD || "9.99",
+            },
+          },
+        ],
+      }),
     });
 
-    const orderText = await orderResp.text();
-    if (!orderResp.ok) {
+    const orderData = await orderRes.json();
+
+    if (!orderRes.ok) {
       return res.status(200).json({
         ok: false,
         stage: "order",
-        message: "Order creation failed (account/config).",
-        details: {
-          RAW_ENV,
-          PAYPAL_ENV,
-          status: orderResp.status,
-          body: safeJson(orderText),
-        },
-      });
-    }
-
-    const orderJson = safeJson(orderText);
-    const approveURL =
-      (orderJson.links || []).find((l) => l.rel === "approve")?.href || null;
-
-    if (!approveURL) {
-      return res.status(200).json({
-        ok: false,
-        stage: "approve",
-        message: "Order created but missing approve link.",
-        details: { RAW_ENV, PAYPAL_ENV, orderId: orderJson.id, links: orderJson.links },
+        message: "Failed to create PayPal order.",
+        details: { status: orderRes.status, orderData },
       });
     }
 
@@ -109,27 +75,18 @@ export default async function handler(req, res) {
       ok: true,
       stage: "done",
       message: "ENV + credentials look good.",
-      details: { RAW_ENV, PAYPAL_ENV, price: value, orderId: orderJson.id, approveURL },
+      details: {
+        RAW_ENV: PAYPAL_ENV,
+        price: NEXT_PUBLIC_ENTRY_PRICE_USD,
+        orderId: orderData.id,
+        approveURL: orderData.links?.find((l) => l.rel === "approve")?.href,
+      },
     });
-  } catch (e) {
+  } catch (err) {
     return res.status(200).json({
       ok: false,
-      stage: "unexpected",
-      message: "Unexpected server error.",
-      details: String(e),
+      stage: "catch",
+      message: err.message,
     });
-  }
-}
-
-function normalizePrice(p) {
-  const n = Number(p);
-  if (!isFinite(n) || n <= 0) return "9.99";
-  return n.toFixed(2);
-}
-function safeJson(text) {
-  try {
-    return JSON.parse(text);
-  } catch {
-    return text;
   }
 }
