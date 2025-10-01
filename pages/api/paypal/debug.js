@@ -1,9 +1,9 @@
 // /pages/api/paypal/debug.js
-// Safe live check: tries to get a PayPal token and create a live order.
 // Open in browser after deploy: https://www.grandluckytravel.com/api/paypal/debug
-// It prints exactly what's failing (token vs order), without leaking secrets.
+// Shows RAW_ENV (exact env string) and normalized PAYPAL_ENV, plus precise failure stage.
 
-const PAYPAL_ENV = process.env.PAYPAL_ENV === "live" ? "live" : "sandbox";
+const RAW_ENV = (process.env.PAYPAL_ENV || "").trim().toLowerCase();
+const PAYPAL_ENV = RAW_ENV === "live" ? "live" : "sandbox";
 const BASE =
   PAYPAL_ENV === "live"
     ? "https://api-m.paypal.com"
@@ -13,15 +13,14 @@ export default async function handler(req, res) {
   try {
     const id = process.env.PAYPAL_CLIENT_ID || "";
     const secret = process.env.PAYPAL_CLIENT_SECRET || "";
-    const priceStr = (process.env.NEXT_PUBLIC_ENTRY_PRICE_USD ?? "9.99") + "";
+    const priceStr = String(process.env.NEXT_PUBLIC_ENTRY_PRICE_USD ?? "9.99");
 
     if (!id || !secret) {
       return res.status(200).json({
         ok: false,
         stage: "env",
-        message:
-          "Missing PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET in Vercel env. Set LIVE keys.",
-        details: { PAYPAL_ENV, price: priceStr },
+        message: "Missing PAYPAL_CLIENT_ID or PAYPAL_CLIENT_SECRET.",
+        details: { RAW_ENV, PAYPAL_ENV, price: priceStr },
       });
     }
 
@@ -44,8 +43,9 @@ export default async function handler(req, res) {
         ok: false,
         stage: "token",
         message:
-          "PayPal LIVE token failed. This usually means WRONG ENV (live vs sandbox) or invalid/locked live credentials.",
+          "Token failed. Usually ENV mismatch (live vs sandbox) or invalid live credentials.",
         details: {
+          RAW_ENV,
           PAYPAL_ENV,
           status: tokenResp.status,
           body: safeJson(tokenText),
@@ -54,7 +54,7 @@ export default async function handler(req, res) {
     }
     const token = JSON.parse(tokenText).access_token;
 
-    // 2) Create order @ your price
+    // 2) Order
     const value = normalizePrice(priceStr);
     const orderPayload = {
       intent: "CAPTURE",
@@ -82,9 +82,9 @@ export default async function handler(req, res) {
       return res.status(200).json({
         ok: false,
         stage: "order",
-        message:
-          "PayPal LIVE order creation failed. Often caused by live account not fully enabled/approved.",
+        message: "Order creation failed (account/config).",
         details: {
+          RAW_ENV,
           PAYPAL_ENV,
           status: orderResp.status,
           body: safeJson(orderText),
@@ -100,21 +100,16 @@ export default async function handler(req, res) {
       return res.status(200).json({
         ok: false,
         stage: "approve",
-        message: "LIVE order created but no approve link returned.",
-        details: { PAYPAL_ENV, orderId: orderJson.id, links: orderJson.links },
+        message: "Order created but missing approve link.",
+        details: { RAW_ENV, PAYPAL_ENV, orderId: orderJson.id, links: orderJson.links },
       });
     }
 
     return res.status(200).json({
       ok: true,
       stage: "done",
-      message: "LIVE is working. You can be redirected to PayPal.",
-      details: {
-        PAYPAL_ENV,
-        price: value,
-        orderId: orderJson.id,
-        approveURL,
-      },
+      message: "ENV + credentials look good.",
+      details: { RAW_ENV, PAYPAL_ENV, price: value, orderId: orderJson.id, approveURL },
     });
   } catch (e) {
     return res.status(200).json({
@@ -131,7 +126,6 @@ function normalizePrice(p) {
   if (!isFinite(n) || n <= 0) return "9.99";
   return n.toFixed(2);
 }
-
 function safeJson(text) {
   try {
     return JSON.parse(text);
