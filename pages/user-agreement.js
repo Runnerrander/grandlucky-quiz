@@ -29,12 +29,10 @@ export default function UserAgreement() {
       termsH: "Felhasználói Feltételek",
       privacy:
         "Adatvédelmi nyilatkozat: A regisztráció során nem gyűjtünk és nem tárolunk semmilyen személyes adatot. Csak a nyertes és utazótársa adatait rögzíti a Grand Slam Travel személyes egyeztetések céljából, kizárólag a foglalások, az ESTA/VÍZUM igénylés, valamint az utazás ügyintézése céljából.",
-      // UPDATED to PayPal
       paymentsA:
         "Fizetés feldolgozása: Minden fizetés biztonságosan a PayPal rendszerén keresztül történik. Kérjük, tekintsd meg a PayPal hivatalos weboldalán az ",
       paymentsB: "Adatvédelmi nyilatkozatot",
       paymentsC: " és a ",
-      // UPDATED wording to match PayPal
       paymentsD: "Felhasználói megállapodást",
       refund:
         "Visszatérítési szabályzat: A nevezési díj semmilyen körülmények között nem visszatéríthető.",
@@ -62,12 +60,10 @@ export default function UserAgreement() {
       termsH: "Terms of Use",
       privacy:
         "Privacy notice: We do not collect or store personal data at registration. Only the winner’s and companion’s data are recorded by Grand Slam Travel for travel arrangements, bookings, ESTA/VISA processing and trip administration.",
-      // UPDATED to PayPal
       paymentsA:
         "Payments: All payments are processed securely by PayPal. Please review PayPal’s ",
       paymentsB: "Privacy Statement",
       paymentsC: " and ",
-      // UPDATED wording to match PayPal
       paymentsD: "User Agreement",
       refund: "Refund policy: The entry fee is non-refundable in all cases.",
       agreeLbl: "I’ve read and accept the Rules and Terms of Use",
@@ -77,6 +73,17 @@ export default function UserAgreement() {
   };
 
   const c = t[lang];
+
+  // Locale-aware PayPal legal links (Hungary jurisdiction)
+  const privacyHref =
+    lang === "hu"
+      ? "https://www.paypal.com/hu/legalhub/paypal/privacy-full"
+      : "https://www.paypal.com/hu/legalhub/paypal/privacy-full?locale.x=en_HU";
+
+  const termsHref =
+    lang === "hu"
+      ? "https://www.paypal.com/hu/legalhub/paypal/useragreement-full"
+      : "https://www.paypal.com/hu/legalhub/paypal/useragreement-full?locale.x=en_HU";
 
   return (
     <main className="wrap">
@@ -129,7 +136,7 @@ export default function UserAgreement() {
         <p className="p">
           {c.paymentsA}
           <a
-            href="https://www.paypal.com/webapps/mpp/ua/privacy-full"
+            href={privacyHref}
             target="_blank"
             rel="noopener noreferrer"
             className="link"
@@ -138,7 +145,7 @@ export default function UserAgreement() {
           </a>
           {c.paymentsC}
           <a
-            href="https://www.paypal.com/webapps/mpp/ua/useragreement-full"
+            href={termsHref}
             target="_blank"
             rel="noopener noreferrer"
             className="link"
