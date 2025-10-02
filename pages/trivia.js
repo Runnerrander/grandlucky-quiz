@@ -4,6 +4,41 @@ import Head from 'next/head';
 import Link from 'next/link';
 import Router, { useRouter } from 'next/router';
 
+/** Helpers */
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+function normalizeQuestion(q) {
+  // Normalize shape coming from your API(s)
+  // expect: { id?, text, choices[3], correct_idx }
+  return {
+    id: q.id ?? null,
+    text: String(q.text || '').trim(),
+    choices: Array.isArray(q.choices) ? q.choices.slice(0, 3) : [],
+    correct_idx:
+      typeof q.correct_idx === 'number' ? q.correct_idx : Number(q.correct_idx ?? -1),
+  };
+}
+function uniqueByPrompt(list) {
+  // Deduplicate by the prompt text only (so templates with different options don't repeat)
+  const seen = new Set();
+  const out = [];
+  for (const raw of list) {
+    const q = normalizeQuestion(raw);
+    const key = q.text.toLowerCase();
+    if (!key || seen.has(key)) continue;
+    // Guard: only keep valid 3-choice questions with a valid answer index
+    if (!Array.isArray(q.choices) || q.choices.length < 3) continue;
+    if (q.correct_idx < 0 || q.correct_idx > 2) continue;
+    seen.add(key);
+    out.push(q);
+  }
+  return out;
+}
+
 export default function TriviaPage() {
   const router = useRouter();
 
@@ -15,8 +50,9 @@ export default function TriviaPage() {
   const [notice, setNotice] = useState('');
 
   // game state
-  const [questions, setQuestions] = useState([]);
-  const [qIdx, setQIdx] = useState(0);
+  const [pool, setPool] = useState([]);                 // unique, normalized questions
+  const [deck, setDeck] = useState([]);                 // shuffled indices into pool
+  const [di, setDi] = useState(0);                      // pointer into deck
   const [correctCount, setCorrectCount] = useState(0);
   const [feedback, setFeedback] = useState(null);
   const [locked, setLocked] = useState(false);
@@ -39,6 +75,7 @@ export default function TriviaPage() {
       no_q: 'Nincsenek elérhető kérdések ehhez a nyelvhez/fordulóhoz.',
       retry: 'Újra',
       loading: 'Betöltés…',
+      out_of_unique: 'Elfogytak az egyedi kérdések. Kérjük, indítsd újra a kvízt.',
     };
     const en = {
       title: 'GrandLucky Trivia',
@@ -55,6 +92,7 @@ export default function TriviaPage() {
       no_q: 'No questions are available for this language/round.',
       retry: 'Retry',
       loading: 'Loading…',
+      out_of_unique: 'We ran out of unique questions. Please restart the quiz.',
     };
     return lang === 'hu' ? hu : en;
   }, [lang]);
@@ -150,7 +188,7 @@ export default function TriviaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.isReady]); // eslint-disable-line
 
-  // ✅ On HU↔EN toggle, clear any loaded questions and return to "ready".
+  // On HU↔EN toggle, clear any loaded questions and return to "ready".
   // Also reflect the choice in the URL (?lang=...) without a full reload.
   useEffect(() => {
     if (!router.isReady) return;
@@ -158,8 +196,9 @@ export default function TriviaPage() {
     router.replace({ pathname: router.pathname, query: nextQuery }, undefined, { shallow: true });
 
     if (status === 'playing' || status === 'ready') {
-      setQuestions([]);
-      setQIdx(0);
+      setPool([]);
+      setDeck([]);
+      setDi(0);
       setCorrectCount(0);
       setFeedback(null);
       setLocked(false);
@@ -168,61 +207,109 @@ export default function TriviaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]); // eslint-disable-line
 
-  // No auto-start. User must click Start; timer begins on click.
+  // Fetch & build a unique deck
+  const fetchUniqueDeck = async (minNeeded = 5) => {
+    // First try get-questions with limit=24 (bigger pool)
+    const qs = new URLSearchParams({
+      lang,
+      limit: '24',
+      username,
+      round_id: round?.id || '',
+      ts: String(Date.now()), // cache-bust
+    });
+    let collected = [];
+    try {
+      const r = await fetch(`/api/get-questions?${qs}`, { cache: 'no-store' });
+      if (r.ok) {
+        const j = await r.json();
+        collected = Array.isArray(j?.questions) ? j.questions : [];
+      }
+    } catch {}
+
+    // Deduplicate by prompt text (stop capital/emperor repeats)
+    let uniq = uniqueByPrompt(collected);
+
+    // If we still have too few unique, try a second pull with larger limit (best-effort)
+    if (uniq.length < minNeeded) {
+      try {
+        const qs2 = new URLSearchParams({
+          lang,
+          limit: '50',
+          username,
+          round_id: round?.id || '',
+          ts: String(Date.now() + 1),
+        });
+        const r2 = await fetch(`/api/get-questions?${qs2}`, { cache: 'no-store' });
+        if (r2.ok) {
+          const j2 = await r2.json();
+          const more = uniqueByPrompt(j2?.questions || []);
+          // merge: prefer first-seen prompt text
+          const seen = new Set(uniq.map((q) => q.text.toLowerCase()));
+          for (const q of more) {
+            const key = q.text.toLowerCase();
+            if (!seen.has(key)) {
+              seen.add(key);
+              uniq.push(q);
+            }
+          }
+        }
+      } catch {}
+    }
+
+    if (uniq.length < minNeeded) {
+      return { ok: false, reason: 'too_few', items: uniq };
+    }
+
+    // Build a randomized deck of indices
+    const idx = Array.from({ length: uniq.length }, (_, i) => i);
+    shuffle(idx);
+
+    setPool(uniq);
+    setDeck(idx);
+    setDi(0);
+    return { ok: true, count: uniq.length };
+  };
+
+  // Start quiz: build unique, shuffled deck; no repeats until exhausted.
   const startQuiz = async () => {
     if (!round) return;
     setNotice('');
     setStatus('loading');
 
-    try {
-      const qs = new URLSearchParams({
-        lang,
-        limit: '12',               // ⬅️ best: tight balanced set from API
-        username,
-        round_id: round.id,
-        ts: String(Date.now()),    // cache-bust to avoid stale fetches
-      });
-      const r = await fetch(`/api/get-questions?${qs}`, { cache: 'no-store' });
-      if (!r.ok) throw new Error('get-questions missing');
-      const { questions: got } = await r.json();
-
-      if (!got || got.length === 0) {
-        setQuestions([]);
-        setStatus('ready');
-        setNotice(t.no_q);
-        return;
-      }
-
-      setQuestions(got);
-      setQIdx(0);
-      setCorrectCount(0);
-      setFeedback(null);
-      setLocked(false);
-
-      // ⏱️ Start timer *when* the user clicks Start
-      startTimeRef.current = Date.now();
-
-      setStatus('playing');
-    } catch {
-      setQuestions([]);
+    const built = await fetchUniqueDeck(5);
+    if (!built.ok) {
       setStatus('ready');
-      setNotice(t.no_q);
+      setNotice(t.out_of_unique);
+      return;
     }
+
+    // Start timer when user starts
+    startTimeRef.current = Date.now();
+
+    setCorrectCount(0);
+    setFeedback(null);
+    setLocked(false);
+    setStatus('playing');
   };
 
-  const curr = questions[qIdx];
+  // Current question from deck
+  const curr = (() => {
+    if (!deck.length) return null;
+    const idx = deck[Math.max(0, Math.min(di, deck.length - 1))];
+    return pool[idx] || null;
+  })();
 
   // One attempt per question, then advance. End at 5 correct.
-  const choose = (idx) => {
+  const choose = async (idxChoice) => {
     if (!curr || locked) return;
     setLocked(true);
 
-    const isCorrect = idx === curr.correct_idx;
+    const isCorrect = idxChoice === curr.correct_idx;
     const nextCorrect = isCorrect ? correctCount + 1 : correctCount;
 
     setFeedback({ ok: isCorrect });
 
-    setTimeout(() => {
+    setTimeout(async () => {
       setFeedback(null);
 
       if (nextCorrect >= 5) {
@@ -231,8 +318,23 @@ export default function TriviaPage() {
       }
 
       setCorrectCount(nextCorrect);
-      setQIdx((q) => (q + 1) % Math.max(questions.length, 1));
-      setLocked(false);
+
+      // Advance in the deck; if deck exhausted, try refilling once
+      if (di + 1 < deck.length) {
+        setDi(di + 1);
+        setLocked(false);
+      } else {
+        // Try to fetch a fresh unique deck and continue
+        const built = await fetchUniqueDeck(5);
+        if (built.ok) {
+          setLocked(false);
+        } else {
+          // Out of unique questions — stop cleanly
+          setStatus('ready');
+          setNotice(t.out_of_unique);
+          setLocked(false);
+        }
+      }
     }, 350);
   };
 
@@ -245,7 +347,7 @@ export default function TriviaPage() {
         body: JSON.stringify({
           username,
           round_id: round?.id,
-          answers: [],
+          answers: [],               // not used server-side
           correct_count: cc,
           total_time_ms: elapsed,
         }),
@@ -264,11 +366,10 @@ export default function TriviaPage() {
       <Head>
         <title>{t.title}</title>
         <meta name="robots" content="noindex" />
-        {/* Prevent mobile text auto-enlargement / font boosting */}
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      {/* ✅ Global reset to stop mobile right-shift/overflow */}
+      {/* Global reset to stop mobile right-shift/overflow */}
       <style jsx global>{`
         html {
           box-sizing: border-box;
@@ -304,7 +405,7 @@ export default function TriviaPage() {
             </div>
           )}
 
-          {/* Username display (keep right, but prevent overflow) */}
+          {/* Username display */}
           {username && (
             <div style={{ marginTop: 8, marginBottom: 12, opacity: 0.9, textAlign: 'right' }}>
               <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>{t.your_user}</div>
@@ -379,13 +480,13 @@ export default function TriviaPage() {
             </div>
           )}
 
-          {status === 'playing' && questions.length > 0 && (
+          {status === 'playing' && deck.length > 0 && curr && (
             <div style={{ marginTop: 8 }}>
               <div style={{ fontSize: 14, opacity: 0.8, marginBottom: 6 }}>{correctCount}/5</div>
               <div style={{ background: '#222', padding: 20, borderRadius: 16 }}>
-                <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 14, lineHeight: 1.35 }}>{questions[qIdx]?.text}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 14, lineHeight: 1.35 }}>{curr.text}</div>
                 <div style={{ display: 'grid', gap: 10 }}>
-                  {(questions[qIdx]?.choices || []).slice(0, 3).map((c, i) => (
+                  {curr.choices.map((c, i) => (
                     <button
                       key={i}
                       onClick={() => choose(i)}
