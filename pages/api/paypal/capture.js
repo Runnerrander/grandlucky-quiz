@@ -1,6 +1,7 @@
-// pages/api/paypal/capture.js
 /* eslint-env node */
+/* global fetch */
 
+// pages/api/paypal/capture.js  (ES module style)
 import { createClient } from '@supabase/supabase-js';
 
 /** ---------- Supabase (server) ---------- */
@@ -40,7 +41,6 @@ async function getAccessToken() {
     },
     body: new URLSearchParams({ grant_type: 'client_credentials' }),
   });
-
   if (!r.ok) {
     const txt = await r.text().catch(() => '');
     throw new Error(`PayPal token error (${r.status}): ${txt}`);
@@ -78,15 +78,17 @@ export default async function handler(req, res) {
     const body =
       typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     const token = body.token || body.orderID || body.orderId || '';
-
     if (!token || typeof token !== 'string') {
       return res.status(400).json({ ok: false, message: 'Missing PayPal order token.' });
     }
 
-    // 1) Get auth
+    // 1) Capture (or accept already-captured)
     const accessToken = await getAccessToken();
 
-    // 2) Actively CAPTURE the order (this is what flips APPROVED -> COMPLETED)
+    let paid = false;
+    let captureJson = null;
+
+    // Try to capture
     const capRes = await fetch(
       `${PAYPAL_API_BASE}/v2/checkout/orders/${encodeURIComponent(token)}/capture`,
       {
@@ -94,106 +96,97 @@ export default async function handler(req, res) {
         headers: {
           Authorization: `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
-          Prefer: 'return=representation',
-          // helps make retries idempotent:
-          'PayPal-Request-Id': `cap_${token}`,
         },
-        body: JSON.stringify({}),
       }
     );
 
-    let paid = false;
-    let captureJson = null;
-
-    if (capRes.ok || capRes.status === 201) {
+    if (capRes.ok) {
       captureJson = await capRes.json().catch(() => null);
-      const orderStatus = captureJson?.status || 'UNKNOWN';
       const capStatus =
         captureJson?.purchase_units?.[0]?.payments?.captures?.[0]?.status || 'UNKNOWN';
-      paid = orderStatus === 'COMPLETED' || capStatus === 'COMPLETED';
+      paid = capStatus === 'COMPLETED';
     } else {
-      // If capture rejected because it was already captured,
-      // double-check the order status
-      const txt = await capRes.text().catch(() => '');
-      // Fallback: read order
-      const orderRes = await fetch(
+      // If capture failed, check order status anyway (already captured etc.)
+      const ordRes = await fetch(
         `${PAYPAL_API_BASE}/v2/checkout/orders/${encodeURIComponent(token)}`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
+        { method: 'GET', headers: { Authorization: `Bearer ${accessToken}` } }
       );
-      const orderJson = await orderRes.json().catch(() => null);
-      const orderStatus = orderJson?.status || 'UNKNOWN';
-      const capStatus =
-        orderJson?.purchase_units?.[0]?.payments?.captures?.[0]?.status || 'UNKNOWN';
-      paid = orderStatus === 'COMPLETED' || capStatus === 'COMPLETED';
-
-      if (!paid) {
+      if (!ordRes.ok) {
+        const txt = await ordRes.text().catch(() => '');
         return res.status(400).json({
           ok: false,
-          message: 'Payment not completed',
-          details: { capture_status: capRes.status, capture_body: txt, orderStatus, capStatus },
+          message: 'Failed to verify/capture PayPal order.',
+          details: { status: ordRes.status, body: txt },
         });
       }
+      const order = await ordRes.json().catch(() => null);
+      const orderStatus = order?.status || 'UNKNOWN';
+      const capStatus =
+        order?.purchase_units?.[0]?.payments?.captures?.[0]?.status || 'UNKNOWN';
+      paid = orderStatus === 'COMPLETED' || capStatus === 'COMPLETED';
     }
 
     if (!paid) {
       return res.status(400).json({
         ok: false,
         message: 'Payment not completed',
-        details: captureJson ?? null,
       });
     }
 
-    // 3) Generate credentials
+    // 2) Create credentials
     const username = makeUsername();
     const password = makePassword();
 
-    // 4) Store rows
-    // registrations: mirror old Stripe flow
-    const { error: regErr } = await supabase
+    // 3) Insert registration row (no unique-index dependency)
+    const regIns = await supabase
       .from('registrations')
       .insert([
         {
           session_id: `pp_${token}`,
+          username,
           password,
-          created_at: new Date().toISOString(),
           status: 'active',
-          username,
+          created_at: new Date().toISOString(),
         },
-      ]);
+      ])
+      .select('id')
+      .single();
 
-    if (regErr) {
+    if (regIns.error) {
       return res.status(500).json({
         ok: false,
-        message: 'DB insert into registrations failed',
-        details: { code: regErr.code, message: regErr.message, hint: regErr.hint ?? null },
+        message: 'Failed to write into registrations.',
+        details: {
+          code: regIns.error.code,
+          message: regIns.error.message,
+          hint: regIns.error.hint ?? null,
+        },
       });
     }
 
-    // quiz_results (make sure NOT NULLs are satisfied)
-    const { error: qrErr } = await supabase
+    // 4) (Optional) seed quiz_results so the user exists on scoreboard
+    const qrIns = await supabase
       .from('quiz_results')
-      .insert([
-        {
-          username,
-          provider: 'paypal',
-          order_id: token,
-          correct: 0,
-          time_ms: 0,
-        },
-      ]);
+      .insert([{ username, provider: 'paypal', order_id: token, correct: 0, time_ms: 0 }]);
 
-    if (qrErr) {
-      return res.status(500).json({
-        ok: false,
-        message: 'DB insert into quiz_results failed',
-        details: { code: qrErr.code, message: qrErr.message, hint: qrErr.hint ?? null },
+    if (qrIns.error) {
+      // Not fatal for the user, but return detail so we can see it in Success page if desired
+      return res.status(200).json({
+        ok: true,
+        message: 'Payment captured & registration saved (seed of quiz_results failed).',
+        creds: { username, password },
+        warn: {
+          where: 'quiz_results.insert',
+          code: qrIns.error.code,
+          message: qrIns.error.message,
+          hint: qrIns.error.hint ?? null,
+        },
       });
     }
 
-    // 5) Return creds for the Success page
     return res.status(200).json({
       ok: true,
-      message: 'Payment captured & row stored.',
+      message: 'Payment captured & registration saved.',
       creds: { username, password },
     });
   } catch (err) {
