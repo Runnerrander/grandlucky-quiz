@@ -16,19 +16,12 @@ export default function UserAgreement() {
       rulesH: "Szabályok",
       rules: [
         "A regisztrációhoz legalább 18 évesnek kell lenned.",
-        // 2 — UPDATED (mirror)
         "Nem lehetsz a GrandLucky Travel, a Vivko vagy a Grand Slam Travel családtagja.",
-        // 3 — UPDATED (mirror)
         "A verseny nyertese és kísérője köteles ESTA-t vagy turista vízumot igényelni (a Grand Slam Travel segítséget nyújt az igénylésben).",
-        // 4 — UPDATED (mirror to 'next place')
         "A Grand Slam Travel, a Vivko és a GrandLucky Travel nem felelős, ha a verseny nyertese vagy kísérője ESTA/VÍZUM igénylése elutasításra kerül. Ilyen esetben a soron következő helyezett utazik.",
-        // 5 — UPDATED (mirror)
         "Az Egyesült Államokban tartózkodás során a nyertesnek és kísérőjének be kell tartania az Egyesült Államok törvényeit és szabályait.",
-        // 6 — UPDATED (mirror)
         "A verseny második fordulója élőben közvetített esemény lesz különböző digitális platformokon. A versenyzők vállalják, hogy részt vesznek ezen az élő eseményen.",
-        // 7 — UPDATED (mirror)
         "Médiahozzájárulás: a nyertes és kísérője hozzájárul, hogy a hitelesítésről és az utazásról készült fotók/videók megjelenjenek a Vivko és a Grand Slam Travel közösségi média felületein, valamint a GrandLucky Travel weboldalán.",
-        // 8 — UPDATED (mirror)
         "Határidő a 2. forduló élő versenyéhez való csatlakozáshoz: a verseny kezdete után 5 perc áll rendelkezésre a csatlakozásra; ellenkező esetben egy másik, az első fordulót teljesítő versenyző kap lehetőséget. A 2. forduló versenyzői a Zoom digitális platformon keresztül csatlakoznak.",
       ],
       note:
@@ -36,12 +29,13 @@ export default function UserAgreement() {
       termsH: "Felhasználói Feltételek",
       privacy:
         "Adatvédelmi nyilatkozat: A regisztráció során nem gyűjtünk és nem tárolunk semmilyen személyes adatot. Csak a nyertes és utazótársa adatait rögzíti a Grand Slam Travel személyes egyeztetések céljából, kizárólag a foglalások, az ESTA/VÍZUM igénylés, valamint az utazás ügyintézése céljából.",
+      // UPDATED to PayPal
       paymentsA:
-        "Fizetés feldolgozása: Minden fizetés biztonságosan, a Stripe rendszerén keresztül történik. Kérjük, tekintsd meg a Stripe hivatalos weboldalán az ",
+        "Fizetés feldolgozása: Minden fizetés biztonságosan a PayPal rendszerén keresztül történik. Kérjük, tekintsd meg a PayPal hivatalos weboldalán az ",
       paymentsB: "Adatvédelmi nyilatkozatot",
       paymentsC: " és a ",
-      paymentsD: "Felhasználói feltételeket",
-      // REFUND — UPDATED wording
+      // UPDATED wording to match PayPal
+      paymentsD: "Felhasználói megállapodást",
       refund:
         "Visszatérítési szabályzat: A nevezési díj semmilyen körülmények között nem visszatéríthető.",
       agreeLbl:
@@ -55,19 +49,12 @@ export default function UserAgreement() {
       rulesH: "Rules",
       rules: [
         "You must be at least 18 years old to register.",
-        // 2 — UPDATED
         "You cannot be a family member of GrandLucky Travel, Vivko, or Grand Slam Travel.",
-        // 3 — UPDATED
         "The winner of the contest and their companion must obtain an ESTA or tourist visa (Grand Slam Travel assists with the application).",
-        // 4 — UPDATED to 'next place winner'
         "Grand Slam Travel, Vivko, and GrandLucky Travel are not responsible if the contest winner’s or companion’s ESTA/VISA is denied. In such a case, the next place winner will travel.",
-        // 5 — UPDATED
         "While in the United States, the winner and companion must follow all US laws and regulations.",
-        // 6 — UPDATED
         "The second round of the contest will be a live-streamed event on various digital platforms. Contestants agree to attend this live event.",
-        // 7 — UPDATED
         "Media consent: the Winner and companion consent that photos/videos from verification and the trip may be shared on Vivko’s and Grand Slam Travel’s social media and the GrandLucky Travel webpage.",
-        // 8 — UPDATED
         "Deadline to enter Round 2 Live contest: a contestant has 5 minutes to join the Round 2 live contest after the event starts; otherwise another contestant who completed the first round will get a chance to compete. Contestants for the 2nd round will join the contest on the Zoom digital platform.",
       ],
       note:
@@ -75,11 +62,13 @@ export default function UserAgreement() {
       termsH: "Terms of Use",
       privacy:
         "Privacy notice: We do not collect or store personal data at registration. Only the winner’s and companion’s data are recorded by Grand Slam Travel for travel arrangements, bookings, ESTA/VISA processing and trip administration.",
+      // UPDATED to PayPal
       paymentsA:
-        "Payments: All payments are processed securely by Stripe. Please review Stripe’s ",
-      paymentsB: "Privacy Policy",
+        "Payments: All payments are processed securely by PayPal. Please review PayPal’s ",
+      paymentsB: "Privacy Statement",
       paymentsC: " and ",
-      paymentsD: "Terms of Service",
+      // UPDATED wording to match PayPal
+      paymentsD: "User Agreement",
       refund: "Refund policy: The entry fee is non-refundable in all cases.",
       agreeLbl: "I’ve read and accept the Rules and Terms of Use",
       back: "BACK",
@@ -127,7 +116,7 @@ export default function UserAgreement() {
           <a
             href="https://zoom.us/download"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="link"
           >
             Zoom
@@ -140,18 +129,18 @@ export default function UserAgreement() {
         <p className="p">
           {c.paymentsA}
           <a
-            href="https://stripe.com/privacy"
+            href="https://www.paypal.com/webapps/mpp/ua/privacy-full"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="link"
           >
             {c.paymentsB}
           </a>
           {c.paymentsC}
           <a
-            href="https://stripe.com/terms"
+            href="https://www.paypal.com/webapps/mpp/ua/useragreement-full"
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             className="link"
           >
             {c.paymentsD}
