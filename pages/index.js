@@ -1,219 +1,159 @@
 // pages/index.js
 import Head from "next/head";
+import Link from "next/link";
 import { useState } from "react";
 
 export default function Landing() {
   const [lang, setLang] = useState<"hu" | "en">("hu");
 
-  const copy = {
+  const t = {
     hu: {
-      langBtn: "ENGLISH",
-      title: "GrandLucky Travel",
-      headline: "Köszönjük az érdeklődést!",
-      sub: "Az aktuális nyereményjáték véget ért. Hamarosan új projekttel jelentkezünk.",
-      extra:
-        "A második fordulóba bejutó 5 szerencsés versenyző felhasználónevei október 12-én 20:00-kor (magyar idő szerint) kerülnek közzétételre. Ugyanekkor közzétesszük az összes résztvevő felhasználónevét is a kvíz befejezési idejével együtt.",
-      contactBtn: "KAPCSOLAT",
-      contactAria: "Kapcsolatfelvétel e-mailben",
+      title: "GrandLuckyTravel — Tájékoztatás",
+      h1: "Köszönjük az érdeklődést!",
+      p1: "Ez a promóció jelenleg zárva van. Hamarosan új játékkal jelentkezünk ezen az oldalon.",
+      p2: "Kérdéseiddel fordulj hozzánk bizalommal:",
+      email: "support@grandluckytravel.com",
+      oct12:
+        "A 2. fordulóba jutó 6 versenyző felhasználónevét 2025. október 12-én 20:00-kor (magyar idő) tesszük közzé. Ugyanebben az időpontban az összes, kvízt teljesítő versenyző felhasználónevét is közzétesszük a befejezési idővel együtt.",
+      home: "Vissza a kezdőlapra",
     },
     en: {
-      langBtn: "MAGYAR",
-      title: "GrandLucky Travel",
-      headline: "Thanks for your interest!",
-      sub: "The current contest has ended. We’ll be back soon with a new project.",
-      extra:
-        "The usernames of the 5 lucky contestants entering Round 2 will be listed on October 12 at 20:00 (Hungarian time). At the same time, all participating contestants’ usernames will be listed together with their quiz completion time.",
-      contactBtn: "CONTACT",
-      contactAria: "Contact us by email",
+      title: "GrandLuckyTravel — Notice",
+      h1: "Thank you for your interest!",
+      p1: "This promotion is currently closed. We’ll announce the next contest here soon.",
+      p2: "If you have any questions, please contact:",
+      email: "support@grandluckytravel.com",
+      oct12:
+        "Usernames of the six contestants entering the second round will be posted on October 12 at 20:00 (Hungarian time). At the same time we’ll also publish the usernames of all participants who completed the trivia, with their completion time.",
+      home: "Back to home",
     },
   }[lang];
 
   return (
     <main className="wrap">
       <Head>
-        <title>{copy.title}</title>
-        {/* Temporary page should not be indexed */}
-        <meta name="robots" content="noindex, nofollow, noarchive" />
+        <title>{t.title}</title>
+        {/* prevent indexing & try to avoid stale caching without SSR headers */}
+        <meta name="robots" content="noindex, nofollow" />
+        <meta httpEquiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <meta httpEquiv="Pragma" content="no-cache" />
+        <meta httpEquiv="Expires" content="0" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {/* Fonts */}
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Montserrat:wght@500;700;900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&display=swap"
         />
       </Head>
 
-      {/* Language toggle */}
-      <button
-        className="lang"
-        onClick={() => setLang((l) => (l === "hu" ? "en" : "hu"))}
-        aria-label="Toggle language"
-      >
-        {copy.langBtn}
+      <button className="lang" onClick={() => setLang(lang === "hu" ? "en" : "hu")}>
+        {lang === "hu" ? "EN" : "HU"}
       </button>
 
-      {/* Content card */}
       <section className="card">
-        <h1 className="brand">GrandLucky</h1>
-        <h2 className="headline">
-          <span className="script">{copy.headline}</span>
-        </h2>
-
-        <p className="sub">{copy.sub}</p>
-        <p className="extra">{copy.extra}</p>
-
-        <div className="actions">
-          <a
-            className="btn primary"
-            href="mailto:support@grandluckytravel.com"
-            aria-label={copy.contactAria}
-          >
-            {copy.contactBtn}
+        <h1 className="h1">{t.h1}</h1>
+        <p className="p">{t.p1}</p>
+        <p className="p">
+          {t.p2}{" "}
+          <a className="link" href="mailto:support@grandluckytravel.com">
+            {t.email}
           </a>
+        </p>
+        <hr className="hr" />
+        <p className="p strong">{t.oct12}</p>
+
+        <div className="row">
+          <Link href="/" className="btn">
+            {t.home}
+          </Link>
         </div>
       </section>
 
       <style jsx>{`
         :global(:root) {
-          --bg: #0f0f0f;
-          --ink: #111;
-          --paper: #fff8ef;
+          --bg: #101010;
+          --ink: #222;
+          --muted: rgba(0, 0, 0, 0.7);
           --accent: #faaf3b;
           --accent-border: #e49b28;
-          --muted: rgba(0, 0, 0, 0.7);
+          --paper: #ffffff;
         }
-
         .wrap {
           min-height: 100dvh;
+          background:
+            radial-gradient(1400px 700px at 70% 10%, #2222 0%, transparent 60%),
+            linear-gradient(180deg, #181818 0%, #0f0f0f 100%);
           display: grid;
           place-items: center;
-          background:
-            radial-gradient(60vw 60vw at 85% 10%, #1a1a1a 0%, #0f0f0f 60%, #0a0a0a 100%),
-            url("/vivko-ny.jpg") center / cover no-repeat fixed;
-          position: relative;
-          overflow: hidden;
+          padding: 24px;
           font-family: "Montserrat", system-ui, sans-serif;
         }
-
-        /* soft veil over background for readability */
-        .wrap::before {
-          content: "";
-          position: absolute;
-          inset: 0;
-          background: linear-gradient(
-            180deg,
-            rgba(0, 0, 0, 0.42),
-            rgba(0, 0, 0, 0.62)
-          );
-        }
-
         .lang {
           position: fixed;
-          top: clamp(12px, 2.2vw, 20px);
-          right: clamp(12px, 2.2vw, 20px);
-          z-index: 3;
+          top: 14px;
+          right: 14px;
           padding: 10px 16px;
-          border-radius: 999px;
+          font-weight: 900;
           background: var(--accent);
           border: 3px solid var(--accent-border);
+          border-radius: 999px;
           color: #111;
-          font-weight: 900;
-          box-shadow: 0 10px 18px rgba(0, 0, 0, 0.25),
-            inset 0 2px 0 rgba(255, 255, 255, 0.6);
+          box-shadow: 0 10px 18px rgba(0, 0, 0, 0.2), inset 0 2px 0 #fff6;
         }
-
         .card {
-          position: relative;
-          z-index: 2;
-          width: min(820px, 92vw);
+          width: min(880px, 92vw);
           background: var(--paper);
           color: var(--ink);
-          border-radius: 20px;
-          padding: clamp(18px, 4vw, 36px);
-          box-shadow: 0 28px 60px rgba(0, 0, 0, 0.35);
-          border: 1px solid #f0eadf;
+          border-radius: 18px;
+          padding: clamp(20px, 4vw, 34px);
+          box-shadow: 0 22px 60px rgba(0, 0, 0, 0.35);
+          transform: translateY(-2px);
         }
-
-        .brand {
-          margin: 0 0 4px 0;
-          font-size: clamp(18px, 1.6vw, 20px);
-          letter-spacing: 0.6px;
-          color: var(--muted);
+        .h1 {
+          margin: 0 0 8px 0;
           font-weight: 900;
+          font-size: clamp(22px, 3vw, 30px);
         }
-
-        .headline {
-          margin: 0;
-        }
-        .script {
-          display: inline-block;
-          font: 700 clamp(36px, 5vw, 56px) "Caveat", cursive;
-          color: var(--accent);
-          text-shadow: 0 1px 0 #fff8, 0 2px 6px rgba(0, 0, 0, 0.12);
-        }
-
-        .sub {
-          margin: 10px 0 8px;
-          font-size: clamp(16px, 1.6vw, 18px);
+        .p {
+          margin: 10px 0;
           color: var(--muted);
+          font-size: clamp(16px, 1.7vw, 18px);
           line-height: 1.55;
         }
-
-        .extra {
-          margin: 6px 0 16px;
+        .p.strong {
+          color: #111;
           font-weight: 700;
-          font-size: clamp(16px, 1.6vw, 18px);
-          line-height: 1.5;
         }
-
-        .actions {
-          margin-top: 10px;
+        .hr {
+          border: none;
+          border-top: 1px solid #ececec;
+          margin: 16px 0;
+        }
+        .link {
+          color: #111;
+          font-weight: 800;
+          text-decoration: underline;
+        }
+        .row {
+          margin-top: 14px;
           display: flex;
-          gap: 12px;
+          gap: 10px;
           flex-wrap: wrap;
         }
-
         .btn {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          text-decoration: none;
           padding: 12px 20px;
           border-radius: 999px;
           font-weight: 900;
           text-transform: uppercase;
-          font-size: 14px;
-        }
-
-        .btn.primary {
           background: var(--accent);
           border: 3px solid var(--accent-border);
           color: #111;
-          box-shadow: 0 16px 28px rgba(0, 0, 0, 0.2),
-            inset 0 2px 0 rgba(255, 255, 255, 0.65);
-        }
-        .btn.primary:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 22px 36px rgba(0, 0, 0, 0.28),
-            inset 0 2px 0 rgba(255, 255, 255, 0.75);
-        }
-
-        @media (max-width: 900px) {
-          .card {
-            backdrop-filter: blur(2px);
-          }
+          text-decoration: none;
+          box-shadow: 0 16px 28px rgba(0, 0, 0, 0.18), inset 0 2px 0 #fff6;
         }
       `}</style>
     </main>
   );
-}
-
-// Force no-cache so copy changes appear instantly
-export async function getServerSideProps({ res }) {
-  res.setHeader(
-    "Cache-Control",
-    "no-store, no-cache, must-revalidate, proxy-revalidate"
-  );
-  res.setHeader("Pragma", "no-cache");
-  res.setHeader("Expires", "0");
-  return { props: {} };
 }
