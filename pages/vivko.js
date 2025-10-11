@@ -79,7 +79,7 @@ export default function Vivko() {
         hScript: "",
         hStrongTop: "",
         phase1:
-          "1. forduló: Online kvíz, lezárás 2025. október 11 — 00:30 (CET)",
+          "1. forduló: Online kvíz, lezárás 2025. október 11 — 23:59 (CET)",
         phase2:
           "2. forduló: Online élő verseny, kezdés 2025. október 18 — 18:00 (CET)",
         phase3:
@@ -135,7 +135,7 @@ export default function Vivko() {
         hScript: "",
         hStrongTop: "",
         phase1:
-          "1st Round: Online trivia, closes October 11, 2025 — 00:30 (CET)",
+          "1st Round: Online trivia, closes October 11, 2025 — 11:59 PM (CET)",
         phase2:
           "2nd Round: Online Live Contest, starts October 18, 2025 — 18:00 (CET)",
         phase3:
