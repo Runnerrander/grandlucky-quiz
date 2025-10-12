@@ -235,6 +235,7 @@ export default function IndexPage() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
+      {/* Theme */}
       <style jsx global>{`
         :root{
           --page-yellow:#F4A53B; /* payment page yellow */
@@ -273,6 +274,7 @@ export default function IndexPage() {
         <RowSection title={dict.s3} items={OTHERS} searchable dict={dict} />
       </main>
 
+      {/* Layout */}
       <style jsx>{`
         .main{
           max-width: 1100px;
@@ -299,25 +301,28 @@ export default function IndexPage() {
         .mediumScroll{ max-height:300px; overflow-y:auto; }
         .tallScroll{ max-height:420px; overflow-y:auto; }
 
-        /* Desktop/tablet: clean two-column grid */
-        @media (min-width: 601px){
-          .tableHeader{
-            position: sticky; top: 0; z-index: 1;
-            display:grid; grid-template-columns: 1fr 160px;
-            background:var(--thead); border-bottom:1px solid var(--border);
-            font-size:13px; letter-spacing:.2px;
-          }
-          .tableHeader.three{ grid-template-columns: 1fr 160px 140px; }
-          .tableRow{ display:grid; grid-template-columns: 1fr 160px; border-bottom:1px solid var(--row-sep); }
-          .tableRow.three{ grid-template-columns: 1fr 160px 140px; }
-          .cell{ padding:12px 14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-          .right{ text-align:right; }
-        }
+        /* ---- RESULTS TABLE LAYOUT (single source of truth) ---- */
 
-        /* Portrait phones: card rows, username & time on SAME line */
-        @media (max-width: 600px){
+        /* Base: grid table for desktop/tablet (and mobile by default) */
+        .tableHeader{
+          position: sticky; top: 0; z-index: 1;
+          display:grid; grid-template-columns: 1fr 160px;
+          background:var(--thead); border-bottom:1px solid var(--border);
+          font-size:13px; letter-spacing:.2px;
+        }
+        .tableHeader.three{ grid-template-columns: 1fr 160px 140px; }
+
+        .tableRow{ display:grid; grid-template-columns: 1fr 160px; border-bottom:1px solid var(--row-sep); }
+        .tableRow.three{ grid-template-columns: 1fr 160px 140px; }
+
+        .cell{ padding:12px 14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .right{ text-align:right; }
+
+        /* Phones in portrait ONLY: card rows; username & time on SAME line */
+        @media (max-width: 480px){
           .tableHeader{ display:none; }
-          .tableRow{
+
+          .tableRow, .tableRow.three{
             display:flex; flex-direction:column; gap:6px;
             border-bottom:1px solid var(--row-sep); padding:10px 12px; margin:6px 6px; background:#fff; border-radius:10px;
             box-shadow:0 6px 14px rgba(0,0,0,0.06);
