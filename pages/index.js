@@ -139,9 +139,10 @@ function RowSection({ title, items, searchable = false, dict }) {
 
   return (
     <section className="section">
-      <div className="sectionHeader">
-        <h2 className="sectionTitle">{title}</h2>
-        {searchable && (
+      <div className="sectionHeaderBar">{title}</div>
+
+      {searchable && (
+        <div className="sectionHeader">
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
@@ -149,8 +150,8 @@ function RowSection({ title, items, searchable = false, dict }) {
             aria-label={dict.searchPh}
             className="search"
           />
-        )}
-      </div>
+        </div>
+      )}
 
       <div className={`tableWrap ${searchable ? "tallScroll" : "mediumScroll"}`}>
         <div className="tableHeader">
@@ -163,8 +164,8 @@ function RowSection({ title, items, searchable = false, dict }) {
         ) : (
           filtered.map((r) => (
             <div key={r.username} className="tableRow">
-              <div className="cell user" data-label={dict.username}>{r.username}</div>
-              <div className="cell time right" data-label={dict.time}>{formatMs(r.time_ms)}</div>
+              <div className="cell user">{r.username}</div>
+              <div className="cell time right">{formatMs(r.time_ms)}</div>
             </div>
           ))
         )}
@@ -187,9 +188,9 @@ function GlobalSearch({ top6, next20, others, dict }) {
   }, [all, q]);
 
   return (
-    <section className="section" style={{ marginTop: 12 }}>
+    <section className="section">
+      <div className="sectionHeaderBar">{dict.find}</div>
       <div className="sectionHeader">
-        <h2 className="sectionTitle">{dict.find}</h2>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -211,9 +212,9 @@ function GlobalSearch({ top6, next20, others, dict }) {
           ) : (
             results.map((r) => (
               <div key={`${r.username}-${r.group}`} className="tableRow three">
-                <div className="cell" data-label={dict.username}>{r.username}</div>
-                <div className="cell right" data-label={dict.time}>{formatMs(r.time_ms)}</div>
-                <div className="cell" data-label={dict.group}>{r.group}</div>
+                <div className="cell">{r.username}</div>
+                <div className="cell right">{formatMs(r.time_ms)}</div>
+                <div className="cell">{r.group}</div>
               </div>
             ))
           )}
@@ -244,8 +245,8 @@ export default function IndexPage() {
           --muted:rgba(0,0,0,0.72);
           --border:#e79f47;
           --card:#fff;
-          --thead:rgba(244,165,59,0.22);
-          --row-sep:rgba(244,165,59,0.28);
+          --thead:#fae4c8;         /* beige header fill inside cards */
+          --row-sep:#eee;
         }
         html,body{ background:var(--page-yellow); color:var(--ink); }
         a{ color:#1f2937; }
@@ -262,13 +263,14 @@ export default function IndexPage() {
         </header>
 
         <section className="infoCard">
-          <p style={{ margin: "8px 0" }}>{dict.infoP}</p>
+          <p style={{ margin: "6px 0" }}>{dict.infoP}</p>
           <p style={{ margin: 0, opacity: 0.9 }}>
             {dict.contact} <a href="mailto:support@grandluckytravel.com">support@grandluckytravel.com</a>
           </p>
         </section>
 
         <GlobalSearch top6={TOP6} next20={NEXT20} others={OTHERS} dict={dict} />
+
         <RowSection title={dict.s1} items={TOP6} dict={dict} />
         <RowSection title={dict.s2} items={NEXT20} dict={dict} />
         <RowSection title={dict.s3} items={OTHERS} searchable dict={dict} />
@@ -279,64 +281,82 @@ export default function IndexPage() {
         .main{
           max-width: 1100px;
           margin: 0 auto;
-          padding: clamp(16px, 4vw, 32px) clamp(10px, 4vw, 20px) 64px;
+          padding: clamp(16px, 4vw, 28px) 10px 56px;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans";
         }
-        .hero{ margin-bottom: 10px; text-align: center; }
+        .hero{ margin-bottom: 8px; text-align: center; }
         .h1{ font-size: clamp(20px, 5.2vw, 28px); line-height: 1.2; margin: 0 0 6px; font-weight: 800; }
         .sub{ font-size: clamp(14px, 3.8vw, 18px); margin: 0; opacity: .9; font-weight: 500; }
 
-        .langSwitch{ margin-top: 12px; display: inline-flex; gap: 8px; flex-wrap: wrap; background:#fff; padding:6px; border-radius:999px; border:1px solid var(--border); }
+        .langSwitch{ margin-top: 10px; display: inline-flex; gap: 8px; flex-wrap: wrap; background:#fff; padding:6px; border-radius:999px; border:1px solid var(--border); }
         .langBtn{ padding:8px 14px; border-radius:999px; border:2px solid transparent; background:transparent; font-weight:800; font-size:14px; cursor:pointer; }
         .langBtn.active{ background: var(--accent); border-color:#e49b28; }
 
-        .infoCard{ border:1px solid var(--border); background:#fff7e6; border-radius:12px; padding: clamp(10px, 3vw, 16px); box-shadow:0 12px 24px rgba(0,0,0,0.05); }
+        .infoCard{
+          background: #fbf1e1;
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: 12px 14px;
+          margin-bottom: 12px;
+          box-shadow: 0 12px 24px rgba(0,0,0,0.05);
+        }
 
-        .section{ margin-top:14px; border:1px solid var(--border); border-radius:12px; padding: clamp(10px,3vw,16px); background:var(--card); box-shadow:0 12px 24px rgba(0,0,0,0.06); }
-        .sectionHeader{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:space-between; margin-bottom:12px; }
-        .sectionTitle{ margin:0; font-size: clamp(16px, 4.2vw, 20px); font-weight:800; }
-        .search{ width:min(100%, 360px); height:42px; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:#fffdfa; font-size:15px; }
+        .section{
+          margin-top: 12px;
+          border-radius: 14px;
+          overflow: hidden;
+          box-shadow: 0 10px 22px rgba(0,0,0,0.06);
+          background: var(--card);
+          border: 1px solid var(--border);
+        }
+        .sectionHeaderBar{
+          background: var(--thead);
+          font-weight: 800;
+          padding: 10px 14px;
+          border-bottom: 1px solid var(--border);
+        }
+        .sectionHeader{
+          display:flex; justify-content:flex-end; padding:10px 12px;
+        }
+        .search{
+          width:min(100%, 360px); height:40px; padding:10px 12px;
+          border-radius: 8px; border:1px solid var(--border); background:#fffdfa; font-size:14px;
+        }
 
-        .tableWrap{ border:1px solid var(--border); border-radius:10px; overflow:hidden; background:#fff; }
-        .mediumScroll{ max-height:300px; overflow-y:auto; }
-        .tallScroll{ max-height:420px; overflow-y:auto; }
+        .tableWrap{ padding: 0 0 6px; }
+        .mediumScroll{ max-height: 320px; overflow-y: auto; }
+        .tallScroll{ max-height: 420px; overflow-y: auto; }
 
-        /* ---- RESULTS TABLE LAYOUT (single source of truth) ---- */
-
-        /* Base: grid table for desktop/tablet (and mobile by default) */
+        /* Table */
         .tableHeader{
           position: sticky; top: 0; z-index: 1;
           display:grid; grid-template-columns: 1fr 160px;
-          background:var(--thead); border-bottom:1px solid var(--border);
-          font-size:13px; letter-spacing:.2px;
+          background: var(--thead);
+          border-bottom: 1px solid var(--border);
+          font-size: 13px; letter-spacing: .2px;
         }
         .tableHeader.three{ grid-template-columns: 1fr 160px 140px; }
 
-        .tableRow{ display:grid; grid-template-columns: 1fr 160px; border-bottom:1px solid var(--row-sep); }
+        .tableRow{
+          display:grid; grid-template-columns: 1fr 160px;
+          border-bottom: 1px solid var(--row-sep);
+          background:#fff;
+        }
         .tableRow.three{ grid-template-columns: 1fr 160px 140px; }
 
-        .cell{ padding:12px 14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .right{ text-align:right; }
+        .cell{ padding: 12px 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .head{ font-weight: 800; }
+        .right{ text-align: right; }
+        .user{ font-variant-numeric: tabular-nums; }
+        .time{ font-variant-numeric: tabular-nums; }
 
-        /* Phones in portrait ONLY: card rows; username & time on SAME line */
+        /* MOBILE PORTRAIT: keep two columns, just narrower time col & slightly smaller text */
         @media (max-width: 480px){
-          .tableHeader{ display:none; }
-
-          .tableRow, .tableRow.three{
-            display:flex; flex-direction:column; gap:6px;
-            border-bottom:1px solid var(--row-sep); padding:10px 12px; margin:6px 6px; background:#fff; border-radius:10px;
-            box-shadow:0 6px 14px rgba(0,0,0,0.06);
-          }
-          .cell{
-            display:flex; align-items:center; justify-content:space-between;
-            gap:12px; padding:4px 0; white-space:normal;
-          }
-          .cell::before{
-            content: attr(data-label);
-            font-weight:700; font-size:13px; color:#333; margin-right:12px; flex:0 0 auto;
-          }
-          .user{ font-weight:700; font-size:15px; }
-          .time{ font-variant-numeric: tabular-nums; font-size:15px; }
+          .tableHeader{ grid-template-columns: 1fr 110px; font-size: 12px; }
+          .tableHeader.three{ grid-template-columns: 1fr 110px 120px; }
+          .tableRow{ grid-template-columns: 1fr 110px; }
+          .tableRow.three{ grid-template-columns: 1fr 110px 120px; }
+          .cell{ padding: 10px 12px; font-size: 14px; }
         }
       `}</style>
     </>
