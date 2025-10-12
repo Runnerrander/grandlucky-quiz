@@ -123,6 +123,7 @@ function includesOrFuzzy(hay, needle) {
   for (const h of parts) for (const n of n2) if (lev1(h, n)) return true;
   return false;
 }
+
 function formatMs(ms) {
   if (ms == null || isNaN(ms)) return "—";
   const t = Math.max(0, Math.floor(ms));
@@ -167,8 +168,8 @@ function RowSection({ title, items, searchable = false, dict }) {
         ) : (
           filtered.map((r, i) => (
             <div key={`${r.username}-${i}`} className="tableRow">
-              <div className="cell userCell" data-label={dict.username}>{r.username}</div>
-              <div className="cell timeCell" data-label={dict.time}>{formatMs(r.time_ms)}</div>
+              <div className="cell userCell">{r.username}</div>
+              <div className="cell timeCell">{formatMs(r.time_ms)}</div>
             </div>
           ))
         )}
@@ -215,9 +216,9 @@ function GlobalSearch({ top6, next20, others, dict }) {
           ) : (
             results.map((r, i) => (
               <div key={`${r.username}-${i}`} className="tableRow three">
-                <div className="cell" data-label={dict.username}>{r.username}</div>
-                <div className="cell" data-label={dict.time} style={{ textAlign: "right" }}>{formatMs(r.time_ms)}</div>
-                <div className="cell" data-label={dict.group}>{r.group}</div>
+                <div className="cell">{r.username}</div>
+                <div className="cell" style={{ textAlign: "right" }}>{formatMs(r.time_ms)}</div>
+                <div className="cell">{r.group}</div>
               </div>
             ))
           )}
@@ -328,93 +329,47 @@ export default function IndexPage() {
         .sectionTitle{ margin: 0; font-size: clamp(16px, 4.2vw, 20px); font-weight: 800; }
 
         .search{
-          width: min(100%, 360px); height: 42px; padding: 10px 12px;
+          width: min(100%, 360px); height: 40px; padding: 8px 12px;
           border-radius: 10px; border: 1px solid var(--border); outline: none;
-          font-size: 15px; background: #fffdfa;
+          font-size: 14px; background: #fffdfa;
         }
 
         .tableWrap{
           border: 1px solid var(--border);
           border-radius: 10px;
-          overflow: hidden;
+          overflow: auto;             /* allow horizontal scroll on tiny screens */
           background: #fff;
         }
-        .mediumScroll{ max-height: 300px; overflow-y: auto; }
-        .tallScroll{ max-height: 420px; overflow-y: auto; }
+        .mediumScroll{ max-height: 300px; }
+        .tallScroll{ max-height: 420px; }
 
-        /* Default (tablet/desktop) – grid table */
         .tableHeader{
           position: sticky; top: 0; z-index: 1;
           display: grid;
-          grid-template-columns: 1fr minmax(120px, 180px);
+          grid-template-columns: 1fr minmax(86px, 140px);
           background: var(--thead);
           border-bottom: 1px solid var(--border);
           font-size: 13px; letter-spacing: .2px;
         }
         .tableHeader.three{
-          grid-template-columns: 1fr minmax(120px, 180px) minmax(110px, 160px);
+          grid-template-columns: 1fr minmax(86px, 140px) minmax(90px, 120px);
         }
+
         .tableRow{
           display: grid;
-          grid-template-columns: 1fr minmax(120px, 180px);
+          grid-template-columns: 1fr minmax(86px, 140px);
           background: #fff;
           border-bottom: 1px solid var(--row-sep);
-          font-size: clamp(14px, 3.4vw, 15px);
+          font-size: clamp(14px, 3.8vw, 15px);
         }
         .tableRow.three{
-          grid-template-columns: 1fr minmax(120px, 180px) minmax(110px, 160px);
+          grid-template-columns: 1fr minmax(86px, 140px) minmax(90px, 120px);
         }
-        .cell{ padding: 12px 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        .cell{ padding: 10px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .userCell{ font-variant-numeric: tabular-nums; }
         .timeCell{ text-align: right; font-variant-numeric: tabular-nums; }
         .emptyRow{ padding: 14px 12px; font-size: 14px; color: var(--muted); background: #fff; }
-
-        /* ---- SUPER MOBILE MODE (portrait phones) ---- */
-        @media (max-width: 480px){
-          /* Hide table header; rows become cards with labels */
-          .tableHeader{ display: none; }
-
-          .tableWrap{ overflow: visible; }
-          .tableRow, .tableRow.three{
-            display: block;
-            border-bottom: 1px solid var(--row-sep);
-            padding: 10px 12px;
-          }
-          .tableRow:nth-child(even){ background: #fff; }
-          .tableRow:nth-child(odd){ background: #fffef9; }
-
-          .cell{
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            padding: 8px 0;
-            white-space: normal;
-          }
-          .cell::before{
-            content: attr(data-label);
-            font-weight: 700;
-            font-size: 13px;
-            color: #333;
-            margin-right: 12px;
-            flex: 0 0 auto;
-          }
-          .userCell{ font-weight: 700; font-size: 15px; }
-          .timeCell{ text-align: right; font-variant-numeric: tabular-nums; font-size: 15px; }
-
-          /* Card look */
-          .tableRow{
-            border-radius: 10px;
-            margin: 8px 8px;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.06);
-            background: #fff;
-          }
-
-          /* Search input a bit larger for thumb tapping */
-          .search{
-            height: 46px; font-size: 16px;
-          }
-        }
 
         @media (min-width: 720px){
           .mediumScroll{ max-height: 260px; }
