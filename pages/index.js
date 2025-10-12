@@ -27,7 +27,7 @@ export default function Landing() {
             fut aktív projekt ezen az oldalon.
           </p>
           <p>
-            <strong>Fontos:</strong> A 2. fordulóba bejutó <strong>5 szerencsés
+            <strong>Fontos:</strong> A 2. fordulóba bejutó <strong>6 szerencsés
             felhasználónév</strong> listája <strong>október 12-én 20:00-kor
             (magyar idő)</strong> kerül közzétételre. Ugyanebben az időpontban
             közzétesszük az összes résztvevő <strong>felhasználónevét</strong> is
@@ -51,7 +51,7 @@ export default function Landing() {
             on this site at the moment.
           </p>
           <p>
-            <strong>Heads-up:</strong> The <strong>5 usernames</strong> entering
+            <strong>Heads-up:</strong> The <strong>6 usernames</strong> entering
             Round 2 will be posted on <strong>October 12 at 20:00 (Hungary
             time)</strong>. At the same time we’ll publish <strong>all
             participating usernames</strong> together with their <strong>quiz
