@@ -2,7 +2,7 @@
 import Head from "next/head";
 import { useMemo, useState } from "react";
 
-/** Data: correct ≥ 5, time_ms > 0 (static snapshot) */
+/** ---------- DATA (static snapshot) ---------- */
 const TOP6 = [
   {"username":"GL-UJQA","time_ms":5362},
   {"username":"GL-FB5U","time_ms":5756},
@@ -36,97 +36,70 @@ const NEXT20 = [
 ];
 
 const OTHERS = [
-  {"username":"GL-ONCU","time_ms":37114},
-  {"username":"GL-HUVF","time_ms":38977},
-  {"username":"GL-VD5B","time_ms":39139},
-  {"username":"GL-GAZT","time_ms":39230},
-  {"username":"GL-Q6QJ","time_ms":39619},
-  {"username":"GL-PWIQ","time_ms":40077},
-  {"username":"GL-CQTA","time_ms":42039},
-  {"username":"GL-B9NC","time_ms":42151},
-  {"username":"GL-4HB6","time_ms":43647},
-  {"username":"GL-ZYLH","time_ms":43675},
-  {"username":"GL-MEKJ","time_ms":43838},
-  {"username":"GL-HOCK","time_ms":44670},
-  {"username":"GL-F5VI","time_ms":45568},
-  {"username":"GL-THCM","time_ms":51204},
-  {"username":"GL-KW6A","time_ms":51331},
-  {"username":"GL-P9BX","time_ms":51464},
-  {"username":"GL-IGMV","time_ms":51550},
-  {"username":"GL-NXJH","time_ms":51886},
-  {"username":"GL-WSXW","time_ms":52147},
-  {"username":"GL-UGER","time_ms":52418},
-  {"username":"GL-PBGA","time_ms":53136},
-  {"username":"GL-DIMW","time_ms":55006},
-  {"username":"GL-OH1J","time_ms":55092},
-  {"username":"GL-6AKS","time_ms":55475},
-  {"username":"GL-ERPN","time_ms":55603},
-  {"username":"GL-LFJT","time_ms":61245},
-  {"username":"GL-LXDL","time_ms":70120},
-  {"username":"GL-ZNAM","time_ms":70323},
-  {"username":"GL-XZJE","time_ms":70376},
-  {"username":"GL-L7MH","time_ms":71118},
-  {"username":"GL-HABY","time_ms":72711},
-  {"username":"GL-2RPL","time_ms":73680},
-  {"username":"GL-ZRXW","time_ms":74234},
-  {"username":"GL-MDE7","time_ms":74846},
-  {"username":"GL-KEQD","time_ms":75804},
-  {"username":"GL-KG6X","time_ms":76244},
-  {"username":"GL-OA7O","time_ms":76787},
-  {"username":"GL-GCAH","time_ms":76961},
-  {"username":"GL-DFWD","time_ms":78498},
-  {"username":"GL-R8SP","time_ms":80811},
-  {"username":"GL-U4HU","time_ms":81166},
-  {"username":"GL-ZBUX","time_ms":86818},
-  {"username":"GL-SKWJ","time_ms":88877},
-  {"username":"GL-G7MM","time_ms":90914},
-  {"username":"GL-KNPL","time_ms":93432},
-  {"username":"GL-D3S5","time_ms":103216},
-  {"username":"GL-5XWQ","time_ms":105621},
-  {"username":"GL-9PVN","time_ms":110606},
-  {"username":"GL-PB9B","time_ms":111820},
-  {"username":"GL-E9XM","time_ms":117403},
-  {"username":"GL-ORSO","time_ms":126653},
-  {"username":"GL-AMFT","time_ms":128346},
-  {"username":"GL-LYMP","time_ms":132258},
-  {"username":"GL-ZLQP","time_ms":134875},
-  {"username":"GL-ESAX","time_ms":138995},
-  {"username":"GL-12I0","time_ms":149860},
-  {"username":"GL-KHBZ","time_ms":151678},
-  {"username":"GL-PUXZ","time_ms":157298},
-  {"username":"GL-GUHH","time_ms":176442},
-  {"username":"GL-PBQM","time_ms":189435},
-  {"username":"GL-L8HB","time_ms":211507},
-  {"username":"qa.091","time_ms":212204},
-  {"username":"GL-LT9B","time_ms":225765},
-  {"username":"GL-UUFQ","time_ms":231437},
-  {"username":"GL-YWZP","time_ms":233971},
-  {"username":"GL-E8YO","time_ms":247502},
-  {"username":"GL-225U","time_ms":284724},
-  {"username":"GL-6QRH","time_ms":290891},
-  {"username":"GL-GOIS","time_ms":359008},
-  {"username":"GL-VH35","time_ms":449747}
+  {"username":"GL-ONCU","time_ms":37114},{"username":"GL-HUVF","time_ms":38977},{"username":"GL-VD5B","time_ms":39139},{"username":"GL-GAZT","time_ms":39230},{"username":"GL-Q6QJ","time_ms":39619},{"username":"GL-PWIQ","time_ms":40077},{"username":"GL-CQTA","time_ms":42039},{"username":"GL-B9NC","time_ms":42151},{"username":"GL-4HB6","time_ms":43647},{"username":"GL-ZYLH","time_ms":43675},{"username":"GL-MEKJ","time_ms":43838},{"username":"GL-HOCK","time_ms":44670},{"username":"GL-F5VI","time_ms":45568},{"username":"GL-THCM","time_ms":51204},{"username":"GL-KW6A","time_ms":51331},{"username":"GL-P9BX","time_ms":51464},{"username":"GL-IGMV","time_ms":51550},{"username":"GL-NXJH","time_ms":51886},{"username":"GL-WSXW","time_ms":52147},{"username":"GL-UGER","time_ms":52418},{"username":"GL-PBGA","time_ms":53136},{"username":"GL-DIMW","time_ms":55006},{"username":"GL-OH1J","time_ms":55092},{"username":"GL-6AKS","time_ms":55475},{"username":"GL-ERPN","time_ms":55603},{"username":"GL-LFJT","time_ms":61245},{"username":"GL-LXDL","time_ms":70120},{"username":"GL-ZNAM","time_ms":70323},{"username":"GL-XZJE","time_ms":70376},{"username":"GL-L7MH","time_ms":71118},{"username":"GL-HABY","time_ms":72711},{"username":"GL-2RPL","time_ms":73680},{"username":"GL-ZRXW","time_ms":74234},{"username":"GL-MDE7","time_ms":74846},{"username":"GL-KEQD","time_ms":75804},{"username":"GL-KG6X","time_ms":76244},{"username":"GL-OA7O","time_ms":76787},{"username":"GL-GCAH","time_ms":76961},{"username":"GL-DFWD","time_ms":78498},{"username":"GL-R8SP","time_ms":80811},{"username":"GL-U4HU","time_ms":81166},{"username":"GL-ZBUX","time_ms":86818},{"username":"GL-SKWJ","time_ms":88877},{"username":"GL-G7MM","time_ms":90914},{"username":"GL-KNPL","time_ms":93432},{"username":"GL-D3S5","time_ms":103216},{"username":"GL-5XWQ","time_ms":105621},{"username":"GL-9PVN","time_ms":110606},{"username":"GL-PB9B","time_ms":111820},{"username":"GL-E9XM","time_ms":117403},{"username":"GL-ORSO","time_ms":126653},{"username":"GL-AMFT","time_ms":128346},{"username":"GL-LYMP","time_ms":132258},{"username":"GL-ZLQP","time_ms":134875},{"username":"GL-ESAX","time_ms":138995},{"username":"GL-12I0","time_ms":149860},{"username":"GL-KHBZ","time_ms":151678},{"username":"GL-PUXZ","time_ms":157298},{"username":"GL-GUHH","time_ms":176442},{"username":"GL-PBQM","time_ms":189435},{"username":"GL-L8HB","time_ms":211507},{"username":"qa.091","time_ms":212204},{"username":"GL-LT9B","time_ms":225765},{"username":"GL-UUFQ","time_ms":231437},{"username":"GL-YWZP","time_ms":233971},{"username":"GL-E8YO","time_ms":247502},{"username":"GL-225U","time_ms":284724},{"username":"GL-6QRH","time_ms":290891},{"username":"GL-GOIS","time_ms":359008},{"username":"GL-VH35","time_ms":449747}
 ];
 
-// ---------- Helpers ----------
+/** ---------- I18N ---------- */
+const STR = {
+  en: {
+    heroTitle: "The Vivko contest Round 1 has ended.",
+    heroSub: "New contest coming soon.",
+    infoP: "The Vivko contest Round 1 has ended. A new contest is coming soon.",
+    contact: "Questions? Email us at",
+    find: "Find your result",
+    searchPh: "Type username (e.g., GL-XXXX)…",
+    username: "Username",
+    time: "Quiz Time",
+    group: "Group",
+    gTop: "Top 6",
+    gBackups: "Backups",
+    gOthers: "Others",
+    s1: "Contestants for 2nd round (Top 6)",
+    s2: "Back up contestants for 2nd round (Next 20)",
+    s3: "All other registered (this table is searchable)",
+    noMatches: "No matches.",
+    noResults: "No results.",
+    langSwitch: "HU / EN"
+  },
+  hu: {
+    heroTitle: "A Vivkó nyereményjáték 1. fordulója lezárult.",
+    heroSub: "Hamarosan új játék indul.",
+    infoP: "A Vivkó nyereményjáték első fordulója lezárult. Hamarosan új játék indul.",
+    contact: "Kérdés esetén írj nekünk:",
+    find: "Keresd meg az eredményed",
+    searchPh: "Írd be a felhasználónevet (pl. GL-XXXX)…",
+    username: "Felhasználónév",
+    time: "Kvízidő",
+    group: "Csoport",
+    gTop: "Top 6",
+    gBackups: "Tartalékok",
+    gOthers: "Egyéb",
+    s1: "2. forduló versenyzői (Top 6)",
+    s2: "Tartalék versenyzők (Következő 20)",
+    s3: "Többi regisztrált (ez a tábla kereshető)",
+    noMatches: "Nincs találat.",
+    noResults: "Nincs eredmény.",
+    langSwitch: "HU / EN"
+  }
+};
+
+/** ---------- UTIL ---------- */
 function formatMs(ms) {
   if (ms == null || isNaN(ms)) return "—";
   const t = Math.max(0, Math.floor(ms));
   const minutes = Math.floor(t / 60000);
   const seconds = Math.floor((t % 60000) / 1000);
   const millis = t % 1000;
-  const mm = String(minutes).padStart(2, "0");
-  const ss = String(seconds).padStart(2, "0");
-  const mmm = String(millis).padStart(3, "0");
-  return `${mm}:${ss}.${mmm}`;
+  return `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}.${String(millis).padStart(3,"0")}`;
 }
 
-function RowSection({ title, items, searchable = false }) {
+/** ---------- UI SECTIONS ---------- */
+function RowSection({ title, items, searchable = false, dict }) {
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
     if (!searchable || !q) return items;
     const needle = q.trim().toLowerCase();
-    return items.filter((r) => r.username.toLowerCase().includes(needle));
+    return items.filter(r => r.username.toLowerCase().includes(needle));
   }, [items, q, searchable]);
 
   return (
@@ -137,8 +110,8 @@ function RowSection({ title, items, searchable = false }) {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search this table…"
-            aria-label="Search this table"
+            placeholder={dict.searchPh}
+            aria-label={dict.searchPh}
             style={styles.search}
           />
         )}
@@ -146,12 +119,12 @@ function RowSection({ title, items, searchable = false }) {
 
       <div style={{ ...styles.tableWrap, ...(searchable ? styles.tallScroll : styles.mediumScroll) }}>
         <div style={styles.tableHeader}>
-          <div style={{ ...styles.cell, ...styles.userCell, fontWeight: 700 }}>Username</div>
-          <div style={{ ...styles.cell, ...styles.timeCell, fontWeight: 700 }}>Quiz Time</div>
+          <div style={{ ...styles.cell, ...styles.userCell, fontWeight: 700 }}>{dict.username}</div>
+          <div style={{ ...styles.cell, ...styles.timeCell, fontWeight: 700 }}>{dict.time}</div>
         </div>
 
         {filtered.length === 0 ? (
-          <div style={styles.emptyRow}>No results.</div>
+          <div style={styles.emptyRow}>{dict.noResults}</div>
         ) : (
           filtered.map((r, i) => (
             <div key={`${r.username}-${i}`} style={styles.tableRow}>
@@ -165,12 +138,16 @@ function RowSection({ title, items, searchable = false }) {
   );
 }
 
-function GlobalSearch({ top6, next20, others }) {
+function GlobalSearch({ top6, next20, others, dict }) {
   const [q, setQ] = useState("");
   const all = useMemo(() => {
     const tag = (arr, group) => arr.map(x => ({ ...x, group }));
-    return [...tag(top6, "Top 6"), ...tag(next20, "Backups"), ...tag(others, "Others")];
-  }, [top6, next20, others]);
+    return [
+      ...tag(top6, dict.gTop),
+      ...tag(next20, dict.gBackups),
+      ...tag(others, dict.gOthers)
+    ];
+  }, [top6, next20, others, dict]);
 
   const results = useMemo(() => {
     const s = q.trim();
@@ -179,30 +156,30 @@ function GlobalSearch({ top6, next20, others }) {
   }, [all, q]);
 
   return (
-    <section style={{...styles.section, marginTop: 12}}>
+    <section style={{ ...styles.section, marginTop: 12 }}>
       <div style={styles.sectionHeader}>
-        <h2 style={styles.sectionTitle}>Find your result</h2>
+        <h2 style={styles.sectionTitle}>{dict.find}</h2>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Type username (e.g., GL-XXXX)…"
-          aria-label="Global search username"
+          placeholder={dict.searchPh}
+          aria-label={dict.searchPh}
           style={styles.search}
         />
       </div>
 
       {q && (
         <div style={styles.tableWrap}>
-          <div style={{...styles.tableHeader, gridTemplateColumns: "1fr 160px 140px"}}>
-            <div style={{ ...styles.cell, fontWeight: 700 }}>Username</div>
-            <div style={{ ...styles.cell, textAlign: "right", fontWeight: 700 }}>Quiz Time</div>
-            <div style={{ ...styles.cell, fontWeight: 700 }}>Group</div>
+          <div style={{ ...styles.tableHeader, gridTemplateColumns: "1fr 160px 140px" }}>
+            <div style={{ ...styles.cell, fontWeight: 700 }}>{dict.username}</div>
+            <div style={{ ...styles.cell, textAlign: "right", fontWeight: 700 }}>{dict.time}</div>
+            <div style={{ ...styles.cell, fontWeight: 700 }}>{dict.group}</div>
           </div>
           {results.length === 0 ? (
-            <div style={styles.emptyRow}>No matches.</div>
+            <div style={styles.emptyRow}>{dict.noMatches}</div>
           ) : (
             results.map((r, i) => (
-              <div key={`${r.username}-${i}`} style={{...styles.tableRow, gridTemplateColumns: "1fr 160px 140px"}}>
+              <div key={`${r.username}-${i}`} style={{ ...styles.tableRow, gridTemplateColumns: "1fr 160px 140px" }}>
                 <div style={styles.cell}>{r.username}</div>
                 <div style={{ ...styles.cell, textAlign: "right" }}>{formatMs(r.time_ms)}</div>
                 <div style={styles.cell}>{r.group}</div>
@@ -215,7 +192,11 @@ function GlobalSearch({ top6, next20, others }) {
   );
 }
 
+/** ---------- PAGE ---------- */
 export default function IndexPage() {
+  const [lang, setLang] = useState("en"); // "en" | "hu"
+  const dict = STR[lang];
+
   return (
     <>
       <Head>
@@ -223,112 +204,139 @@ export default function IndexPage() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      {/* Soft yellow page background */}
+      {/* Global theming: warm yellow like earlier */}
       <style jsx global>{`
-        html, body {
-          background: #fff7d1; /* light yellow */
+        :root {
+          --accent: #faaf3b;   /* your earlier accent */
+          --bg-soft: #fff4c2;  /* light yellow wash */
+          --ink: #111;
+          --muted: rgba(0,0,0,0.7);
+          --border: #f3cf7a;
+          --card: #fff;
+          --thead: #fff1b3;
         }
+        html, body {
+          background: radial-gradient(1400px 700px at 20% -10%, #fff 0%, var(--bg-soft) 65%, #ffeaa1 100%);
+        }
+        a { color: #1f2937; }
       `}</style>
 
       <main style={styles.main}>
-        <div style={styles.hero}>
-          <h1 style={styles.h1}>The Vivko contest Round 1 has ended.</h1>
-          <p style={styles.sub}>New contest coming soon.</p>
-        </div>
+        <header style={styles.hero}>
+          <h1 style={styles.h1}>{dict.heroTitle}</h1>
+          <p style={styles.sub}>{dict.heroSub}</p>
 
-        {/* HU + EN info blocks with contact line */}
-        <div style={styles.infoWrap}>
-          <section style={styles.infoCard}>
-            <h2 style={styles.infoTitle}>Magyarul</h2>
-            <p>A Vivkó nyereményjáték első fordulója lezárult. Hamarosan új játék indul.</p>
-            <p style={styles.muted}>
-              Kérdés esetén írj nekünk:{" "}
-              <a href="mailto:support@grandluckytravel.com">support@grandluckytravel.com</a>
-            </p>
-          </section>
+          {/* HU / EN toggle */}
+          <div style={styles.langSwitch}>
+            <button
+              onClick={() => setLang("hu")}
+              aria-label="Magyar"
+              style={{ ...styles.langBtn, ...(lang === "hu" ? styles.langActive : {}) }}
+            >
+              HU
+            </button>
+            <button
+              onClick={() => setLang("en")}
+              aria-label="English"
+              style={{ ...styles.langBtn, ...(lang === "en" ? styles.langActive : {}) }}
+            >
+              EN
+            </button>
+          </div>
+        </header>
 
-          <section style={styles.infoCard}>
-            <h2 style={styles.infoTitle}>English</h2>
-            <p>The Vivko contest Round 1 has ended. A new contest is coming soon.</p>
-            <p style={styles.muted}>
-              Questions? Email us at{" "}
-              <a href="mailto:support@grandluckytravel.com">support@grandluckytravel.com</a>
-            </p>
-          </section>
-        </div>
+        {/* Info card with contact */}
+        <section style={styles.infoCard}>
+          <p style={{ margin: "8px 0" }}>{dict.infoP}</p>
+          <p style={{ margin: 0, opacity: 0.9 }}>
+            {dict.contact}{" "}
+            <a href="mailto:support@grandluckytravel.com">support@grandluckytravel.com</a>
+          </p>
+        </section>
 
-        {/* Global search across ALL groups */}
-        <GlobalSearch top6={TOP6} next20={NEXT20} others={OTHERS} />
+        {/* Global search */}
+        <GlobalSearch top6={TOP6} next20={NEXT20} others={OTHERS} dict={dict} />
 
         {/* Three sections */}
-        <RowSection title="Contestants for 2nd round (Top 6)" items={TOP6} />
-        <RowSection title="Back up contestants for 2nd round (Next 20)" items={NEXT20} />
-        <RowSection title="All other registered (this table is searchable)" items={OTHERS} searchable />
+        <RowSection title={dict.s1} items={TOP6} dict={dict} />
+        <RowSection title={dict.s2} items={NEXT20} dict={dict} />
+        <RowSection title={dict.s3} items={OTHERS} searchable dict={dict} />
       </main>
     </>
   );
 }
 
-// ---------- Inline Styles ----------
+/** ---------- STYLES ---------- */
 const styles = {
   main: {
     maxWidth: 1100,
     margin: "0 auto",
-    padding: "32px 16px 64px",
+    padding: "28px 16px 64px",
     fontFamily:
       '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"',
-    color: "#111",
+    color: "var(--ink)"
   },
-  hero: { marginBottom: 12, textAlign: "center" },
-  h1: { fontSize: 28, lineHeight: 1.25, margin: "0 0 6px", fontWeight: 800 },
+  hero: { marginBottom: 10, textAlign: "center" },
+  h1: { fontSize: 28, lineHeight: 1.2, margin: "0 0 6px", fontWeight: 800 },
   sub: { fontSize: 18, margin: 0, opacity: 0.9, fontWeight: 500 },
 
-  infoWrap: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 12,
-    margin: "16px 0 8px",
-  },
+  langSwitch: { marginTop: 10, display: "inline-flex", gap: 6, background: "#fff", padding: 4, borderRadius: 999, border: "1px solid var(--border)" },
+  langBtn: { padding: "6px 12px", borderRadius: 999, border: "1px solid transparent", cursor: "pointer", background: "transparent", fontWeight: 800 },
+  langActive: { background: "var(--accent)", borderColor: "#e49b28" },
+
   infoCard: {
-    border: "1px solid #f2d48a",
-    background: "#fff9e5",
+    border: "1px solid var(--border)",
+    background: "#fffbe6",
     borderRadius: 12,
     padding: 14,
-    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+    boxShadow: "0 12px 24px rgba(0,0,0,0.05)"
   },
-  infoTitle: { margin: 0, fontSize: 18, fontWeight: 800 },
-  muted: { opacity: 0.85 },
 
   section: {
-    marginTop: 16, border: "1px solid #e5e7eb", borderRadius: 12,
-    padding: 16, background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,0.04)"
+    marginTop: 16,
+    border: "1px solid var(--border)",
+    borderRadius: 12,
+    padding: 16,
+    background: "var(--card)",
+    boxShadow: "0 12px 24px rgba(0,0,0,0.06)"
   },
   sectionHeader: {
     display: "flex", alignItems: "center", gap: 12,
     justifyContent: "space-between", marginBottom: 12
   },
-  sectionTitle: { margin: 0, fontSize: 20, fontWeight: 700 },
+  sectionTitle: { margin: 0, fontSize: 20, fontWeight: 800 },
+
   search: {
-    flexShrink: 0, width: 260, height: 36, padding: "6px 10px",
-    borderRadius: 10, border: "1px solid #d1d5db", outline: "none", fontSize: 14
+    flexShrink: 0, width: 280, height: 36, padding: "6px 10px",
+    borderRadius: 10, border: "1px solid #e5c770", outline: "none", fontSize: 14, background: "#fffdfa"
   },
+
   tableWrap: {
-    border: "1px solid #e5e7eb", borderRadius: 10,
-    overflow: "hidden", background: "#fafafa"
+    border: "1px solid var(--border)",
+    borderRadius: 10,
+    overflow: "hidden",
+    background: "#fffef7"
   },
   mediumScroll: { maxHeight: 260, overflowY: "auto" },
   tallScroll: { maxHeight: 360, overflowY: "auto" },
+
   tableHeader: {
-    display: "grid", gridTemplateColumns: "1fr 160px",
-    background: "#f3f4f6", borderBottom: "1px solid #e5e7eb",
-    fontSize: 13, letterSpacing: 0.2
+    display: "grid",
+    gridTemplateColumns: "1fr 160px",
+    background: "var(--thead)",
+    borderBottom: "1px solid var(--border)",
+    fontSize: 13,
+    letterSpacing: 0.2
   },
   tableRow: {
-    display: "grid", gridTemplateColumns: "1fr 160px",
-    background: "#fff", borderBottom: "1px solid #f3f4f6", fontSize: 15
+    display: "grid",
+    gridTemplateColumns: "1fr 160px",
+    background: "#fff",
+    borderBottom: "1px solid #f7e1a9",
+    fontSize: 15
   },
   cell: { padding: "10px 12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
   userCell: { fontVariantNumeric: "tabular-nums" },
   timeCell: { textAlign: "right", fontVariantNumeric: "tabular-nums" },
-  emptyRow: { padding: "14px 12px", fontSize: 14, color: "#6b7280", background: "#fff" },
+  emptyRow: { padding: "14px 12px", fontSize: 14, color: "var(--muted)", background: "#fff" }
 };
