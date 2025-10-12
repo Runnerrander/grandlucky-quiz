@@ -55,7 +55,7 @@ const OTHERS = [
 const STR = {
   en: {
     heroTitle: "The Vivko contest Round 1 has ended.",
-    heroSub: "New contest coming soon.",
+   heroSub: "New contest coming soon. vMARK-1012",
     infoP: "The Vivko contest Round 1 has ended. A new contest is coming soon.",
     contact: "Questions? Email us at",
     find: "Find your result",
