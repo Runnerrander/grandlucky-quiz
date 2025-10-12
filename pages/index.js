@@ -98,6 +98,7 @@ const normalizeUsername = (u) => {
   const n = norm(u).replace(/^GL-/, "GL").replace(/^GL(?=[A-Z0-9]{4}$)/, "GL-");
   return n;
 };
+// Levenshtein ≤ 1
 function lev1(a, b) {
   if (a === b) return true;
   const la = a.length, lb = b.length;
@@ -142,33 +143,33 @@ function RowSection({ title, items, searchable = false, dict }) {
   }, [items, q, searchable]);
 
   return (
-    <section style={styles.section}>
-      <div style={styles.sectionHeader}>
-        <h2 style={styles.sectionTitle}>{title}</h2>
+    <section className="section">
+      <div className="sectionHeader">
+        <h2 className="sectionTitle">{title}</h2>
         {searchable && (
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={dict.searchPh}
             aria-label={dict.searchPh}
-            style={styles.search}
+            className="search"
           />
         )}
       </div>
 
-      <div style={{ ...styles.tableWrap, ...(searchable ? styles.tallScroll : styles.mediumScroll) }}>
-        <div style={styles.tableHeader}>
-          <div style={{ ...styles.cell, ...styles.userCell, fontWeight: 800 }}>{dict.username}</div>
-          <div style={{ ...styles.cell, ...styles.timeCell, fontWeight: 800 }}>{dict.time}</div>
+      <div className={`tableWrap ${searchable ? "tallScroll" : "mediumScroll"}`}>
+        <div className="tableHeader">
+          <div className="cell userCell userHead">{dict.username}</div>
+          <div className="cell timeCell timeHead">{dict.time}</div>
         </div>
 
         {filtered.length === 0 ? (
-          <div style={styles.emptyRow}>{dict.noResults}</div>
+          <div className="emptyRow">{dict.noResults}</div>
         ) : (
           filtered.map((r, i) => (
-            <div key={`${r.username}-${i}`} style={styles.tableRow}>
-              <div style={{ ...styles.cell, ...styles.userCell }}>{r.username}</div>
-              <div style={{ ...styles.cell, ...styles.timeCell }}>{formatMs(r.time_ms)}</div>
+            <div key={`${r.username}-${i}`} className="tableRow">
+              <div className="cell userCell">{r.username}</div>
+              <div className="cell timeCell">{formatMs(r.time_ms)}</div>
             </div>
           ))
         )}
@@ -191,33 +192,33 @@ function GlobalSearch({ top6, next20, others, dict }) {
   }, [all, q]);
 
   return (
-    <section style={{ ...styles.section, marginTop: 12 }}>
-      <div style={styles.sectionHeader}>
-        <h2 style={styles.sectionTitle}>{dict.find}</h2>
+    <section className="section" style={{ marginTop: 12 }}>
+      <div className="sectionHeader">
+        <h2 className="sectionTitle">{dict.find}</h2>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder={dict.searchPh}
           aria-label={dict.searchPh}
-          style={styles.search}
+          className="search"
         />
       </div>
 
       {q && (
-        <div style={styles.tableWrap}>
-          <div style={{ ...styles.tableHeader, gridTemplateColumns: "1fr 160px 140px" }}>
-            <div style={{ ...styles.cell, fontWeight: 800 }}>{dict.username}</div>
-            <div style={{ ...styles.cell, textAlign: "right", fontWeight: 800 }}>{dict.time}</div>
-            <div style={{ ...styles.cell, fontWeight: 800 }}>{dict.group}</div>
+        <div className="tableWrap">
+          <div className="tableHeader three">
+            <div className="cell">{dict.username}</div>
+            <div className="cell" style={{ textAlign: "right" }}>{dict.time}</div>
+            <div className="cell">{dict.group}</div>
           </div>
           {results.length === 0 ? (
-            <div style={styles.emptyRow}>{dict.noMatches}</div>
+            <div className="emptyRow">{dict.noMatches}</div>
           ) : (
             results.map((r, i) => (
-              <div key={`${r.username}-${i}`} style={{ ...styles.tableRow, gridTemplateColumns: "1fr 160px 140px" }}>
-                <div style={styles.cell}>{r.username}</div>
-                <div style={{ ...styles.cell, textAlign: "right" }}>{formatMs(r.time_ms)}</div>
-                <div style={styles.cell}>{r.group}</div>
+              <div key={`${r.username}-${i}`} className="tableRow three">
+                <div className="cell">{r.username}</div>
+                <div className="cell" style={{ textAlign: "right" }}>{formatMs(r.time_ms)}</div>
+                <div className="cell">{r.group}</div>
               </div>
             ))
           )}
@@ -229,7 +230,7 @@ function GlobalSearch({ top6, next20, others, dict }) {
 
 /** ---------- PAGE ---------- */
 export default function IndexPage() {
-  const [lang, setLang] = useState("en"); // "en" | "hu"
+  const [lang, setLang] = useState("en");
   const dict = STR[lang];
 
   return (
@@ -239,7 +240,7 @@ export default function IndexPage() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      {/* Global theme: match the payment-page yellow */}
+      {/* Global theme */}
       <style jsx global>{`
         :root{
           --page-yellow:#F4A53B;  /* from your payment page */
@@ -258,22 +259,18 @@ export default function IndexPage() {
         a{ color:#1f2937; }
       `}</style>
 
-      <main style={styles.main}>
-        <header style={styles.hero}>
-          <h1 style={styles.h1}>{dict.heroTitle}</h1>
-          <p style={styles.sub}>{dict.heroSub}</p>
+      <main className="main">
+        <header className="hero">
+          <h1 className="h1">{dict.heroTitle}</h1>
+          <p className="sub">{dict.heroSub}</p>
 
-        <div style={styles.langSwitch}>
-            <button onClick={() => setLang("hu")} aria-label="Magyar" style={{ ...styles.langBtn, ...(lang === "hu" ? styles.langActive : {}) }}>
-              HU
-            </button>
-            <button onClick={() => setLang("en")} aria-label="English" style={{ ...styles.langBtn, ...(lang === "en" ? styles.langActive : {}) }}>
-              EN
-            </button>
+          <div className="langSwitch">
+            <button onClick={() => setLang("hu")} aria-label="Magyar" className={`langBtn ${lang==="hu"?"active":""}`}>HU</button>
+            <button onClick={() => setLang("en")} aria-label="English" className={`langBtn ${lang==="en"?"active":""}`}>EN</button>
           </div>
         </header>
 
-        <section style={styles.infoCard}>
+        <section className="infoCard">
           <p style={{ margin: "8px 0" }}>{dict.infoP}</p>
           <p style={{ margin: 0, opacity: 0.9 }}>
             {dict.contact} <a href="mailto:support@grandluckytravel.com">support@grandluckytravel.com</a>
@@ -285,85 +282,100 @@ export default function IndexPage() {
         <RowSection title={dict.s2} items={NEXT20} dict={dict} />
         <RowSection title={dict.s3} items={OTHERS} searchable dict={dict} />
       </main>
+
+      {/* Responsive CSS (mobile-first) */}
+      <style jsx>{`
+        .main{
+          max-width: 1100px;
+          margin: 0 auto;
+          padding: clamp(16px, 4vw, 32px) clamp(10px, 4vw, 20px) 64px;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans";
+          color: var(--ink);
+        }
+        .hero{ margin-bottom: 10px; text-align: center; }
+        .h1{ font-size: clamp(20px, 5.2vw, 28px); line-height: 1.2; margin: 0 0 6px; font-weight: 800; }
+        .sub{ font-size: clamp(14px, 3.8vw, 18px); margin: 0; opacity: .9; font-weight: 500; }
+
+        .langSwitch{
+          margin-top: 12px; display: inline-flex; gap: 8px; flex-wrap: wrap;
+          background: #fff; padding: 6px; border-radius: 999px; border: 1px solid var(--border)
+        }
+        .langBtn{
+          padding: 8px 14px; border-radius: 999px; border: 2px solid transparent;
+          cursor: pointer; background: transparent; font-weight: 800; font-size: 14px;
+        }
+        .langBtn.active{ background: var(--accent); border-color: #e49b28; }
+
+        .infoCard{
+          border: 1px solid var(--border);
+          background: #fff7e6;
+          border-radius: 12px;
+          padding: clamp(10px, 3vw, 16px);
+          box-shadow: 0 12px 24px rgba(0,0,0,0.05);
+        }
+
+        .section{
+          margin-top: 14px;
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          padding: clamp(10px, 3vw, 16px);
+          background: var(--card);
+          box-shadow: 0 12px 24px rgba(0,0,0,0.06);
+        }
+        .sectionHeader{
+          display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+          justify-content: space-between; margin-bottom: 12px;
+        }
+        .sectionTitle{ margin: 0; font-size: clamp(16px, 4.2vw, 20px); font-weight: 800; }
+
+        .search{
+          width: min(100%, 360px); height: 40px; padding: 8px 12px;
+          border-radius: 10px; border: 1px solid var(--border); outline: none;
+          font-size: 14px; background: #fffdfa;
+        }
+
+        .tableWrap{
+          border: 1px solid var(--border);
+          border-radius: 10px;
+          overflow: auto;             /* allow horizontal scroll on tiny screens */
+          background: #fff;
+        }
+        .mediumScroll{ max-height: 300px; }
+        .tallScroll{ max-height: 420px; }
+
+        .tableHeader{
+          position: sticky; top: 0; z-index: 1;
+          display: grid;
+          grid-template-columns: 1fr minmax(86px, 140px);
+          background: var(--thead);
+          border-bottom: 1px solid var(--border);
+          font-size: 13px; letter-spacing: .2px;
+        }
+        .tableHeader.three{
+          grid-template-columns: 1fr minmax(86px, 140px) minmax(90px, 120px);
+        }
+
+        .tableRow{
+          display: grid;
+          grid-template-columns: 1fr minmax(86px, 140px);
+          background: #fff;
+          border-bottom: 1px solid var(--row-sep);
+          font-size: clamp(14px, 3.8vw, 15px);
+        }
+        .tableRow.three{
+          grid-template-columns: 1fr minmax(86px, 140px) minmax(90px, 120px);
+        }
+
+        .cell{ padding: 10px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .userCell{ font-variant-numeric: tabular-nums; }
+        .timeCell{ text-align: right; font-variant-numeric: tabular-nums; }
+        .emptyRow{ padding: 14px 12px; font-size: 14px; color: var(--muted); background: #fff; }
+
+        @media (min-width: 720px){
+          .mediumScroll{ max-height: 260px; }
+          .tallScroll{ max-height: 360px; }
+        }
+      `}</style>
     </>
   );
 }
-
-/** ---------- STYLES ---------- */
-const styles = {
-  main: {
-    maxWidth: 1100,
-    margin: "0 auto",
-    padding: "28px 16px 64px",
-    fontFamily:
-      '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"',
-    color: "var(--ink)"
-  },
-  hero: { marginBottom: 10, textAlign: "center" },
-  h1: { fontSize: 28, lineHeight: 1.2, margin: "0 0 6px", fontWeight: 800 },
-  sub: { fontSize: 18, margin: 0, opacity: 0.9, fontWeight: 500 },
-
-  langSwitch: {
-    marginTop: 10, display: "inline-flex", gap: 6,
-    background: "#fff", padding: 4, borderRadius: 999, border: "1px solid var(--border)"
-  },
-  langBtn: { padding: "6px 12px", borderRadius: 999, border: "1px solid transparent", cursor: "pointer", background: "transparent", fontWeight: 800 },
-  langActive: { background: "var(--accent)", borderColor: "#e49b28" },
-
-  infoCard: {
-    border: "1px solid var(--border)",
-    background: "#fff7e6",
-    borderRadius: 12,
-    padding: 14,
-    boxShadow: "0 12px 24px rgba(0,0,0,0.05)"
-  },
-
-  section: {
-    marginTop: 16,
-    border: "1px solid var(--border)",
-    borderRadius: 12,
-    padding: 16,
-    background: "var(--card)",
-    boxShadow: "0 12px 24px rgba(0,0,0,0.06)"
-  },
-  sectionHeader: {
-    display: "flex", alignItems: "center", gap: 12,
-    justifyContent: "space-between", marginBottom: 12
-  },
-  sectionTitle: { margin: 0, fontSize: 20, fontWeight: 800 },
-
-  search: {
-    flexShrink: 0, width: 280, height: 36, padding: "6px 10px",
-    borderRadius: 10, border: "1px solid var(--border)", outline: "none",
-    fontSize: 14, background: "#fffdfa"
-  },
-
-  tableWrap: {
-    border: "1px solid var(--border)",
-    borderRadius: 10,
-    overflow: "hidden",
-    background: "#fff"
-  },
-  mediumScroll: { maxHeight: 260, overflowY: "auto" },
-  tallScroll: { maxHeight: 360, overflowY: "auto" },
-
-  tableHeader: {
-    display: "grid",
-    gridTemplateColumns: "1fr 160px",
-    background: "var(--thead)",
-    borderBottom: "1px solid var(--border)",
-    fontSize: 13,
-    letterSpacing: 0.2
-  },
-  tableRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 160px",
-    background: "#fff",
-    borderBottom: "1px solid var(--row-sep)",
-    fontSize: 15
-  },
-  cell: { padding: "10px 12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
-  userCell: { fontVariantNumeric: "tabular-nums" },
-  timeCell: { textAlign: "right", fontVariantNumeric: "tabular-nums" },
-  emptyRow: { padding: "14px 12px", fontSize: 14, color: "var(--muted)", background: "#fff" }
-};
