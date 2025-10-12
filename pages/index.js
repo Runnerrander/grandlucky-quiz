@@ -40,7 +40,10 @@ const OTHERS = [
   {"username":"GL-LFJT","time_ms":61245},
   {"username":"GL-0KYS","time_ms":61551},
   {"username":"GL-JDG3","time_ms":63072},
-  {"username":"GL-LXDL","time_ms":70120},{"username":"GL-ZNAM","time_ms":70323},{"username":"GL-XZJE","time_ms":70376},{"username":"GL-L7MH","time_ms":71118},{"username":"GL-HABY","time_ms":72711},{"username":"GL-2RPL","time_ms":73680},{"username":"GL-ZRXW","time_ms":74234},{"username":"GL-MDE7","time_ms":74846},{"username":"GL-KEQD","time_ms":75804},{"username":"GL-KG6X","time_ms":76244},{"username":"GL-OA7O","time_ms":76787},{"username":"GL-GCAH","time_ms":76961},{"username":"GL-DFWD","time_ms":78498},{"username":"GL-R8SP","time_ms":80811},{"username":"GL-U4HU","time_ms":81166},{"username":"GL-ZBUX","time_ms":86818},{"username":"GL-SKWJ","time_ms":88877},{"username":"GL-G7MM","time_ms":90914},{"username":"GL-KNPL","time_ms":93432},
+  {"username":"GL-LXDL","time_ms":70120},{"username":"GL-ZNAM","time_ms":70323},{"username":"GL-XZJE","time_ms":70376},{"username":"GL-L7MH","time_ms":71118},
+  {"username":"GL-6VI8","time_ms":71686},
+  {"username":"GL-HABY","time_ms":72711},
+  {"username":"GL-2RPL","time_ms":73680},{"username":"GL-ZRXW","time_ms":74234},{"username":"GL-MDE7","time_ms":74846},{"username":"GL-KEQD","time_ms":75804},{"username":"GL-KG6X","time_ms":76244},{"username":"GL-OA7O","time_ms":76787},{"username":"GL-GCAH","time_ms":76961},{"username":"GL-DFWD","time_ms":78498},{"username":"GL-R8SP","time_ms":80811},{"username":"GL-U4HU","time_ms":81166},{"username":"GL-ZBUX","time_ms":86818},{"username":"GL-SKWJ","time_ms":88877},{"username":"GL-G7MM","time_ms":90914},{"username":"GL-KNPL","time_ms":93432},
   {"username":"GL-D3S5","time_ms":103216},
   {"username":"GL-5XWQ","time_ms":105621},
   {"username":"GL-HCNP","time_ms":106663},
@@ -95,7 +98,6 @@ const normalizeUsername = (u) => {
   const n = norm(u).replace(/^GL-/, "GL").replace(/^GL(?=[A-Z0-9]{4}$)/, "GL-");
   return n;
 };
-// Levenshtein ≤ 1
 function lev1(a, b) {
   if (a === b) return true;
   const la = a.length, lb = b.length;
@@ -261,7 +263,7 @@ export default function IndexPage() {
           <h1 style={styles.h1}>{dict.heroTitle}</h1>
           <p style={styles.sub}>{dict.heroSub}</p>
 
-          <div style={styles.langSwitch}>
+        <div style={styles.langSwitch}>
             <button onClick={() => setLang("hu")} aria-label="Magyar" style={{ ...styles.langBtn, ...(lang === "hu" ? styles.langActive : {}) }}>
               HU
             </button>
