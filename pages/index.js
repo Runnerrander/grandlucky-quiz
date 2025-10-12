@@ -2,7 +2,7 @@
 import Head from "next/head";
 import { useMemo, useState } from "react";
 
-/** ---------- DATA (static snapshot) ---------- */
+/** ---------- DATA (static snapshot, correct ≥ 5 & time_ms > 0) ---------- */
 const TOP6 = [
   {"username":"GL-UJQA","time_ms":5362},
   {"username":"GL-FB5U","time_ms":5756},
@@ -58,8 +58,7 @@ const STR = {
     s2: "Back up contestants for 2nd round (Next 20)",
     s3: "All other registered (this table is searchable)",
     noMatches: "No matches.",
-    noResults: "No results.",
-    langSwitch: "HU / EN"
+    noResults: "No results."
   },
   hu: {
     heroTitle: "A Vivkó nyereményjáték 1. fordulója lezárult.",
@@ -78,28 +77,35 @@ const STR = {
     s2: "Tartalék versenyzők (Következő 20)",
     s3: "Többi regisztrált (ez a tábla kereshető)",
     noMatches: "Nincs találat.",
-    noResults: "Nincs eredmény.",
-    langSwitch: "HU / EN"
+    noResults: "Nincs eredmény."
   }
 };
 
 /** ---------- UTIL ---------- */
+const norm = (s) =>
+  (s || "").toString().trim().toUpperCase().replace(/\s+/g, "");
+const normalizeUsername = (u) => {
+  // allow GL-XXXX, gl-xxxx, gl xxxx, gllfjt, etc.
+  const n = norm(u).replace(/^GL-/, "GL").replace(/^GL(?=[A-Z0-9]{4}$)/, "GL-");
+  return n;
+};
+
 function formatMs(ms) {
   if (ms == null || isNaN(ms)) return "—";
   const t = Math.max(0, Math.floor(ms));
-  const minutes = Math.floor(t / 60000);
-  const seconds = Math.floor((t % 60000) / 1000);
-  const millis = t % 1000;
-  return `${String(minutes).padStart(2,"0")}:${String(seconds).padStart(2,"0")}.${String(millis).padStart(3,"0")}`;
+  const mm = String(Math.floor(t / 60000)).padStart(2, "0");
+  const ss = String(Math.floor((t % 60000) / 1000)).padStart(2, "0");
+  const mmm = String(t % 1000).padStart(3, "0");
+  return `${mm}:${ss}.${mmm}`;
 }
 
-/** ---------- UI SECTIONS ---------- */
+/** ---------- UI ---------- */
 function RowSection({ title, items, searchable = false, dict }) {
   const [q, setQ] = useState("");
   const filtered = useMemo(() => {
     if (!searchable || !q) return items;
-    const needle = q.trim().toLowerCase();
-    return items.filter(r => r.username.toLowerCase().includes(needle));
+    const needle = normalizeUsername(q);
+    return items.filter((r) => normalizeUsername(r.username).includes(needle));
   }, [items, q, searchable]);
 
   return (
@@ -119,8 +125,8 @@ function RowSection({ title, items, searchable = false, dict }) {
 
       <div style={{ ...styles.tableWrap, ...(searchable ? styles.tallScroll : styles.mediumScroll) }}>
         <div style={styles.tableHeader}>
-          <div style={{ ...styles.cell, ...styles.userCell, fontWeight: 700 }}>{dict.username}</div>
-          <div style={{ ...styles.cell, ...styles.timeCell, fontWeight: 700 }}>{dict.time}</div>
+          <div style={{ ...styles.cell, ...styles.userCell, fontWeight: 800 }}>{dict.username}</div>
+          <div style={{ ...styles.cell, ...styles.timeCell, fontWeight: 800 }}>{dict.time}</div>
         </div>
 
         {filtered.length === 0 ? (
@@ -141,18 +147,18 @@ function RowSection({ title, items, searchable = false, dict }) {
 function GlobalSearch({ top6, next20, others, dict }) {
   const [q, setQ] = useState("");
   const all = useMemo(() => {
-    const tag = (arr, group) => arr.map(x => ({ ...x, group }));
+    const tag = (arr, group) => arr.map((x) => ({ ...x, group }));
     return [
       ...tag(top6, dict.gTop),
       ...tag(next20, dict.gBackups),
-      ...tag(others, dict.gOthers)
+      ...tag(others, dict.gOthers),
     ];
   }, [top6, next20, others, dict]);
 
   const results = useMemo(() => {
-    const s = q.trim();
+    const s = normalizeUsername(q);
     if (!s) return [];
-    return all.filter(x => x.username.toLowerCase().includes(s.toLowerCase())).slice(0, 50);
+    return all.filter((x) => normalizeUsername(x.username).includes(s)).slice(0, 50);
   }, [all, q]);
 
   return (
@@ -171,15 +177,18 @@ function GlobalSearch({ top6, next20, others, dict }) {
       {q && (
         <div style={styles.tableWrap}>
           <div style={{ ...styles.tableHeader, gridTemplateColumns: "1fr 160px 140px" }}>
-            <div style={{ ...styles.cell, fontWeight: 700 }}>{dict.username}</div>
-            <div style={{ ...styles.cell, textAlign: "right", fontWeight: 700 }}>{dict.time}</div>
-            <div style={{ ...styles.cell, fontWeight: 700 }}>{dict.group}</div>
+            <div style={{ ...styles.cell, fontWeight: 800 }}>{dict.username}</div>
+            <div style={{ ...styles.cell, textAlign: "right", fontWeight: 800 }}>{dict.time}</div>
+            <div style={{ ...styles.cell, fontWeight: 800 }}>{dict.group}</div>
           </div>
           {results.length === 0 ? (
             <div style={styles.emptyRow}>{dict.noMatches}</div>
           ) : (
             results.map((r, i) => (
-              <div key={`${r.username}-${i}`} style={{ ...styles.tableRow, gridTemplateColumns: "1fr 160px 140px" }}>
+              <div
+                key={`${r.username}-${i}`}
+                style={{ ...styles.tableRow, gridTemplateColumns: "1fr 160px 140px" }}
+              >
                 <div style={styles.cell}>{r.username}</div>
                 <div style={{ ...styles.cell, textAlign: "right" }}>{formatMs(r.time_ms)}</div>
                 <div style={styles.cell}>{r.group}</div>
@@ -204,21 +213,24 @@ export default function IndexPage() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      {/* Global theming: warm yellow like earlier */}
+      {/* Global theme: EXACT toggle yellow (#faaf3b) across the page */}
       <style jsx global>{`
-        :root {
-          --accent: #faaf3b;   /* your earlier accent */
-          --bg-soft: #fff4c2;  /* light yellow wash */
-          --ink: #111;
-          --muted: rgba(0,0,0,0.7);
-          --border: #f3cf7a;
-          --card: #fff;
-          --thead: #fff1b3;
+        :root{
+          --accent:#faaf3b;
+          --ink:#111;
+          --muted:rgba(0,0,0,0.7);
+          --border:#f0c06a;       /* derived from accent */
+          --card:#fff;
+          --thead:rgba(250,175,59,0.18);
+          --row-sep:rgba(250,175,59,0.22);
+          --wash1:rgba(250,175,59,0.14);
+          --wash2:rgba(250,175,59,0.24);
         }
-        html, body {
-          background: radial-gradient(1400px 700px at 20% -10%, #fff 0%, var(--bg-soft) 65%, #ffeaa1 100%);
+        html,body{
+          background: radial-gradient(1200px 600px at 20% -10%, #fff 0%, var(--wash1) 60%, var(--wash2) 100%);
+          color:var(--ink);
         }
-        a { color: #1f2937; }
+        a{ color:#1f2937; }
       `}</style>
 
       <main style={styles.main}>
@@ -245,7 +257,7 @@ export default function IndexPage() {
           </div>
         </header>
 
-        {/* Info card with contact */}
+        {/* Info + contact */}
         <section style={styles.infoCard}>
           <p style={{ margin: "8px 0" }}>{dict.infoP}</p>
           <p style={{ margin: 0, opacity: 0.9 }}>
@@ -280,13 +292,16 @@ const styles = {
   h1: { fontSize: 28, lineHeight: 1.2, margin: "0 0 6px", fontWeight: 800 },
   sub: { fontSize: 18, margin: 0, opacity: 0.9, fontWeight: 500 },
 
-  langSwitch: { marginTop: 10, display: "inline-flex", gap: 6, background: "#fff", padding: 4, borderRadius: 999, border: "1px solid var(--border)" },
+  langSwitch: {
+    marginTop: 10, display: "inline-flex", gap: 6,
+    background: "#fff", padding: 4, borderRadius: 999, border: "1px solid var(--border)"
+  },
   langBtn: { padding: "6px 12px", borderRadius: 999, border: "1px solid transparent", cursor: "pointer", background: "transparent", fontWeight: 800 },
   langActive: { background: "var(--accent)", borderColor: "#e49b28" },
 
   infoCard: {
     border: "1px solid var(--border)",
-    background: "#fffbe6",
+    background: "#fffef4",
     borderRadius: 12,
     padding: 14,
     boxShadow: "0 12px 24px rgba(0,0,0,0.05)"
@@ -308,14 +323,15 @@ const styles = {
 
   search: {
     flexShrink: 0, width: 280, height: 36, padding: "6px 10px",
-    borderRadius: 10, border: "1px solid #e5c770", outline: "none", fontSize: 14, background: "#fffdfa"
+    borderRadius: 10, border: "1px solid var(--border)", outline: "none",
+    fontSize: 14, background: "rgba(250,175,59,0.06)"
   },
 
   tableWrap: {
     border: "1px solid var(--border)",
     borderRadius: 10,
     overflow: "hidden",
-    background: "#fffef7"
+    background: "#fff"
   },
   mediumScroll: { maxHeight: 260, overflowY: "auto" },
   tallScroll: { maxHeight: 360, overflowY: "auto" },
@@ -332,7 +348,7 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "1fr 160px",
     background: "#fff",
-    borderBottom: "1px solid #f7e1a9",
+    borderBottom: "1px solid var(--row-sep)",
     fontSize: 15
   },
   cell: { padding: "10px 12px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
