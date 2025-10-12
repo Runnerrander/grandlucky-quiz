@@ -2,7 +2,7 @@
 import Head from "next/head";
 import { useMemo, useState } from "react";
 
-/** ---------- DATA (static snapshot, correct ≥ 5 & time_ms > 0) ---------- */
+/** ---------- DATA (correct >=5 & time_ms > 0) ---------- */
 const TOP6 = [
   {"username":"GL-UJQA","time_ms":5362},
   {"username":"GL-FB5U","time_ms":5756},
@@ -40,6 +40,7 @@ const OTHERS = [
   {"username":"GL-LFJT","time_ms":61245},
   {"username":"GL-0KYS","time_ms":61551},
   {"username":"GL-JDG3","time_ms":63072},
+  {"username":"GL-MQUG","time_ms":64414},
   {"username":"GL-LXDL","time_ms":70120},{"username":"GL-ZNAM","time_ms":70323},{"username":"GL-XZJE","time_ms":70376},{"username":"GL-L7MH","time_ms":71118},
   {"username":"GL-6VI8","time_ms":71686},
   {"username":"GL-HABY","time_ms":72711},
@@ -47,7 +48,7 @@ const OTHERS = [
   {"username":"GL-D3S5","time_ms":103216},
   {"username":"GL-5XWQ","time_ms":105621},
   {"username":"GL-HCNP","time_ms":106663},
-  {"username":"GL-9PVN","time_ms":110606},{"username":"GL-PB9B","time_ms":111820},{"username":"GL-E9XM","time_ms":117403},{"username":"GL-ORSO","time_ms":126653},{"username":"GL-AMFT","time_ms":128346},{"username":"GL-LYMP","time_ms":132258},{"username":"GL-ZLQP","time_ms":134875},{"username":"GL-ESAX","time_ms":138995},{"username":"GL-12I0","time_ms":149860},{"username":"GL-KHBZ","time_ms":151678},{"username":"GL-PUXZ","time_ms":157298},{"username":"GL-GUHH","time_ms":176442},{"username":"GL-PBQM","time_ms":189435},{"username":"GL-L8HB","time_ms":211507},{"username":"qa.091","time_ms":212204},{"username":"GL-LT9B","time_ms":225765},{"username":"GL-UUFQ","time_ms":231437},{"username":"GL-YWZP","time_ms":233971},{"username":"GL-E8YO","time_ms":247502},{"username":"GL-225U","time_ms":284724},{"username":"GL-6QRH","time_ms":290891},{"username":"GL-GOIS","time_ms":359008},{"username":"GL-VH35","time_ms":449747}
+  {"username":"GL-9PVN","time_ms":110606},{"username":"GL-PB9B","time_ms":111820},{"username":"GL-E9XM","time_ms":117403},{"username":"GL-JSA9","time_ms":125788},{"username":"GL-ORSO","time_ms":126653},{"username":"GL-AMFT","time_ms":128346},{"username":"GL-LYMP","time_ms":132258},{"username":"GL-ZLQP","time_ms":134875},{"username":"GL-ESAX","time_ms":138995},{"username":"GL-12I0","time_ms":149860},{"username":"GL-KHBZ","time_ms":151678},{"username":"GL-PUXZ","time_ms":157298},{"username":"GL-GUHH","time_ms":176442},{"username":"GL-PBQM","time_ms":189435},{"username":"GL-L8HB","time_ms":211507},{"username":"qa.091","time_ms":212204},{"username":"GL-LT9B","time_ms":225765},{"username":"GL-UUFQ","time_ms":231437},{"username":"GL-YWZP","time_ms":233971},{"username":"GL-E8YO","time_ms":247502},{"username":"GL-225U","time_ms":284724},{"username":"GL-6QRH","time_ms":290891},{"username":"GL-GOIS","time_ms":359008},{"username":"GL-VH35","time_ms":449747}
 ];
 
 /** ---------- I18N ---------- */
@@ -92,13 +93,12 @@ const STR = {
   }
 };
 
-/** ---------- SEARCH NORMALIZATION + FUZZY ---------- */
+/** ---------- SEARCH HELPERS ---------- */
 const norm = (s) => (s || "").toString().trim().toUpperCase().replace(/\s+/g, "");
-const normalizeUsername = (u) => {
-  const n = norm(u).replace(/^GL-/, "GL").replace(/^GL(?=[A-Z0-9]{4}$)/, "GL-");
-  return n;
-};
-// Levenshtein ≤ 1
+const normalizeUsername = (u) =>
+  norm(u).replace(/^GL-/, "GL").replace(/^GL(?=[A-Z0-9]{4}$)/, "GL-");
+
+// Levenshtein distance <= 1
 function lev1(a, b) {
   if (a === b) return true;
   const la = a.length, lb = b.length;
@@ -106,11 +106,8 @@ function lev1(a, b) {
   let i = 0, j = 0, edits = 0;
   while (i < la && j < lb) {
     if (a[i] === b[j]) { i++; j++; continue; }
-    edits++;
-    if (edits > 1) return false;
-    if (la > lb) i++;
-    else if (lb > la) j++;
-    else { i++; j++; }
+    if (++edits > 1) return false;
+    if (la > lb) i++; else if (lb > la) j++; else { i++; j++; }
   }
   if (i < la || j < lb) edits++;
   return edits <= 1;
@@ -118,15 +115,13 @@ function lev1(a, b) {
 function includesOrFuzzy(hay, needle) {
   if (!needle) return true;
   if (hay.includes(needle)) return true;
-  const parts = [hay, hay.replace(/^GL-/, "")];
-  const n2 = [needle, needle.replace(/^GL-/, "")];
-  for (const h of parts) for (const n of n2) if (lev1(h, n)) return true;
+  const H = [hay, hay.replace(/^GL-/, "")];
+  const N = [needle, needle.replace(/^GL-/, "")];
+  for (const h of H) for (const n of N) if (lev1(h, n)) return true;
   return false;
 }
-
 function formatMs(ms) {
-  if (ms == null || isNaN(ms)) return "—";
-  const t = Math.max(0, Math.floor(ms));
+  const t = Math.max(0, Math.floor(ms || 0));
   const mm = String(Math.floor(t / 60000)).padStart(2, "0");
   const ss = String(Math.floor((t % 60000) / 1000)).padStart(2, "0");
   const mmm = String(t % 1000).padStart(3, "0");
@@ -159,17 +154,17 @@ function RowSection({ title, items, searchable = false, dict }) {
 
       <div className={`tableWrap ${searchable ? "tallScroll" : "mediumScroll"}`}>
         <div className="tableHeader">
-          <div className="cell userCell userHead">{dict.username}</div>
-          <div className="cell timeCell timeHead">{dict.time}</div>
+          <div className="cell head">{dict.username}</div>
+          <div className="cell head right">{dict.time}</div>
         </div>
 
         {filtered.length === 0 ? (
           <div className="emptyRow">{dict.noResults}</div>
         ) : (
-          filtered.map((r, i) => (
-            <div key={`${r.username}-${i}`} className="tableRow">
-              <div className="cell userCell">{r.username}</div>
-              <div className="cell timeCell">{formatMs(r.time_ms)}</div>
+          filtered.map((r) => (
+            <div key={r.username} className="tableRow">
+              <div className="cell user" data-label={dict.username}>{r.username}</div>
+              <div className="cell time right" data-label={dict.time}>{formatMs(r.time_ms)}</div>
             </div>
           ))
         )}
@@ -207,18 +202,18 @@ function GlobalSearch({ top6, next20, others, dict }) {
       {q && (
         <div className="tableWrap">
           <div className="tableHeader three">
-            <div className="cell">{dict.username}</div>
-            <div className="cell" style={{ textAlign: "right" }}>{dict.time}</div>
-            <div className="cell">{dict.group}</div>
+            <div className="cell head">{dict.username}</div>
+            <div className="cell head right">{dict.time}</div>
+            <div className="cell head">{dict.group}</div>
           </div>
           {results.length === 0 ? (
             <div className="emptyRow">{dict.noMatches}</div>
           ) : (
-            results.map((r, i) => (
-              <div key={`${r.username}-${i}`} className="tableRow three">
-                <div className="cell">{r.username}</div>
-                <div className="cell" style={{ textAlign: "right" }}>{formatMs(r.time_ms)}</div>
-                <div className="cell">{r.group}</div>
+            results.map((r) => (
+              <div key={`${r.username}-${r.group}`} className="tableRow three">
+                <div className="cell" data-label={dict.username}>{r.username}</div>
+                <div className="cell right" data-label={dict.time}>{formatMs(r.time_ms)}</div>
+                <div className="cell" data-label={dict.group}>{r.group}</div>
               </div>
             ))
           )}
@@ -240,22 +235,18 @@ export default function IndexPage() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      {/* Global theme */}
       <style jsx global>{`
         :root{
-          --page-yellow:#F4A53B;  /* from your payment page */
+          --page-yellow:#F4A53B; /* payment page yellow */
           --accent:#faaf3b;
           --ink:#111;
-          --muted:rgba(0,0,0,0.7);
+          --muted:rgba(0,0,0,0.72);
           --border:#e79f47;
           --card:#fff;
           --thead:rgba(244,165,59,0.22);
           --row-sep:rgba(244,165,59,0.28);
         }
-        html,body{
-          background: var(--page-yellow);
-          color:var(--ink);
-        }
+        html,body{ background:var(--page-yellow); color:var(--ink); }
         a{ color:#1f2937; }
       `}</style>
 
@@ -263,10 +254,9 @@ export default function IndexPage() {
         <header className="hero">
           <h1 className="h1">{dict.heroTitle}</h1>
           <p className="sub">{dict.heroSub}</p>
-
           <div className="langSwitch">
-            <button onClick={() => setLang("hu")} aria-label="Magyar" className={`langBtn ${lang==="hu"?"active":""}`}>HU</button>
-            <button onClick={() => setLang("en")} aria-label="English" className={`langBtn ${lang==="en"?"active":""}`}>EN</button>
+            <button onClick={() => setLang("hu")} className={`langBtn ${lang==="hu"?"active":""}`}>HU</button>
+            <button onClick={() => setLang("en")} className={`langBtn ${lang==="en"?"active":""}`}>EN</button>
           </div>
         </header>
 
@@ -283,97 +273,65 @@ export default function IndexPage() {
         <RowSection title={dict.s3} items={OTHERS} searchable dict={dict} />
       </main>
 
-      {/* Responsive CSS (mobile-first) */}
       <style jsx>{`
         .main{
           max-width: 1100px;
           margin: 0 auto;
           padding: clamp(16px, 4vw, 32px) clamp(10px, 4vw, 20px) 64px;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans";
-          color: var(--ink);
         }
         .hero{ margin-bottom: 10px; text-align: center; }
         .h1{ font-size: clamp(20px, 5.2vw, 28px); line-height: 1.2; margin: 0 0 6px; font-weight: 800; }
         .sub{ font-size: clamp(14px, 3.8vw, 18px); margin: 0; opacity: .9; font-weight: 500; }
 
-        .langSwitch{
-          margin-top: 12px; display: inline-flex; gap: 8px; flex-wrap: wrap;
-          background: #fff; padding: 6px; border-radius: 999px; border: 1px solid var(--border)
-        }
-        .langBtn{
-          padding: 8px 14px; border-radius: 999px; border: 2px solid transparent;
-          cursor: pointer; background: transparent; font-weight: 800; font-size: 14px;
-        }
-        .langBtn.active{ background: var(--accent); border-color: #e49b28; }
+        .langSwitch{ margin-top: 12px; display: inline-flex; gap: 8px; flex-wrap: wrap; background:#fff; padding:6px; border-radius:999px; border:1px solid var(--border); }
+        .langBtn{ padding:8px 14px; border-radius:999px; border:2px solid transparent; background:transparent; font-weight:800; font-size:14px; cursor:pointer; }
+        .langBtn.active{ background: var(--accent); border-color:#e49b28; }
 
-        .infoCard{
-          border: 1px solid var(--border);
-          background: #fff7e6;
-          border-radius: 12px;
-          padding: clamp(10px, 3vw, 16px);
-          box-shadow: 0 12px 24px rgba(0,0,0,0.05);
-        }
+        .infoCard{ border:1px solid var(--border); background:#fff7e6; border-radius:12px; padding: clamp(10px, 3vw, 16px); box-shadow:0 12px 24px rgba(0,0,0,0.05); }
 
-        .section{
-          margin-top: 14px;
-          border: 1px solid var(--border);
-          border-radius: 12px;
-          padding: clamp(10px, 3vw, 16px);
-          background: var(--card);
-          box-shadow: 0 12px 24px rgba(0,0,0,0.06);
-        }
-        .sectionHeader{
-          display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-          justify-content: space-between; margin-bottom: 12px;
-        }
-        .sectionTitle{ margin: 0; font-size: clamp(16px, 4.2vw, 20px); font-weight: 800; }
+        .section{ margin-top:14px; border:1px solid var(--border); border-radius:12px; padding: clamp(10px,3vw,16px); background:var(--card); box-shadow:0 12px 24px rgba(0,0,0,0.06); }
+        .sectionHeader{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:space-between; margin-bottom:12px; }
+        .sectionTitle{ margin:0; font-size: clamp(16px, 4.2vw, 20px); font-weight:800; }
+        .search{ width:min(100%, 360px); height:42px; padding:10px 12px; border-radius:10px; border:1px solid var(--border); background:#fffdfa; font-size:15px; }
 
-        .search{
-          width: min(100%, 360px); height: 40px; padding: 8px 12px;
-          border-radius: 10px; border: 1px solid var(--border); outline: none;
-          font-size: 14px; background: #fffdfa;
+        .tableWrap{ border:1px solid var(--border); border-radius:10px; overflow:hidden; background:#fff; }
+        .mediumScroll{ max-height:300px; overflow-y:auto; }
+        .tallScroll{ max-height:420px; overflow-y:auto; }
+
+        /* Desktop/tablet: clean two-column grid */
+        @media (min-width: 601px){
+          .tableHeader{
+            position: sticky; top: 0; z-index: 1;
+            display:grid; grid-template-columns: 1fr 160px;
+            background:var(--thead); border-bottom:1px solid var(--border);
+            font-size:13px; letter-spacing:.2px;
+          }
+          .tableHeader.three{ grid-template-columns: 1fr 160px 140px; }
+          .tableRow{ display:grid; grid-template-columns: 1fr 160px; border-bottom:1px solid var(--row-sep); }
+          .tableRow.three{ grid-template-columns: 1fr 160px 140px; }
+          .cell{ padding:12px 14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+          .right{ text-align:right; }
         }
 
-        .tableWrap{
-          border: 1px solid var(--border);
-          border-radius: 10px;
-          overflow: auto;             /* allow horizontal scroll on tiny screens */
-          background: #fff;
-        }
-        .mediumScroll{ max-height: 300px; }
-        .tallScroll{ max-height: 420px; }
-
-        .tableHeader{
-          position: sticky; top: 0; z-index: 1;
-          display: grid;
-          grid-template-columns: 1fr minmax(86px, 140px);
-          background: var(--thead);
-          border-bottom: 1px solid var(--border);
-          font-size: 13px; letter-spacing: .2px;
-        }
-        .tableHeader.three{
-          grid-template-columns: 1fr minmax(86px, 140px) minmax(90px, 120px);
-        }
-
-        .tableRow{
-          display: grid;
-          grid-template-columns: 1fr minmax(86px, 140px);
-          background: #fff;
-          border-bottom: 1px solid var(--row-sep);
-          font-size: clamp(14px, 3.8vw, 15px);
-        }
-        .tableRow.three{
-          grid-template-columns: 1fr minmax(86px, 140px) minmax(90px, 120px);
-        }
-
-        .cell{ padding: 10px 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .userCell{ font-variant-numeric: tabular-nums; }
-        .timeCell{ text-align: right; font-variant-numeric: tabular-nums; }
-        .emptyRow{ padding: 14px 12px; font-size: 14px; color: var(--muted); background: #fff; }
-
-        @media (min-width: 720px){
-          .mediumScroll{ max-height: 260px; }
-          .tallScroll{ max-height: 360px; }
+        /* Portrait phones: card rows, username & time on SAME line */
+        @media (max-width: 600px){
+          .tableHeader{ display:none; }
+          .tableRow{
+            display:flex; flex-direction:column; gap:6px;
+            border-bottom:1px solid var(--row-sep); padding:10px 12px; margin:6px 6px; background:#fff; border-radius:10px;
+            box-shadow:0 6px 14px rgba(0,0,0,0.06);
+          }
+          .cell{
+            display:flex; align-items:center; justify-content:space-between;
+            gap:12px; padding:4px 0; white-space:normal;
+          }
+          .cell::before{
+            content: attr(data-label);
+            font-weight:700; font-size:13px; color:#333; margin-right:12px; flex:0 0 auto;
+          }
+          .user{ font-weight:700; font-size:15px; }
+          .time{ font-variant-numeric: tabular-nums; font-size:15px; }
         }
       `}</style>
     </>
