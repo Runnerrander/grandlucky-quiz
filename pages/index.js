@@ -36,9 +36,15 @@ const NEXT20 = [
 ];
 
 const OTHERS = [
-  {"username":"GL-ONCU","time_ms":37114},{"username":"GL-HUVF","time_ms":38977},{"username":"GL-VD5B","time_ms":39139},{"username":"GL-GAZT","time_ms":39230},{"username":"GL-Q6QJ","time_ms":39619},{"username":"GL-PWIQ","time_ms":40077},{"username":"GL-CQTA","time_ms":42039},{"username":"GL-B9NC","time_ms":42151},{"username":"GL-4HB6","time_ms":43647},{"username":"GL-ZYLH","time_ms":43675},{"username":"GL-MEKJ","time_ms":43838},{"username":"GL-HOCK","time_ms":44670},{"username":"GL-F5VI","time_ms":45568},{"username":"GL-THCM","time_ms":51204},{"username":"GL-KW6A","time_ms":51331},{"username":"GL-P9BX","time_ms":51464},{"username":"GL-IGMV","time_ms":51550},{"username":"GL-NXJH","time_ms":51886},{"username":"GL-WSXW","time_ms":52147},{"username":"GL-UGER","time_ms":52418},{"username":"GL-PBGA","time_ms":53136},{"username":"GL-DIMW","time_ms":55006},{"username":"GL-OH1J","time_ms":55092},{"username":"GL-6AKS","time_ms":55475},{"username":"GL-ERPN","time_ms":55603},{"username":"GL-LFJT","time_ms":61245},
+  {"username":"GL-ONCU","time_ms":37114},{"username":"GL-HUVF","time_ms":38977},{"username":"GL-VD5B","time_ms":39139},{"username":"GL-GAZT","time_ms":39230},{"username":"GL-Q6QJ","time_ms":39619},{"username":"GL-PWIQ","time_ms":40077},{"username":"GL-CQTA","time_ms":42039},{"username":"GL-B9NC","time_ms":42151},{"username":"GL-4HB6","time_ms":43647},{"username":"GL-ZYLH","time_ms":43675},{"username":"GL-MEKJ","time_ms":43838},{"username":"GL-HOCK","time_ms":44670},{"username":"GL-F5VI","time_ms":45568},{"username":"GL-THCM","time_ms":51204},{"username":"GL-KW6A","time_ms":51331},{"username":"GL-P9BX","time_ms":51464},{"username":"GL-IGMV","time_ms":51550},{"username":"GL-NXJH","time_ms":51886},{"username":"GL-WSXW","time_ms":52147},{"username":"GL-UGER","time_ms":52418},{"username":"GL-PBGA","time_ms":53136},{"username":"GL-DIMW","time_ms":55006},{"username":"GL-OH1J","time_ms":55092},{"username":"GL-6AKS","time_ms":55475},{"username":"GL-ERPN","time_ms":55603},
+  {"username":"GL-LFJT","time_ms":61245},
+  {"username":"GL-0KYS","time_ms":61551},
   {"username":"GL-JDG3","time_ms":63072},
-  {"username":"GL-LXDL","time_ms":70120},{"username":"GL-ZNAM","time_ms":70323},{"username":"GL-XZJE","time_ms":70376},{"username":"GL-L7MH","time_ms":71118},{"username":"GL-HABY","time_ms":72711},{"username":"GL-2RPL","time_ms":73680},{"username":"GL-ZRXW","time_ms":74234},{"username":"GL-MDE7","time_ms":74846},{"username":"GL-KEQD","time_ms":75804},{"username":"GL-KG6X","time_ms":76244},{"username":"GL-OA7O","time_ms":76787},{"username":"GL-GCAH","time_ms":76961},{"username":"GL-DFWD","time_ms":78498},{"username":"GL-R8SP","time_ms":80811},{"username":"GL-U4HU","time_ms":81166},{"username":"GL-ZBUX","time_ms":86818},{"username":"GL-SKWJ","time_ms":88877},{"username":"GL-G7MM","time_ms":90914},{"username":"GL-KNPL","time_ms":93432},{"username":"GL-D3S5","time_ms":103216},{"username":"GL-5XWQ","time_ms":105621},{"username":"GL-9PVN","time_ms":110606},{"username":"GL-PB9B","time_ms":111820},{"username":"GL-E9XM","time_ms":117403},{"username":"GL-ORSO","time_ms":126653},{"username":"GL-AMFT","time_ms":128346},{"username":"GL-LYMP","time_ms":132258},{"username":"GL-ZLQP","time_ms":134875},{"username":"GL-ESAX","time_ms":138995},{"username":"GL-12I0","time_ms":149860},{"username":"GL-KHBZ","time_ms":151678},{"username":"GL-PUXZ","time_ms":157298},{"username":"GL-GUHH","time_ms":176442},{"username":"GL-PBQM","time_ms":189435},{"username":"GL-L8HB","time_ms":211507},{"username":"qa.091","time_ms":212204},{"username":"GL-LT9B","time_ms":225765},{"username":"GL-UUFQ","time_ms":231437},{"username":"GL-YWZP","time_ms":233971},{"username":"GL-E8YO","time_ms":247502},{"username":"GL-225U","time_ms":284724},{"username":"GL-6QRH","time_ms":290891},{"username":"GL-GOIS","time_ms":359008},{"username":"GL-VH35","time_ms":449747}
+  {"username":"GL-LXDL","time_ms":70120},{"username":"GL-ZNAM","time_ms":70323},{"username":"GL-XZJE","time_ms":70376},{"username":"GL-L7MH","time_ms":71118},{"username":"GL-HABY","time_ms":72711},{"username":"GL-2RPL","time_ms":73680},{"username":"GL-ZRXW","time_ms":74234},{"username":"GL-MDE7","time_ms":74846},{"username":"GL-KEQD","time_ms":75804},{"username":"GL-KG6X","time_ms":76244},{"username":"GL-OA7O","time_ms":76787},{"username":"GL-GCAH","time_ms":76961},{"username":"GL-DFWD","time_ms":78498},{"username":"GL-R8SP","time_ms":80811},{"username":"GL-U4HU","time_ms":81166},{"username":"GL-ZBUX","time_ms":86818},{"username":"GL-SKWJ","time_ms":88877},{"username":"GL-G7MM","time_ms":90914},{"username":"GL-KNPL","time_ms":93432},
+  {"username":"GL-D3S5","time_ms":103216},
+  {"username":"GL-5XWQ","time_ms":105621},
+  {"username":"GL-HCNP","time_ms":106663},
+  {"username":"GL-9PVN","time_ms":110606},{"username":"GL-PB9B","time_ms":111820},{"username":"GL-E9XM","time_ms":117403},{"username":"GL-ORSO","time_ms":126653},{"username":"GL-AMFT","time_ms":128346},{"username":"GL-LYMP","time_ms":132258},{"username":"GL-ZLQP","time_ms":134875},{"username":"GL-ESAX","time_ms":138995},{"username":"GL-12I0","time_ms":149860},{"username":"GL-KHBZ","time_ms":151678},{"username":"GL-PUXZ","time_ms":157298},{"username":"GL-GUHH","time_ms":176442},{"username":"GL-PBQM","time_ms":189435},{"username":"GL-L8HB","time_ms":211507},{"username":"qa.091","time_ms":212204},{"username":"GL-LT9B","time_ms":225765},{"username":"GL-UUFQ","time_ms":231437},{"username":"GL-YWZP","time_ms":233971},{"username":"GL-E8YO","time_ms":247502},{"username":"GL-225U","time_ms":284724},{"username":"GL-6QRH","time_ms":290891},{"username":"GL-GOIS","time_ms":359008},{"username":"GL-VH35","time_ms":449747}
 ];
 
 /** ---------- I18N ---------- */
@@ -86,11 +92,10 @@ const STR = {
 /** ---------- SEARCH NORMALIZATION + FUZZY ---------- */
 const norm = (s) => (s || "").toString().trim().toUpperCase().replace(/\s+/g, "");
 const normalizeUsername = (u) => {
-  // Accept GL-XXXX, glxxxx, gl xxxx, etc.
   const n = norm(u).replace(/^GL-/, "GL").replace(/^GL(?=[A-Z0-9]{4}$)/, "GL-");
   return n;
 };
-// simple Levenshtein≤1 check for short IDs
+// Levenshtein ≤ 1
 function lev1(a, b) {
   if (a === b) return true;
   const la = a.length, lb = b.length;
@@ -256,7 +261,6 @@ export default function IndexPage() {
           <h1 style={styles.h1}>{dict.heroTitle}</h1>
           <p style={styles.sub}>{dict.heroSub}</p>
 
-          {/* HU / EN toggle */}
           <div style={styles.langSwitch}>
             <button onClick={() => setLang("hu")} aria-label="Magyar" style={{ ...styles.langBtn, ...(lang === "hu" ? styles.langActive : {}) }}>
               HU
@@ -267,7 +271,6 @@ export default function IndexPage() {
           </div>
         </header>
 
-        {/* Info + contact */}
         <section style={styles.infoCard}>
           <p style={{ margin: "8px 0" }}>{dict.infoP}</p>
           <p style={{ margin: 0, opacity: 0.9 }}>
@@ -275,10 +278,7 @@ export default function IndexPage() {
           </p>
         </section>
 
-        {/* Global search */}
         <GlobalSearch top6={TOP6} next20={NEXT20} others={OTHERS} dict={dict} />
-
-        {/* Three sections */}
         <RowSection title={dict.s1} items={TOP6} dict={dict} />
         <RowSection title={dict.s2} items={NEXT20} dict={dict} />
         <RowSection title={dict.s3} items={OTHERS} searchable dict={dict} />
