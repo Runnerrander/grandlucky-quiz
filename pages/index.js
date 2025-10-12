@@ -53,7 +53,7 @@ const OTHERS = [
   {"username":"GL-KW6A","time_ms":51331},
   {"username":"GL-P9BX","time_ms":51464},
   {"username":"GL-IGMV","time_ms":51550},
-  {"username":"GL-NXJH","time_ms":51886},  // ← added (51.886s)
+  {"username":"GL-NXJH","time_ms":51886},
   {"username":"GL-WSXW","time_ms":52147},
   {"username":"GL-UGER","time_ms":52418},
   {"username":"GL-PBGA","time_ms":53136},
@@ -223,10 +223,38 @@ export default function IndexPage() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
+      {/* Soft yellow page background */}
+      <style jsx global>{`
+        html, body {
+          background: #fff7d1; /* light yellow */
+        }
+      `}</style>
+
       <main style={styles.main}>
         <div style={styles.hero}>
           <h1 style={styles.h1}>The Vivko contest Round 1 has ended.</h1>
           <p style={styles.sub}>New contest coming soon.</p>
+        </div>
+
+        {/* HU + EN info blocks with contact line */}
+        <div style={styles.infoWrap}>
+          <section style={styles.infoCard}>
+            <h2 style={styles.infoTitle}>Magyarul</h2>
+            <p>A Vivkó nyereményjáték első fordulója lezárult. Hamarosan új játék indul.</p>
+            <p style={styles.muted}>
+              Kérdés esetén írj nekünk:{" "}
+              <a href="mailto:support@grandluckytravel.com">support@grandluckytravel.com</a>
+            </p>
+          </section>
+
+          <section style={styles.infoCard}>
+            <h2 style={styles.infoTitle}>English</h2>
+            <p>The Vivko contest Round 1 has ended. A new contest is coming soon.</p>
+            <p style={styles.muted}>
+              Questions? Email us at{" "}
+              <a href="mailto:support@grandluckytravel.com">support@grandluckytravel.com</a>
+            </p>
+          </section>
         </div>
 
         {/* Global search across ALL groups */}
@@ -251,11 +279,28 @@ const styles = {
       '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"',
     color: "#111",
   },
-  hero: { marginBottom: 24, textAlign: "center" },
+  hero: { marginBottom: 12, textAlign: "center" },
   h1: { fontSize: 28, lineHeight: 1.25, margin: "0 0 6px", fontWeight: 800 },
   sub: { fontSize: 18, margin: 0, opacity: 0.9, fontWeight: 500 },
+
+  infoWrap: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 12,
+    margin: "16px 0 8px",
+  },
+  infoCard: {
+    border: "1px solid #f2d48a",
+    background: "#fff9e5",
+    borderRadius: 12,
+    padding: 14,
+    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+  },
+  infoTitle: { margin: 0, fontSize: 18, fontWeight: 800 },
+  muted: { opacity: 0.85 },
+
   section: {
-    marginTop: 28, border: "1px solid #e5e7eb", borderRadius: 12,
+    marginTop: 16, border: "1px solid #e5e7eb", borderRadius: 12,
     padding: 16, background: "#fff", boxShadow: "0 1px 2px rgba(0,0,0,0.04)"
   },
   sectionHeader: {
