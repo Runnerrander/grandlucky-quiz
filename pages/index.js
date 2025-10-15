@@ -3,11 +3,12 @@ import Head from "next/head";
 import { useMemo, useState } from "react";
 
 /**
- * DATA
- * ----
- * Top 6 (fastest) + Next 20 (backup) + All other finishers for Round 1.
- * Times are mm:ss.mmm. Lists match the completion export you provided.
+ * DATA (verified from your completion export)
+ * -------------------------------------------
+ * Only "username" and "time" are displayed. Group is derived (Top 6 / Backup).
  */
+
+// Top 6 — fastest correct submissions
 const TOP6 = [
   { username: "GL-UJQA", time: "00:05.362" },
   { username: "GL-FB5U", time: "00:05.756" },
@@ -17,93 +18,28 @@ const TOP6 = [
   { username: "GL-QX3V", time: "00:12.101" },
 ];
 
-// Backup 20 – keep your validated order
+// Next 20 — backups, next fastest after Top 6
 const NEXT20 = [
   { username: "GL-OVEN", time: "00:22.459" },
   { username: "GL-JCWO", time: "00:22.597" },
   { username: "GL-NCAD", time: "00:25.069" },
-  { username: "GL-6XZU", time: "00:26.767" },
+  { username: "GL-6X2U", time: "00:26.767" },
   { username: "GL-ANN7", time: "00:26.788" },
   { username: "GL-IFNC", time: "00:28.143" },
+  { username: "GL-YGY9", time: "00:28.252" },
   { username: "GL-PSKY", time: "00:29.851" },
   { username: "GL-KKHC", time: "00:30.735" },
-  { username: "GL-Z9PW", time: "00:30.142" },
-  { username: "GL-SFUR", time: "00:31.604" },
-  { username: "GL-P35S", time: "00:32.575" },
   { username: "GL-JJRR", time: "00:32.996" },
-  { username: "GL-GAZT", time: "00:39.230" },
-  { username: "GL-PWIQ", time: "00:40.077" },
-  { username: "GL-B9NC", time: "00:42.151" },
-  { username: "GL-THCM", time: "00:51.204" },
-  { username: "GL-ESAX", time: "02:18.995" },
-  { username: "GL-12I0", time: "02:29.860" },
-  { username: "GL-ORSO", time: "02:06.653" },
-  { username: "qa.091", time: "03:32.204" },
-];
-
-/**
- * All other finishers (correct=5) from your export, excluding Top6/NEXT20.
- * Order doesn’t change your Top6/Next20; feel free to reorder later by time if you want.
- */
-const OTHERS = [
-  { username: "GL-HABY", time: "01:12.711" },
-  { username: "GL-IGMV", time: "00:51.550" },
-  { username: "GL-UGER", time: "00:52.418" },
-  { username: "GL-6AKS", time: "00:55.475" },
-  { username: "GL-9PVN", time: "01:50.606" },
-  { username: "GL-ZLQP", time: "02:14.875" },
-  { username: "GL-CQTA", time: "00:42.039" },
-  { username: "GL-HUVF", time: "00:38.977" },
-  { username: "GL-D3S5", time: "01:43.216" },
-  { username: "GL-XZJE", time: "01:10.376" },
-  { username: "GL-F5VI", time: "00:45.568" },
-  { username: "GL-GOIS", time: "05:59.008" },
-  { username: "GL-LYMP", time: "02:12.258" },
-  { username: "GL-6L9E", time: "00:36.177" },
-  { username: "GL-HOCK", time: "00:44.670" },
-  { username: "GL-DIMW", time: "00:55.006" },
-  { username: "GL-WSXW", time: "00:52.147" },
-  { username: "GL-ONCU", time: "00:37.114" },
-  { username: "GL-T1TU", time: "00:35.231" },
-  { username: "GL-0KYS", time: "01:01.551" },
-  { username: "GL-E9XM", time: "01:57.403" },
-  { username: "GL-YGY9", time: "00:28.252" },
-  { username: "GL-Q6QJ", time: "00:39.619" },
-  { username: "GL-2RPL", time: "01:13.680" },
-  { username: "GL-GCAH", time: "01:16.961" },
-  { username: "GL-E8YO", time: "04:07.502" },
-  { username: "GL-PBQM", time: "03:09.435" },
-  { username: "GL-ZNAM", time: "01:10.323" },
-  { username: "GL-YWZP", time: "03:53.971" },
-  { username: "GL-ERPN", time: "00:55.603" },
-  { username: "GL-OH1J", time: "00:55.092" },
-  { username: "GL-LFJT", time: "01:01.245" },
-  { username: "GL-VH35", time: "07:29.747" },
-  { username: "GL-DFWD", time: "01:18.498" },
-  { username: "GL-MDE7", time: "01:14.846" },
-  { username: "GL-HCNP", time: "01:46.663" },
-  { username: "GL-ZRXW", time: "01:14.234" },
-  { username: "GL-ZYLH", time: "00:43.675" },
-  { username: "GL-P9BX", time: "00:51.464" },
-  { username: "GL-6QRH", time: "04:50.891" },
-  { username: "GL-L7MH", time: "01:11.118" },
-  { username: "GL-GUHH", time: "02:56.442" },
-  { username: "GL-ZBUX", time: "01:26.818" },
   { username: "GL-Y7QF", time: "00:34.591" },
-  { username: "GL-KHBZ", time: "02:31.678" },
-  { username: "GL-AMFT", time: "02:08.346" },
-  { username: "GL-KEQD", time: "01:15.804" },
-  { username: "GL-G7MM", time: "01:30.914" },
-  { username: "GL-KW6A", time: "00:51.331" },
+  { username: "GL-T1TU", time: "00:35.231" },
   { username: "GL-OTRG", time: "00:35.952" },
-  { username: "GL-PBGA", time: "00:53.136" },
-  { username: "GL-6VI8", time: "01:11.686" },
-  { username: "GL-OA7O", time: "01:16.787" },
-  { username: "GL-R8SP", time: "01:20.811" },
-  { username: "GL-MEKJ", time: "00:43.838" },
-  { username: "GL-UAKO", time: "00:33.708" },
-  // Optional test/utility users with correct=5 and the same round_id:
-  { username: "GL-TEST", time: "00:34.968" },
+  { username: "GL-6L9E", time: "00:36.177" },
+  { username: "GL-ONCU", time: "00:37.114" },
+  { username: "GL-HUVF", time: "00:38.977" },
+  { username: "GL-GAZT", time: "00:39.230" },
+  { username: "GL-Q6QJ", time: "00:39.619" },
+  { username: "GL-PWIQ", time: "00:40.077" },
+  { username: "GL-CQTA", time: "00:42.039" },
 ];
 
 /**
@@ -117,18 +53,22 @@ const normalize = (s) =>
     .replace(/\s+/g, "")
     .replace(/–|—/g, "-");
 
-const withGroup = (rows, label) => rows.map((r) => ({ ...r, group: label }));
+const LISTS = [TOP6, NEXT20];
 
-const ALL = [
-  ...withGroup(TOP6, "Top 6"),
-  ...withGroup(NEXT20, "Backup"),
-  ...withGroup(OTHERS, "Finished"),
-];
+const groupOf = (username) => {
+  const u = normalize(username);
+  if (TOP6.find((r) => normalize(r.username) === u)) return "top6";
+  if (NEXT20.find((r) => normalize(r.username) === u)) return "backup";
+  return null;
+};
 
 const searchUser = (needle) => {
   const q = normalize(needle);
   if (!q) return [];
-  return ALL.filter((r) => normalize(r.username) === q);
+  const hay = LISTS.flat();
+  return hay
+    .filter((r) => normalize(r.username) === q)
+    .map((r) => ({ ...r, group: groupOf(r.username) }));
 };
 
 /**
@@ -136,21 +76,25 @@ const searchUser = (needle) => {
  */
 const COPY = {
   en: {
+    pageTitle: "GrandLucky Travel — Results",
     title: "The Vivko contest Round 1 has ended.",
     subtitle: "New contest coming soon.",
-    banner: "The Vivko contest Round 1 has ended. A new contest is coming soon.",
+    banner:
+      "The Vivko contest Round 1 has ended. A new contest is coming soon.",
     questions: "Questions? Email us at",
     searchLabel: "Find your result",
     searchPlaceholder: "Type username (e.g., GL-XX)",
     noMatch: "No matches.",
     top6: "Contestants for 2nd round (Top 6)",
     next20: "Back up contestants for 2nd round (Next 20)",
-    others: "All other finishers",
     username: "Username",
     quizTime: "Quiz Time",
     group: "Group",
+    groupTop6: "Top 6",
+    groupBackup: "Backup",
   },
   hu: {
+    pageTitle: "GrandLucky Travel — Eredmények",
     title: "A Vivkó nyereményjáték 1. fordulója lezárult.",
     subtitle: "Hamarosan új játék indul.",
     banner:
@@ -161,10 +105,11 @@ const COPY = {
     noMatch: "Nincs találat.",
     top6: "2. forduló versenyzői (Top 6)",
     next20: "Tartalék versenyzők (Következő 20)",
-    others: "További befejezők",
     username: "Felhasználónév",
     quizTime: "Kvízidő",
     group: "Csoport",
+    groupTop6: "Top 6",
+    groupBackup: "Tartalék",
   },
 };
 
@@ -173,12 +118,16 @@ export default function ResultsPage() {
   const [query, setQuery] = useState("");
 
   const t = COPY[lang];
+
   const results = useMemo(() => searchUser(query), [query]);
+
+  const labelForGroup = (g) =>
+    g === "top6" ? t.groupTop6 : g === "backup" ? t.groupBackup : "";
 
   return (
     <>
       <Head>
-        <title>GrandLucky Travel — Results</title>
+        <title>{t.pageTitle}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
@@ -233,7 +182,7 @@ export default function ResultsPage() {
             <div className="thead">
               <div className="cell head">{t.username}</div>
               <div className="cell head right">{t.quizTime}</div>
-              <div className="cell head">{t.group}</div>
+              <div className="cell head right">{t.group}</div>
             </div>
 
             <div className="tbody">
@@ -244,7 +193,7 @@ export default function ResultsPage() {
                   <div className="row" key={`find-${r.username}`}>
                     <div className="cell user">{r.username}</div>
                     <div className="cell time right">{r.time}</div>
-                    <div className="cell">{r.group}</div>
+                    <div className="cell right">{labelForGroup(r.group)}</div>
                   </div>
                 ))
               )}
@@ -260,14 +209,14 @@ export default function ResultsPage() {
             <div className="thead">
               <div className="cell head">{t.username}</div>
               <div className="cell head right">{t.quizTime}</div>
-              <div className="cell head">{t.group}</div>
+              <div className="cell head right">{t.group}</div>
             </div>
             <div className="tbody">
               {TOP6.map((r) => (
                 <div className="row" key={`t6-${r.username}`}>
                   <div className="cell user">{r.username}</div>
                   <div className="cell time right">{r.time}</div>
-                  <div className="cell">Top 6</div>
+                  <div className="cell right">{t.groupTop6}</div>
                 </div>
               ))}
             </div>
@@ -282,36 +231,14 @@ export default function ResultsPage() {
             <div className="thead">
               <div className="cell head">{t.username}</div>
               <div className="cell head right">{t.quizTime}</div>
-              <div className="cell head">{t.group}</div>
+              <div className="cell head right">{t.group}</div>
             </div>
             <div className="tbody">
               {NEXT20.map((r) => (
                 <div className="row" key={`n20-${r.username}`}>
                   <div className="cell user">{r.username}</div>
                   <div className="cell time right">{r.time}</div>
-                  <div className="cell">Backup</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* All other finishers */}
-        <section className="card">
-          <h3 className="list-title">{t.others}</h3>
-
-          <div className="table tableList">
-            <div className="thead">
-              <div className="cell head">{t.username}</div>
-              <div className="cell head right">{t.quizTime}</div>
-              <div className="cell head">{t.group}</div>
-            </div>
-            <div className="tbody">
-              {OTHERS.map((r) => (
-                <div className="row" key={`other-${r.username}`}>
-                  <div className="cell user">{r.username}</div>
-                  <div className="cell time right">{r.time}</div>
-                  <div className="cell">Finished</div>
+                  <div className="cell right">{t.groupBackup}</div>
                 </div>
               ))}
             </div>
@@ -321,10 +248,11 @@ export default function ResultsPage() {
 
       <style jsx>{`
         :root {
-          --brand: #ee8f2e; /* orange background */
+          --brand: #f4a546;
+          --brand-ink: #6b4a12;
           --ink: #1d1d1f;
           --muted: #6b7280;
-          --card: #fff7ea;
+          --card: #fffaf2;
           --row-sep: #f0d2a3;
           --head: #f8e8cd;
         }
@@ -333,8 +261,8 @@ export default function ResultsPage() {
           box-sizing: border-box;
         }
 
-        html,
         body,
+        html,
         .page {
           margin: 0;
           padding: 0;
@@ -370,7 +298,7 @@ export default function ResultsPage() {
         .lang {
           display: inline-flex;
           gap: 6px;
-          background: rgba(255, 255, 255, 0.45);
+          background: #f7e0b6;
           border-radius: 999px;
           padding: 4px;
         }
@@ -381,7 +309,7 @@ export default function ResultsPage() {
           background: transparent;
           font-weight: 700;
           cursor: pointer;
-          color: #4a320d;
+          color: #584015;
         }
         .lang button.on {
           background: #fff;
@@ -422,7 +350,6 @@ export default function ResultsPage() {
           gap: 12px;
           align-items: center;
           border-bottom: 1px solid var(--row-sep);
-          background: #fffdf8;
         }
         .card-head h2 {
           margin: 0;
@@ -457,7 +384,7 @@ export default function ResultsPage() {
           position: sticky;
           top: 0;
           display: grid;
-          grid-template-columns: 1fr 130px 100px; /* user | time | group */
+          grid-template-columns: 1fr 160px 120px;
           background: var(--head);
           border-bottom: 1px solid var(--row-sep);
           z-index: 2;
@@ -467,7 +394,7 @@ export default function ResultsPage() {
         }
         .row {
           display: grid;
-          grid-template-columns: 1fr 130px 100px;
+          grid-template-columns: 1fr 160px 120px;
           background: #fff;
           border-bottom: 1px solid var(--row-sep);
         }
@@ -502,21 +429,21 @@ export default function ResultsPage() {
           background: #fff;
         }
 
-        /* Dedicated scrolling area so headers stick nicely */
+        /* Dedicated scrolling area for the lists so headers stick nicely */
         .tableList {
           max-height: 360px;
           overflow-y: auto;
           border-top: 1px solid var(--row-sep);
         }
 
-        /* Mobile */
+        /* Mobile adjustments */
         @media (max-width: 820px) {
           .card-head {
             grid-template-columns: 1fr;
           }
           .table .thead,
           .table .row {
-            grid-template-columns: 1fr 118px 86px;
+            grid-template-columns: 1fr 130px 100px;
           }
           .cell {
             font-size: 14px;
@@ -526,7 +453,7 @@ export default function ResultsPage() {
         @media (max-width: 420px) {
           .table .thead,
           .table .row {
-            grid-template-columns: 1fr 110px 76px;
+            grid-template-columns: 1fr 118px 94px;
           }
           .title {
             font-size: 22px;
