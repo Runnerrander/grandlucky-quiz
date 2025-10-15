@@ -2,14 +2,7 @@
 import Head from "next/head";
 import { useMemo, useState } from "react";
 
-/**
- * DATA
- * ----
- * If you already maintain these arrays elsewhere, you can keep them here.
- * Only "username" and "time" are shown (mm:ss.mmm).
- *
- * TOP6 (fastest 6) + NEXT20 (backup 20) are taken from your provided CSV.
- */
+/** ---- DATA (unchanged times) ---- */
 const TOP6 = [
   { username: "GL-UJQA", time: "00:05.362" },
   { username: "GL-FB5U", time: "00:05.756" },
@@ -19,7 +12,6 @@ const TOP6 = [
   { username: "GL-QX3V", time: "00:12.101" },
 ];
 
-// Backup 20 – sorted ascending by time
 const NEXT20 = [
   { username: "GL-OVEN", time: "00:22.459" },
   { username: "GL-JCWO", time: "00:22.597" },
@@ -37,15 +29,13 @@ const NEXT20 = [
   { username: "GL-PWIQ", time: "00:40.077" },
   { username: "GL-B9NC", time: "00:42.151" },
   { username: "GL-THCM", time: "00:51.204" },
-  { username: "GL-ESAX", time: "02:18.995" }, // keeping order from your sheet
+  { username: "GL-ESAX", time: "02:18.995" },
   { username: "GL-12I0", time: "02:29.860" },
   { username: "GL-ORSO", time: "02:06.653" },
-  { username: "qa.091", time: "03:32.204" }, // per your request to keep qa.091
+  { username: "qa.091", time: "03:32.204" },
 ];
 
-/**
- * Helpers
- */
+/** ---- Helpers ---- */
 const normalize = (s) =>
   (s || "")
     .toString()
@@ -61,9 +51,14 @@ const searchUser = (needle, lists) => {
   return hay.filter((r) => normalize(r.username) === q);
 };
 
-/**
- * i18n copy
- */
+const inGroup = (username) => {
+  const u = normalize(username);
+  if (TOP6.some((r) => normalize(r.username) === u)) return "Top 6";
+  if (NEXT20.some((r) => normalize(r.username) === u)) return "Backup";
+  return "—";
+};
+
+/** ---- i18n ---- */
 const COPY = {
   en: {
     title: "The Vivko contest Round 1 has ended.",
@@ -78,6 +73,9 @@ const COPY = {
     next20: "Back up contestants for 2nd round (Next 20)",
     username: "Username",
     quizTime: "Quiz Time",
+    group: "Group",
+    gTop6: "Top 6",
+    gBackup: "Backup",
   },
   hu: {
     title: "A Vivkó nyereményjáték 1. fordulója lezárult.",
@@ -92,18 +90,33 @@ const COPY = {
     next20: "Tartalék versenyzők (Következő 20)",
     username: "Felhasználónév",
     quizTime: "Kvízidő",
+    group: "Csoport",
+    gTop6: "Top 6",
+    gBackup: "Tartalék",
   },
 };
 
 export default function ResultsPage() {
   const [lang, setLang] = useState("en");
   const [query, setQuery] = useState("");
-
   const t = COPY[lang];
 
-  const results = useMemo(
-    () => searchUser(query, [TOP6, NEXT20]),
-    [query]
+  const results = useMemo(() => {
+    const rows = searchUser(query, [TOP6, NEXT20]);
+    return rows.map((r) => ({
+      ...r,
+      group: inGroup(r.username),
+    }));
+  }, [query]);
+
+  // decorate static lists with group labels too
+  const DEC_TOP6 = useMemo(
+    () => TOP6.map((r) => ({ ...r, group: t.gTop6 })),
+    [lang]
+  );
+  const DEC_NEXT20 = useMemo(
+    () => NEXT20.map((r) => ({ ...r, group: t.gBackup })),
+    [lang]
   );
 
   return (
@@ -164,6 +177,7 @@ export default function ResultsPage() {
             <div className="thead">
               <div className="cell head">{t.username}</div>
               <div className="cell head right">{t.quizTime}</div>
+              <div className="cell head">{t.group}</div>
             </div>
 
             <div className="tbody">
@@ -174,6 +188,7 @@ export default function ResultsPage() {
                   <div className="row" key={`find-${r.username}`}>
                     <div className="cell user">{r.username}</div>
                     <div className="cell time right">{r.time}</div>
+                    <div className="cell">{r.group}</div>
                   </div>
                 ))
               )}
@@ -189,12 +204,14 @@ export default function ResultsPage() {
             <div className="thead">
               <div className="cell head">{t.username}</div>
               <div className="cell head right">{t.quizTime}</div>
+              <div className="cell head">{t.group}</div>
             </div>
             <div className="tbody">
-              {TOP6.map((r) => (
+              {DEC_TOP6.map((r) => (
                 <div className="row" key={`t6-${r.username}`}>
                   <div className="cell user">{r.username}</div>
                   <div className="cell time right">{r.time}</div>
+                  <div className="cell">{t.gTop6}</div>
                 </div>
               ))}
             </div>
@@ -209,12 +226,14 @@ export default function ResultsPage() {
             <div className="thead">
               <div className="cell head">{t.username}</div>
               <div className="cell head right">{t.quizTime}</div>
+              <div className="cell head">{t.group}</div>
             </div>
             <div className="tbody">
-              {NEXT20.map((r) => (
+              {DEC_NEXT20.map((r) => (
                 <div className="row" key={`n20-${r.username}`}>
                   <div className="cell user">{r.username}</div>
                   <div className="cell time right">{r.time}</div>
+                  <div className="cell">{t.gBackup}</div>
                 </div>
               ))}
             </div>
@@ -224,7 +243,8 @@ export default function ResultsPage() {
 
       <style jsx>{`
         :root {
-          --brand: #f4a546; /* GrandLucky yellow (like your toggle) */
+          /* GrandLucky yellow (from your site) */
+          --brand: #f4a546;
           --brand-ink: #6b4a12;
           --ink: #1d1d1f;
           --muted: #6b7280;
@@ -237,20 +257,20 @@ export default function ResultsPage() {
           box-sizing: border-box;
         }
 
-        body,
-        html,
-        .page {
+        :global(html),
+        :global(body) {
           margin: 0;
           padding: 0;
           background: var(--brand);
           color: var(--ink);
-          font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI,
-            Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
+          font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+            "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji",
             "Segoe UI Emoji";
         }
 
         .page {
           padding: 24px 16px 56px;
+          background: var(--brand); /* ensure full-bleed yellow */
         }
 
         .hero {
@@ -314,7 +334,7 @@ export default function ResultsPage() {
           margin: 14px auto;
           background: #fffdf8;
           border-radius: 12px;
-          border: 1px solid #f0d2a3;
+          border: 1px solid var(--row-sep);
           overflow: hidden;
           box-shadow: 0 2px 0 rgba(0, 0, 0, 0.03);
         }
@@ -360,7 +380,7 @@ export default function ResultsPage() {
           position: sticky;
           top: 0;
           display: grid;
-          grid-template-columns: 1fr 160px;
+          grid-template-columns: 1fr 160px 120px; /* + Group */
           background: var(--head);
           border-bottom: 1px solid var(--row-sep);
           z-index: 2;
@@ -370,7 +390,7 @@ export default function ResultsPage() {
         }
         .row {
           display: grid;
-          grid-template-columns: 1fr 160px;
+          grid-template-columns: 1fr 160px 120px; /* + Group */
           background: #fff;
           border-bottom: 1px solid var(--row-sep);
         }
@@ -405,21 +425,21 @@ export default function ResultsPage() {
           background: #fff;
         }
 
-        /* Dedicated scrolling area for the lists so headers stick nicely */
+        /* list scroller */
         .tableList {
           max-height: 360px;
           overflow-y: auto;
           border-top: 1px solid var(--row-sep);
         }
 
-        /* Mobile adjustments */
+        /* Mobile */
         @media (max-width: 820px) {
           .card-head {
             grid-template-columns: 1fr;
           }
           .table .thead,
           .table .row {
-            grid-template-columns: 1fr 130px; /* keep 2 columns; narrower time col */
+            grid-template-columns: 1fr 130px 96px;
           }
           .cell {
             font-size: 14px;
@@ -429,7 +449,7 @@ export default function ResultsPage() {
         @media (max-width: 420px) {
           .table .thead,
           .table .row {
-            grid-template-columns: 1fr 118px;
+            grid-template-columns: 1fr 118px 84px;
           }
           .title {
             font-size: 22px;
