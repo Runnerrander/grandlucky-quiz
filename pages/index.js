@@ -64,7 +64,7 @@ const OTHERS = [
   { username: "GL-VH35", time_ms: 449747 }
 ];
 
-/* -------- Round 2 credentials (Top6 + Next20 where we have one) -------- */
+/* -------- Round 2 credentials (Top6 + Next20 + first 20 of OTHERS) -------- */
 const R2_CREDENTIALS = {
   // Top 6
   "GL-UJQA": "PASS-UJQA",
@@ -73,7 +73,8 @@ const R2_CREDENTIALS = {
   "GL-JUNA": "PASS-JUNA",
   "GL-WO9I": "PASS-WO9I",
   "GL-QX3V": "PASS-QX3V",
-  // Backups
+
+  // Next 20 (with known passwords)
   "GL-OVEN": "PASS-OVEN",
   "GL-JCWO": "PASS-JCWO",
   "GL-NCAD": "PASS-NCAD",
@@ -88,12 +89,33 @@ const R2_CREDENTIALS = {
   "GL-P35S": "wHiE5BV6",
   "GL-JJRR": "PASS-JJRR",
   "GL-UAKO": "PASS-UAKO",
-  // GL-ERZD: no password provided
+  // GL-ERZD and GL-TEST intentionally omitted (no password provided)
   "GL-Y7QF": "PASS-Y7QF",
-  // GL-TEST: no password provided
   "GL-T1TU": "PASS-T1TU",
   "GL-OTRG": "PASS-OTRG",
-  "GL-6L9E": "PASS-6L9E"
+  "GL-6L9E": "PASS-6L9E",
+
+  // FIRST 20 FASTEST FROM OTHERS
+  "GL-ONCU": "PASS-ONCU",
+  "GL-HUVF": "PASS-HUVF",
+  "GL-VD5B": "bppfyy6Z",
+  "GL-GAZT": "PASS-GAZT",
+  "GL-Q6QJ": "PASS-Q6QJ",
+  "GL-PWIQ": "PASS-PWIQ",
+  "GL-CQTA": "PASS-CQTA",
+  "GL-B9NC": "koG2nZDv",
+  "GL-4HB6": "AQP8Deez",
+  "GL-ZYLH": "PASS-ZYLH",
+  "GL-MEKJ": "PASS-MEKJ",
+  "GL-HOCK": "PASS-HOCK",
+  "GL-F5VI": "PASS-F5VI",
+  "GL-THCM": "PASS-THCM",
+  "GL-KW6A": "PASS-KW6A",
+  "GL-P9BX": "PASS-P9BX",
+  "GL-IGMV": "PASS-IGMV",
+  "GL-NXJH": "ek6YSkpj",
+  "GL-WSXW": "PASS-WSXW",
+  "GL-UGER": "PASS-UGER"
 };
 
 /* -------- Zoom -------- */
@@ -352,6 +374,7 @@ function IndexPage() {
           --card:#fff;
           --thead:#fae4c8;
           --row-sep:#eee;
+          --primary:#111;
         }
         html,body{ background:var(--page-yellow); color:var(--ink); }
         a{ color:#1f2937; }
@@ -418,17 +441,27 @@ function IndexPage() {
         .cell.head{ font-weight:800; }
         .right{ text-align:right; }
 
+        /* Zoom panel */
         .zoom{ align-self:start; background:#fffdf8; border:1px solid var(--border); border-radius:14px; overflow:hidden; box-shadow:0 10px 22px rgba(0,0,0,.06); }
         .zoomInner{ padding:12px 14px; }
         .zoomIntro{ margin:8px 0 12px; font-size:14px; }
         .zoomForm{ display:grid; gap:10px; }
         .zoomForm label{ display:grid; gap:6px; font-weight:700; font-size:13px; }
         .zoomForm input{ height:40px; padding:10px 12px; border-radius:8px; border:1px solid var(--border); background:#fff; font-size:14px; }
-        .revealBtn{ height:40px; border-radius:999px; border:2px solid #e49b28; background:var(--accent); font-weight:900; cursor:pointer; }
-        .zoomError{ color:#8b0000; font-size:13px; min-height:18px; }
-        .zoomReveal{ display:flex; gap:8px; align-items:center; }
-        .zoomLink{ display:inline-flex; align-items:center; justify-content:center; padding:10px 14px; border-radius:999px; border:2px solid #e49b28; background:var(--accent); font-weight:900; text-decoration:none; color:#111; }
-        .copyBtn{ height:40px; padding:0 12px; border-radius:999px; border:1px solid var(--border); background:#fff; cursor:pointer; font-weight:700; }
+        .revealBtn{ height:44px; border-radius:999px; border:2px solid #e49b28; background:var(--accent); font-weight:900; cursor:pointer; }
+
+        .zoomReveal{ display:flex; gap:10px; align-items:center; margin-top:6px; }
+        /* Prominent "Join Zoom" button */
+        .zoomLink{
+          display:inline-flex; align-items:center; justify-content:center;
+          min-width: 160px; height:46px; padding:0 18px;
+          border-radius:999px; border:2px solid #b97a13;
+          background:#ffd35a; /* stronger highlight */
+          font-weight:900; text-decoration:none; color:#111; font-size:16px;
+          box-shadow:0 6px 14px rgba(0,0,0,.12);
+        }
+        .zoomLink:hover{ filter:brightness(0.98); }
+        .copyBtn{ height:46px; padding:0 14px; border-radius:999px; border:1px solid var(--border); background:#fff; cursor:pointer; font-weight:700; }
 
         @media (max-width:480px){
           .thead{ grid-template-columns:1fr 110px; font-size:12px; }
@@ -436,6 +469,8 @@ function IndexPage() {
           .row{ grid-template-columns:1fr 110px; }
           .row.three{ grid-template-columns:1fr 110px 120px; }
           .cell{ padding:10px 12px; font-size:14px; }
+          .zoomReveal{ flex-direction:column; align-items:stretch; }
+          .copyBtn, .zoomLink{ width:100%; justify-content:center; }
         }
       `}</style>
     </>
