@@ -433,8 +433,9 @@ export default function Vivko() {
             0 2px 6px rgba(0, 0, 0, 0.38);
         }
 
-        /* UPDATED: Slide 4 dark panel — keep it dark much further to the right */
+        /* UPDATED: Slide 4 dark panel — wider & dark across all text */
         .s-draw .text {
+          max-width: min(1200px, 92vw);
           background: linear-gradient(
             90deg,
             rgba(0, 0, 0, 0.85) 0%,
