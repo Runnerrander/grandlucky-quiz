@@ -56,9 +56,10 @@ export default function Vivko() {
         id: "times",
         bg: "/vivko-ny-2.jpg",
         blur: "left",
-        hScript: "Adventi Szezon",
-        hStrongTop: "Vivkóval New Yorkban",
-        sub: "Fedezd fel a Times Square varázsát Vivkóval az ünnepi Szezonban.",
+        hScript: "Egy kis tudással és gyorsasággal Vivkóval utazhatsz",
+        hStrongTop: "New York és Washington DC",
+        sub:
+          "Fedezd fel a Times Square varázsát és az USA fővárosának lenyűgöző látképét Vivkóval.",
         ui: "prevnext",
         back: "VISSZA",
         next: "TOVÁBB",
@@ -110,10 +111,11 @@ export default function Vivko() {
         id: "times",
         bg: "/vivko-ny-2.jpg",
         blur: "left",
-        hScript: "Advent Season",
-        hStrongTop: "In New York with Vivko",
+        hScript:
+          "With a little knowledge and fastness you can travel with Vivko",
+        hStrongTop: "New York and Washington DC",
         sub:
-          "Discover the magic of Times Square with Vivko during the holiday season.",
+          "Discover the magic of Times Square and the view of the Capital City with Vivko.",
         ui: "prevnext",
         back: "BACK",
         next: "NEXT",
