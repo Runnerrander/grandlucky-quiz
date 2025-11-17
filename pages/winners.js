@@ -5,7 +5,7 @@ import Link from "next/link";
 export default function WinnersPage() {
   const [lang, setLang] = useState("hu"); // default HU
 
-  const t = {
+  const dict = {
     hu: {
       badge: "AZ ELŐZŐ JÁTÉK NYERTESE:",
       title: "Napsugár Budapestről",
@@ -13,8 +13,6 @@ export default function WinnersPage() {
       p2: "Gratulálunk! Találkozz velünk a következő fordulóban — most egy új nyereményjáték indul.",
       cta1: "Tovább a részletekhez",
       cta2: "Vissza a kezdőlapra",
-      langHu: "HU",
-      langEn: "EN",
     },
     en: {
       badge: "WINNER OF THE PREVIOUS CONTEST:",
@@ -23,16 +21,12 @@ export default function WinnersPage() {
       p2: "Congratulations! See you in the next round — a new contest is starting now.",
       cta1: "Go to details",
       cta2: "Back to home",
-      langHu: "HU",
-      langEn: "EN",
     },
-  }[lang];
+  };
+  const t = dict[lang];
 
   return (
     <main>
-      {/* fixed, sharp, cover background (no blur) */}
-      <div className="hero" aria-hidden="true" />
-
       {/* language toggle */}
       <div className="lang">
         <button
@@ -40,14 +34,14 @@ export default function WinnersPage() {
           onClick={() => setLang("hu")}
           aria-label="Magyar"
         >
-          {t.langHu}
+          HU
         </button>
         <button
           className={`chip ${lang === "en" ? "active" : ""}`}
           onClick={() => setLang("en")}
           aria-label="English"
         >
-          {t.langEn}
+          EN
         </button>
       </div>
 
@@ -80,29 +74,30 @@ export default function WinnersPage() {
 
       <style jsx>{`
         :root {
-          --beige: #fff8ee;
-          --chip-bg: #fff9f0;
-          --chip-text: #8a6a2e;
           --accent: #faaf3b;
           --accent-deep: #eeaa2a;
           --shadow: rgba(0, 0, 0, 0.14);
         }
 
+        /* Page */
         main {
           min-height: 100vh;
           position: relative;
           padding: clamp(18px, 2.4vw, 28px);
         }
-
-        /* SHARP FESTIVE BACKGROUND */
-        .hero {
+        /* SAFE background layer (always visible) */
+        main::before {
+          content: "";
           position: fixed;
           inset: 0;
           background:
             linear-gradient(0deg, rgba(255,255,255,0.20), rgba(255,255,255,0.20)),
             url("/bg-advent.jpg") center/cover no-repeat;
-          z-index: -1;
+          z-index: 0;
         }
+
+        /* Content sits above background */
+        .wrap, .lang { position: relative; z-index: 2; }
 
         .lang {
           position: fixed;
@@ -111,21 +106,19 @@ export default function WinnersPage() {
           display: flex;
           gap: 8px;
         }
-
         .chip {
           appearance: none;
           border: 0;
-          font: 600 12px/1.1 Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue",
-            Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+          font: 600 12px/1.1 Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
           padding: 8px 12px;
           border-radius: 999px;
-          background: var(--chip-bg);
-          color: var(--chip-text);
-          box-shadow: 0 6px 20px var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+          background: #fff9f0;
+          color: #8a6a2e;
+          box-shadow: 0 6px 20px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.6);
           cursor: pointer;
-          transition: transform 0.12s ease;
+          transition: transform .12s ease;
         }
-        .chip:active { transform: scale(0.98); }
+        .chip:active { transform: scale(.98); }
         .chip.active {
           background: linear-gradient(180deg, #ffd77a 0%, #ffbf3a 100%);
           color: #402400;
@@ -144,7 +137,7 @@ export default function WinnersPage() {
           background: #fff;
           border-radius: 14px;
           padding: clamp(16px, 3.2vw, 28px);
-          box-shadow: 0 14px 40px var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+          box-shadow: 0 14px 40px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.6);
         }
 
         .badge {
@@ -154,26 +147,25 @@ export default function WinnersPage() {
           padding: 8px 14px;
           border-radius: 999px;
           font: 800 12px/1.1 Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-          letter-spacing: 0.4px;
+          letter-spacing: .4px;
           background: linear-gradient(180deg, #ffd77a 0%, #ffbf3a 100%);
           color: #3b2a00;
-          border: 2px solid #f2b033;
-          box-shadow: 0 6px 18px var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+          border: 2px solid var(--accent-deep);
+          box-shadow: 0 6px 18px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.7);
           margin-bottom: 12px;
-          text-transform: none; /* we supply caps in the string to preserve accents */
+          /* we pass exact caps with accents in the string */
+          text-transform: none;
         }
 
         .title {
-          font: 900 clamp(22px, 3.6vw, 34px) / 1.2 "Montserrat", Inter, system-ui, -apple-system, Segoe UI,
-            Roboto, "Helvetica Neue", Arial;
+          font: 900 clamp(22px, 3.6vw, 34px)/1.2 "Montserrat", Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
           margin: 4px 0 10px;
           color: #111;
         }
 
         p {
           margin: 8px 0;
-          font: 500 clamp(14px, 1.6vw, 16px) / 1.55 Inter, system-ui, -apple-system, Segoe UI, Roboto,
-            "Helvetica Neue", Arial;
+          font: 500 clamp(14px, 1.6vw, 16px)/1.55 Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
           color: #333;
         }
 
@@ -183,6 +175,7 @@ export default function WinnersPage() {
           margin-top: 16px;
         }
 
+        /* BUTTONS (restore yellow pill + white pill) */
         .btn {
           display: inline-flex;
           align-items: center;
@@ -191,29 +184,27 @@ export default function WinnersPage() {
           border-radius: 999px;
           text-decoration: none;
           font: 800 13px/1 Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-          box-shadow: 0 10px 26px var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+          box-shadow: 0 10px 26px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.6);
           border: 0;
-          transition: transform 0.12s ease, box-shadow 0.2s ease;
+          transition: transform .12s ease, box-shadow .2s ease;
+          color: #3b2a00;
         }
         .btn:active { transform: translateY(1px); }
-
         .btn.primary {
           background: linear-gradient(180deg, #ffd77a 0%, #ffbf3a 100%);
-          color: #3b2a00;
           border: 2px solid var(--accent-deep);
         }
-
         .btn.ghost {
           background: #fff;
-          color: #333;
           border: 2px solid #e7e2d9;
+          color: #333;
         }
 
         .photo {
           margin: 0;
-          background: rgba(255, 255, 255, 0.55);
+          background: rgba(255,255,255,.55);
           border-radius: 16px;
-          box-shadow: 0 20px 50px var(--shadow), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+          box-shadow: 0 20px 50px var(--shadow), inset 0 1px 0 rgba(255,255,255,.8);
           padding: clamp(8px, 1.4vw, 12px);
         }
         .photo img {
@@ -223,12 +214,8 @@ export default function WinnersPage() {
           border-radius: 12px;
         }
 
-        /* Responsive */
         @media (max-width: 980px) {
-          .wrap {
-            grid-template-columns: 1fr;
-            max-width: 680px;
-          }
+          .wrap { grid-template-columns: 1fr; max-width: 680px; }
           .photo { order: 2; }
           .card { order: 1; }
         }
