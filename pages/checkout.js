@@ -4,14 +4,64 @@ import Head from "next/head";
 
 export default function CheckoutPage() {
   const [busy, setBusy] = useState(false);
-  const [agree, setAgree] = useState(true); // default checked like your page
+  const [agree, setAgree] = useState(true); // default checked
   const [error, setError] = useState("");
+  const [lang, setLang] = useState("hu"); // HU default
+
+  const copy = {
+    hu: {
+      headTitle: "Biztonságos fizetés — GrandLuckyTravel",
+      langBtn: "ANGOL",
+      titleScript: "Biztonságos fizetés",
+      introStrong: "Fontos — Kérjük, olvasd el!",
+      bullets: [
+        "A sikeres fizetés után a Felhasználónevet és a Jelszót a rendszer automatikusan létrehozza, majd a köszönő oldalon megjelenítjük. Kérjük, mentsd el, mert szükséged lesz rá a versenyhez.",
+        "A felhasználónév és jelszó nélkül nem tudsz részt venni a tudásalapú versenyben, ezért kérjük, őrizd meg ezeket az adatokat.",
+        "A fizetés a PayPal rendszerén keresztül történik, biztonságos bankkártyás fizetéssel.",
+      ],
+      paypalBoxTitle: "Nem szükséges PayPal-fiók!",
+      paypalBoxLines: [
+        'A fizetéshez egyszerűen add meg az email címedet a PayPal oldalon, majd válaszd a „Kártyával fizetek” vagy „Fizetés vendégként” lehetőséget. Nem kell bejelentkezni és nem kell fiókot létrehozni.',
+        "Tipp: A PayPal oldalon kapcsold ki az „Adatok mentése és PayPal-számla létrehozása” kapcsolót, ha nem szeretnél fiókot — a fizetés így is gond nélkül működik bankkártyával.",
+      ],
+      agreeLabel:
+        "Elolvastam és elfogadom a Szabályokat és a Felhasználói Feltételeket.",
+      back: "VISSZA",
+      pay: "Fizetek",
+      payBusy: "Folyamatban…",
+      alertTerms: "Kérjük, fogadd el a feltételeket.",
+      errorPrefix: "Hiba: ",
+    },
+    en: {
+      headTitle: "Secure Payment — GrandLuckyTravel",
+      langBtn: "MAGYAR",
+      titleScript: "Secure Payment",
+      introStrong: "Important — Please read before paying!",
+      bullets: [
+        "After a successful payment, your Username and Password will be created automatically by the system and displayed on the thank-you page. Please save them, as you will need them to participate in the contest.",
+        "Without your username and password, you will not be able to join the knowledge-based contest, so please keep these details safe.",
+        "Payment is processed securely via PayPal using your debit or credit card.",
+      ],
+      paypalBoxTitle: "No PayPal account required",
+      paypalBoxLines: [
+        "On the PayPal page, you can pay securely with your debit or credit card as a guest, without logging in or creating a PayPal account.",
+      ],
+      agreeLabel: "I’ve read and accept the Rules and Terms of Use.",
+      back: "BACK",
+      pay: "Pay Now",
+      payBusy: "Processing…",
+      alertTerms: "Please accept the terms.",
+      errorPrefix: "Error: ",
+    },
+  };
+
+  const c = copy[lang];
 
   async function payWithPayPal() {
     try {
       setError("");
       if (!agree) {
-        alert("Kérjük, fogadd el a feltételeket. / Please accept the terms.");
+        alert(c.alertTerms + " / " + copy[lang === "hu" ? "en" : "hu"].alertTerms);
         return;
       }
       setBusy(true);
@@ -25,16 +75,23 @@ export default function CheckoutPage() {
       const data = await res.json();
       if (!res.ok || !data?.approveURL) {
         console.error("create error:", data);
-        alert("Sajnáljuk, nem sikerült elindítani a PayPal fizetést.");
+        alert(
+          lang === "hu"
+            ? "Sajnáljuk, nem sikerült elindítani a PayPal fizetést."
+            : "Sorry, we could not start the PayPal payment."
+        );
         setBusy(false);
         return;
       }
 
-      // Redirect user to PayPal
       window.location.href = data.approveURL;
     } catch (e) {
       console.error(e);
-      alert("Sajnáljuk, nem sikerült elindítani a PayPal fizetést.");
+      alert(
+        lang === "hu"
+          ? "Sajnáljuk, nem sikerült elindítani a PayPal fizetést."
+          : "Sorry, we could not start the PayPal payment."
+      );
       setError(String(e));
       setBusy(false);
     }
@@ -43,7 +100,7 @@ export default function CheckoutPage() {
   return (
     <main className="wrap">
       <Head>
-        <title>Biztonságos fizetés — GrandLuckyTravel</title>
+        <title>{c.headTitle}</title>
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1"
@@ -54,6 +111,14 @@ export default function CheckoutPage() {
         />
       </Head>
 
+      {/* language chip */}
+      <button
+        className="lang"
+        onClick={() => setLang((prev) => (prev === "hu" ? "en" : "hu"))}
+      >
+        {c.langBtn}
+      </button>
+
       {/* doodles */}
       <img className="plane" src="/plane-hero.png" alt="" />
       <img className="passport" src="/leaflet.png" alt="" />
@@ -61,48 +126,27 @@ export default function CheckoutPage() {
 
       <section className="container">
         <h1 className="title">
-          <span className="script">Biztonságos fizetés</span>
+          <span className="script">{c.titleScript}</span>
         </h1>
 
         <p className="intro">
-          <strong>Fontos — Kérjük, olvasd el!</strong>
+          <strong>{c.introStrong}</strong>
         </p>
 
         <ul className="list">
-          <li>
-            A sikeres fizetés után a <b>Felhasználónevet</b> és a <b>Jelszót</b>{" "}
-            a rendszer automatikusan létrehozza, majd a{" "}
-            <b>köszönő oldalon</b> megjelenítjük. Kérjük, mentsd el, mert
-            szükséged lesz rá a versenyhez.
-          </li>
-          <li>
-            The <b>Username</b> and <b>Password</b> are created automatically
-            after payment and will be displayed on the <b>thank-you page</b>.
-            Please save them, as you will need them to participate in the
-            contest.
-          </li>
-          <li>
-            A fizetés a <b>PayPal</b> rendszerén keresztül történik, biztonságos
-            kártyás fizetéssel. / Payment is processed securely via{" "}
-            <b>PayPal</b>.
-          </li>
+          {c.bullets.map((line, idx) => (
+            <li key={idx}>{line}</li>
+          ))}
         </ul>
 
-        {/* PayPal helper box – HU focus */}
+        {/* PayPal helper box */}
         <div className="paypal-box">
-          <p className="paypal-title">Nem szükséges PayPal-fiók!</p>
-          <p className="paypal-text">
-            A fizetéshez egyszerűen add meg az email címedet a PayPal oldalon,
-            majd válaszd a <b>„Kártyával fizetek”</b> vagy{" "}
-            <b>„Fizetés vendégként”</b> lehetőséget. Nem kell bejelentkezni és
-            nem kell fiókot létrehozni.
-          </p>
-          <p className="paypal-text">
-            <b>Tipp:</b> A PayPal oldalon kapcsold ki az{" "}
-            <b>„Adatok mentése és PayPal-számla létrehozása”</b> kapcsolót, ha
-            nem szeretnél fiókot — a fizetés így is gond nélkül működik
-            bankkártyával.
-          </p>
+          <p className="paypal-title">{c.paypalBoxTitle}</p>
+          {c.paypalBoxLines.map((line, idx) => (
+            <p className="paypal-text" key={idx}>
+              {line}
+            </p>
+          ))}
         </div>
 
         <label className="agree">
@@ -111,10 +155,7 @@ export default function CheckoutPage() {
             checked={agree}
             onChange={(e) => setAgree(e.target.checked)}
           />
-          <span>
-            Elolvastam és elfogadom a Szabályokat és a Felhasználói
-            Feltételeket. / I’ve read and accept the Rules & Terms.
-          </span>
+          <span>{c.agreeLabel}</span>
         </label>
 
         <div className="actions">
@@ -124,7 +165,7 @@ export default function CheckoutPage() {
             disabled={busy}
             className="btn ghost"
           >
-            VISSZA
+            {c.back}
           </button>
 
           <button
@@ -133,11 +174,16 @@ export default function CheckoutPage() {
             disabled={busy || !agree}
             className="btn"
           >
-            {busy ? "Folyamatban…" : "Fizetek"}
+            {busy ? c.payBusy : c.pay}
           </button>
         </div>
 
-        {error ? <p className="error">{error}</p> : null}
+        {error ? (
+          <p className="error">
+            {c.errorPrefix}
+            {error}
+          </p>
+        ) : null}
       </section>
 
       <style jsx>{`
@@ -154,6 +200,20 @@ export default function CheckoutPage() {
           color: #222;
           position: relative;
           overflow-x: hidden;
+        }
+
+        .lang {
+          position: fixed;
+          top: clamp(14px, 2.2vw, 24px);
+          right: clamp(14px, 2.2vw, 24px);
+          z-index: 10;
+          background: #ffdca7;
+          border: 3px solid #e79a2f;
+          padding: 12px 20px;
+          border-radius: 999px;
+          font-weight: 900;
+          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12),
+            inset 0 2px 0 rgba(255, 255, 255, 0.4);
         }
 
         .container {
