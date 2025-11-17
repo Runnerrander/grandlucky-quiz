@@ -22,7 +22,7 @@ export default function CheckoutPage() {
       paypalBoxTitle: "Nem szükséges PayPal-fiók!",
       paypalBoxLines: [
         "A fizetéshez egyszerűen add meg az email címedet a PayPal oldalon, majd válaszd a „Kártyával fizetek” vagy „Fizetés vendégként” lehetőséget. Nem kell bejelentkezni és nem kell fiókot létrehozni.",
-        "Tipp: A PayPal oldalon kapcsold ki az „Adatok mentése és PayPal-számla létrehozása” kapcsolót, ha nem szeretnél fiókot — a fizetés így is gond nélkül működik bankkártyával.",
+        "Tipp: A PayPal oldalon kapcsold ki az „Adatok mentése és PayPal-számla létrehozása” kapcsolót, ha nem szeretnél fiókot — a fizetés így is gond nélkül működik bankkártyával. Előfordulhat, hogy egyes eszközökön ez a kapcsoló nem jelenik meg; ilyen esetben hagyd üresen a PayPal-fiók létrehozására vonatkozó mezőket (ha láthatók), és egyszerűen folytasd a fizetést bankkártyával.",
       ],
       agreeLabel:
         "Elolvastam és elfogadom a Szabályokat és a Felhasználói Feltételeket.",
