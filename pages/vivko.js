@@ -433,17 +433,9 @@ export default function Vivko() {
             0 2px 6px rgba(0, 0, 0, 0.38);
         }
 
-        /* UPDATED: Slide 4 dark panel — wider & dark across all text */
+        /* Slide 4 dark panel: solid overlay, width set in desktop media query */
         .s-draw .text {
-          max-width: min(1200px, 92vw);
-          background: linear-gradient(
-            90deg,
-            rgba(0, 0, 0, 0.85) 0%,
-            rgba(0, 0, 0, 0.82) 30%,
-            rgba(0, 0, 0, 0.75) 60%,
-            rgba(0, 0, 0, 0.60) 85%,
-            rgba(0, 0, 0, 0.45) 100%
-          );
+          background: rgba(0, 0, 0, 0.82);
           padding: clamp(18px, 2.4vw, 26px);
           border-radius: 18px;
         }
@@ -566,6 +558,12 @@ export default function Vivko() {
           .s-times .strong,
           .s-bridge .strong {
             font-size: clamp(38px, 4.6vw, 68px);
+          }
+
+          /* ★ Slide 4 desktop: make panel almost full width */
+          .s-draw .text {
+            max-width: 96vw;
+            margin-left: 2vw;
           }
         }
 
