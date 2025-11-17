@@ -78,18 +78,18 @@ export default function Vivko() {
       },
       {
         id: "draw",
-        bg: "/vivko-ny-4.jpg", // NEW BACKGROUND
+        bg: "/vivko-ny-4.jpg",
         blur: "left",
         hScript: "",
         hStrongTop: "",
         phase1:
-          "1. forduló: Online kvíz, lezárás 2025. október 11 — 23:59 (CET)",
+          "1. forduló: Online kvíz, lezárás 2026. február 11. — 11:59 (CET)",
         phase2:
-          "2. forduló: Online élő verseny, kezdés 2025. október 18 — 18:00 (CET)",
+          "2. forduló: Online élő verseny, kezdés 2026. január 11. — 18:00 (CET)",
         phase3:
-          "3. Utazás: november 27 – december 3 (7 nap/5 éjszaka)",
+          "3. Utazás: 2026. január 12–19. (8 nap / 6 éjszaka) New Yorkban és Washington DC-ben",
         sub:
-          "Nyertesként Te és egy általad választott kísérő a Grand Slam Travel és a Vivkó Nails kíséretében utazhattok New Yorkba. Az utazás teljes körűen megszervezett, így sem tapasztalatra, sem nyelvtudásra nincs szükség. A nyeremény tartalmazza az ESTA ügyintézést, a repülőjegyeket, a transzfereket, egy manhattani szállodát reggelivel, belépőket több nevezetességhez, valamint egy különleges meglepetést. Csak az ebédhez és vacsorához, illetve a költőpénzhez szükséges összeget kell magaddal hoznod.\nAz első forduló lezárása után a rendszer kiértékeli az eredményeket, és kiválasztja azt a hat versenyzőt, akik a kvízt helyesen a legrövidebb idő alatt teljesítették, valamint további versenyzőket is kiválaszt tartaléklistára (a befejezési idő alapján) azok közül, akik szintén helyesen teljesítették a kvízt, arra az esetre, ha a legjobb hatból valaki nem lépne be a 2. fordulóba (élő verseny), mindaddig, amíg 6 versenyző jelen nincs az élő versenyen. Minden, a kvízt sikeresen teljesítő felhasználónév felkerül a GrandLucky Travel weboldalára vagy aloldalára 2025. október 12-én 20:00-kor (CT) a befejezés idejével együtt.",
+          "A nyertes egy teljes körűen megszervezett, 8 nap 6 éjszakás utazást nyer New Yorkba és Washington DC-be, Vivkó és a Grand Slam Travel kíséretében.\n\nAz utazás teljes mértékben megszervezett, így sem tapasztalatra, sem nyelvtudásra nincs szükség. A nyeremény tartalmazza az ESTA ügyintézést, a repülőjegyeket, a transzfereket, a szállodát reggelivel, több nevezetesség belépőjét, valamint egy egynapos washingtoni kirándulást. Csak az ebédhez és vacsorához, illetve a költőpénzhez szükséges összeget kell magaddal hoznod.\n\nA rendszer a nyolc hét alatt minden héten kiválasztja azt az egy versenyzőt, aki az adott héten a legrövidebb idő alatt, hibátlanul teljesítette a kvízt. Ezen felül minden héten két további versenyző kerül tartaléklistára, az adott heti helyes kitöltési idők sorrendje alapján, arra az esetre, ha a heti győztes nem lépne be a 2. forduló élő versenyébe.\n\nAz első forduló lezárulta után minden, a kvízt sikeresen teljesítő felhasználónév felkerül a GrandLucky Travel weboldalára vagy aloldalára 2026. január 11-én 16:00-kor (CT) a befejezési időkkel együtt.",
         ui: "cta",
         home: "FŐOLDAL",
         play: "JÁTSZOM!",
@@ -102,8 +102,7 @@ export default function Vivko() {
         blur: "right",
         hScript: "February 2026",
         hStrongTop: "In New York and Washington DC with Vivko",
-        sub:
-          "Discover New York and the capital city of the US with Vivko.",
+        sub: "Discover New York and the capital city of the US with Vivko.",
         ui: "prevnext",
         back: "BACK",
         next: "NEXT",
@@ -128,24 +127,25 @@ export default function Vivko() {
         hScript: "Be the Next Winner",
         hStrongTop: "New York and DC Waiting for You",
         sub:
-          "If you are the winner of the two-round, knowledge-based contest, you and your travel companion will enjoy unforgettable experiences on the US East Coast on a 8-day, 6-night trip. Entry fee: $14.99.",
+          "If you are the winner of the two-round, knowledge-based contest, you and your travel companion will enjoy unforgettable experiences on the US East Coast on an 8-day, 6-night trip. Entry fee: $14.99.",
         ui: "prevnext",
         back: "BACK",
         next: "NEXT",
       },
       {
         id: "draw",
-        bg: "/vivko-ny-4.jpg", // NEW BACKGROUND
+        bg: "/vivko-ny-4.jpg",
         blur: "left",
         hScript: "",
         hStrongTop: "",
         phase1:
-          "1st Round: Online trivia, closes October 11, 2025 — 11:59 PM (CET)",
+          "1st Round: Online trivia, closes February 11, 2026 — 11:59 AM (CET)",
         phase2:
-          "2nd Round: Online Live Contest, starts October 18, 2025 — 18:00 (CET)",
-        phase3: "3. Travel: November 27 – December 3 (7 days / 5 nights)",
+          "2nd Round: Online Live Contest, starts January 11, 2026 — 18:00 (CET)",
+        phase3:
+          "3. Travel: January 12–19, 2026 (8 days / 6 nights) in New York and Washington DC",
         sub:
-          "As the winner, you and a companion of your choice will travel to the Big Apple, accompanied by Grand Slam Travel and Vivko Nails. The trip is fully organized, so no prior experience or language skills are required. The prize includes ESTA processing, flights, transfers, a Manhattan hotel with breakfast, tickets to several attractions, and a special surprise. You only need to bring your own money for lunch and dinner and for spending money.\nAfter the first round closes, the system will evaluate and pick six contestants who completed the trivia  correctly in the shortest time, and pick additional contestants who also competed the trivia correctly (by the completion time) as standby in case any of the top six do not enter Round 2 (the live contest) until 6 contestant present at the live contest. All usernames that successfully complete the trivia will be listed on the GrandLucky Travel website or a subsite on October 12, 2025 at 20:00 CT with their completion time.",
+          "The winner will receive a fully organized 8-day, 6-night trip to New York and Washington DC, accompanied by Vivko and Grand Slam Travel.\n\nThe trip is fully organized, so no prior experience or language skills are required. The prize includes ESTA processing, flights, transfers, hotel with breakfast, tickets to several attractions, and a one-day trip to Washington DC. You only need to bring your own money for lunch, dinner, and spending money.\n\nDuring the eight weeks of the first round, the system will select one contestant each week who completed the trivia correctly in the shortest time in that given week. In addition, two more contestants will be placed on a standby list every week, based on their correct completion times for that week, in case the weekly winner does not enter Round 2 (the live contest).\n\nAfter the first round closes, all usernames that successfully completed the trivia will be listed on the GrandLucky Travel website or a subsite on January 11, 2026 at 16:00 CT, together with their completion times.",
         ui: "cta",
         home: "HOME",
         play: "ENTER TO THE CONTEST",
@@ -409,6 +409,7 @@ export default function Vivko() {
           font-size: clamp(18px, 1.7vw, 24px);
           color: var(--muted);
         }
+
         /* Slide 3 description yellow */
         .s-bridge .sub {
           color: var(--yellow);
@@ -422,6 +423,14 @@ export default function Vivko() {
         }
         .s-times .sub {
           color: #fff;
+        }
+
+        /* === Slide 4 (draw) — make phases + sub yellow so they pop === */
+        .s-draw .phase,
+        .s-draw .sub {
+          color: var(--yellow);
+          text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4),
+            0 2px 6px rgba(0, 0, 0, 0.38);
         }
 
         .row {
@@ -506,7 +515,7 @@ export default function Vivko() {
           text-decoration: underline;
         }
 
-        /* === NEW: Slide 3 (bridge) — footer text & link white === */
+        /* === Slide 3 (bridge) — footer text & link white === */
         .s-bridge .legal {
           color: #fff;
         }
@@ -514,7 +523,7 @@ export default function Vivko() {
           color: #fff;
         }
 
-        /* ---------- Laptop tuning (existing), slides 1–3 ONLY ---------- */
+        /* ---------- Laptop tuning (slides 1–3 ONLY) ---------- */
         @media (min-width: 900px) and (max-width: 1400px) {
           .text {
             --top-pad: clamp(16px, 4.4vw, 56px);
@@ -546,7 +555,7 @@ export default function Vivko() {
           }
         }
 
-        /* ---------- Mobile tweaks (unchanged) ---------- */
+        /* ---------- Mobile tweaks ---------- */
         @media (max-width: 900px) {
           .hero::before,
           .blur-left::before {
@@ -610,7 +619,6 @@ export default function Vivko() {
         }
 
         /* ---------- ANDROID CHROME / TOUCH TABLET HARD OVERRIDE (slides 1–3) ---------- */
-        /* Applies if UA says Android Chrome OR runtime flagged tablet. */
         @media (min-width: 700px) and (max-width: 1400px) {
           /* LANDSCAPE: stronger nudge + smaller top lines */
           @media (orientation: landscape) {
