@@ -15,13 +15,13 @@ export default function CheckoutPage() {
       titleScript: "Biztonságos fizetés",
       introStrong: "Fontos — Kérjük, olvasd el!",
       bullets: [
-        "A sikeres fizetés után a Felhasználónevet és a Jelszót a rendszer automatikusan létrehozza, majd a köszönő oldalon megjelenítjük. Kérjük, mentsd el, mert szükséged lesz rá a versenyhez.",
+        "A sikeres fizetés után a Felhasználónevet és a Jelszót a rendszer automatikusan létrehozza, majd a fizetés utáni összegző oldalon megjelenítjük. Kérjük, mentsd el vagy nyomtasd ki, mert szükséged lesz rá a versenyhez.",
         "A felhasználónév és jelszó nélkül nem tudsz részt venni a tudásalapú versenyben, ezért kérjük, őrizd meg ezeket az adatokat.",
         "A fizetés a PayPal rendszerén keresztül történik, biztonságos bankkártyás fizetéssel.",
       ],
       paypalBoxTitle: "Nem szükséges PayPal-fiók!",
       paypalBoxLines: [
-        'A fizetéshez egyszerűen add meg az email címedet a PayPal oldalon, majd válaszd a „Kártyával fizetek” vagy „Fizetés vendégként” lehetőséget. Nem kell bejelentkezni és nem kell fiókot létrehozni.',
+        "A fizetéshez egyszerűen add meg az email címedet a PayPal oldalon, majd válaszd a „Kártyával fizetek” vagy „Fizetés vendégként” lehetőséget. Nem kell bejelentkezni és nem kell fiókot létrehozni.",
         "Tipp: A PayPal oldalon kapcsold ki az „Adatok mentése és PayPal-számla létrehozása” kapcsolót, ha nem szeretnél fiókot — a fizetés így is gond nélkül működik bankkártyával.",
       ],
       agreeLabel:
@@ -38,7 +38,7 @@ export default function CheckoutPage() {
       titleScript: "Secure Payment",
       introStrong: "Important — Please read before paying!",
       bullets: [
-        "After a successful payment, your Username and Password will be created automatically by the system and displayed on the thank-you page. Please save them, as you will need them to participate in the contest.",
+        "After a successful payment, your Username and Password will be created automatically by the system and displayed on the thank-you page. Please save or print them, as you will need them to participate in the contest.",
         "Without your username and password, you will not be able to join the knowledge-based contest, so please keep these details safe.",
         "Payment is processed securely via PayPal using your debit or credit card.",
       ],
@@ -61,7 +61,11 @@ export default function CheckoutPage() {
     try {
       setError("");
       if (!agree) {
-        alert(c.alertTerms + " / " + copy[lang === "hu" ? "en" : "hu"].alertTerms);
+        alert(
+          c.alertTerms +
+            " / " +
+            copy[lang === "hu" ? "en" : "hu"].alertTerms
+        );
         return;
       }
       setBusy(true);
