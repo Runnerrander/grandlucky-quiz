@@ -78,7 +78,7 @@ export default function Vivko() {
       },
       {
         id: "draw",
-        bg: "/vivko-ny.jpg",
+        bg: "/vivko-ny-4.jpg",
         blur: "left",
         hScript: "",
         hStrongTop: "",
@@ -134,7 +134,7 @@ export default function Vivko() {
       },
       {
         id: "draw",
-        bg: "/vivko-ny.jpg",
+        bg: "/vivko-ny-4.jpg",
         blur: "left",
         hScript: "",
         hStrongTop: "",
