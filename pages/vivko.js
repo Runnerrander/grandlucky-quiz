@@ -196,42 +196,33 @@ export default function Vivko() {
 
       {/* Content */}
       <section className={`text ${S.id === "draw" ? "text-draw" : ""}`}>
-        {/* Gradient panel only on slide 4 */}
-        <div className={S.id === "draw" ? "text-shell" : ""}>
-          <h1 className="title">
-            {S.hScript ? <span className="script">{S.hScript}</span> : null}
-            {S.hStrongTop ? (
-              <span className="strong">{S.hStrongTop}</span>
-            ) : null}
+        <h1 className="title">
+          {S.hScript ? <span className="script">{S.hScript}</span> : null}
+          {S.hStrongTop ? <span className="strong">{S.hStrongTop}</span> : null}
 
-            {/* Slide 4: date lines */}
-            {S.id === "draw" && (S.phase1 || S.phase2 || S.phase3) ? (
-              <>
-                {S.phase1 ? <span className="phase">{S.phase1}</span> : null}
-                {S.phase2 ? <span className="phase">{S.phase2}</span> : null}
-                {S.phase3 ? <span className="phase">{S.phase3}</span> : null}
-              </>
-            ) : null}
-          </h1>
+          {/* Slide 4: date lines */}
+          {S.id === "draw" && (S.phase1 || S.phase2 || S.phase3) ? (
+            <>
+              {S.phase1 ? <span className="phase">{S.phase1}</span> : null}
+              {S.phase2 ? <span className="phase">{S.phase2}</span> : null}
+              {S.phase3 ? <span className="phase">{S.phase3}</span> : null}
+            </>
+          ) : null}
+        </h1>
 
-          {/* Scrollable text on Slide 4; buttons separated below (no overlap) */}
-          {S.sub && (
-            <div
-              className={`subwrap ${
-                S.id === "draw" ? "subwrap-draw" : ""
-              }`}
-            >
-              <p className="sub">
-                {S.sub.split("\n").map((line, k) => (
-                  <span key={k}>
-                    {line}
-                    <br />
-                  </span>
-                ))}
-              </p>
-            </div>
-          )}
-        </div>
+        {/* Scrollable text on Slide 4; buttons separated below (no overlap) */}
+        {S.sub && (
+          <div className={`subwrap ${S.id === "draw" ? "subwrap-draw" : ""}`}>
+            <p className="sub">
+              {S.sub.split("\n").map((line, k) => (
+                <span key={k}>
+                  {line}
+                  <br />
+                </span>
+              ))}
+            </p>
+          </div>
+        )}
 
         {S.ui === "prevnext" ? (
           <div className="row">
@@ -434,7 +425,7 @@ export default function Vivko() {
           color: #fff;
         }
 
-        /* === Slide 4 (draw) — make phases + sub yellow so they pop === */
+        /* === Slide 4 (draw) — phases + sub yellow and panel behind all text === */
         .s-draw .phase,
         .s-draw .sub {
           color: var(--yellow);
@@ -442,17 +433,16 @@ export default function Vivko() {
             0 2px 6px rgba(0, 0, 0, 0.38);
         }
 
-        /* NEW: dark gradient panel behind slide 4 text */
-        .s-draw .text-shell {
+        .s-draw .text {
           background: linear-gradient(
             to bottom,
-            rgba(0, 0, 0, 0.8),
-            rgba(0, 0, 0, 0.6),
-            rgba(0, 0, 0, 0.3),
-            rgba(0, 0, 0, 0)
+            rgba(0, 0, 0, 0.85),
+            rgba(0, 0, 0, 0.7),
+            rgba(0, 0, 0, 0.5),
+            rgba(0, 0, 0, 0.4)
           );
-          padding: clamp(16px, 2vw, 22px);
-          border-radius: 14px;
+          padding: clamp(18px, 2.4vw, 26px);
+          border-radius: 18px;
         }
 
         .row {
@@ -486,10 +476,10 @@ export default function Vivko() {
             inset 0 2px 0 rgba(255, 255, 255, 0.7);
         }
 
-        /* ---------- Slide 4 (draw) — GRID so buttons never overlap ---------- */
+        /* ---------- Slide 4 (draw) — GRID so middle scrolls, buttons stay visible ---------- */
         .text-draw {
           display: grid;
-          grid-template-rows: 1fr auto; /* text-shell | buttons */
+          grid-template-rows: auto 1fr auto; /* title | scroll | buttons */
           gap: 10px;
           max-height: calc(
             100svh - var(--top-pad) -
@@ -498,7 +488,7 @@ export default function Vivko() {
           padding-bottom: max(8px, env(safe-area-inset-bottom));
         }
         .text-draw .subwrap {
-          min-height: 0; /* so content can scroll */
+          min-height: 0; /* so 1fr can shrink and scroll */
           overflow: auto;
           -webkit-overflow-scrolling: touch;
           padding-right: 4px;
@@ -637,10 +627,6 @@ export default function Vivko() {
               100svh - var(--top-pad) -
                 max(16px, env(safe-area-inset-bottom))
             );
-          }
-
-          .s-draw .text-shell {
-            padding: 14px;
           }
         }
 
