@@ -20,7 +20,9 @@ export default function Vivko() {
       const touchCapable =
         typeof window !== "undefined" &&
         ("ontouchstart" in window ||
-          (navigator && (navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0)));
+          (navigator &&
+            (navigator.maxTouchPoints > 0 ||
+              navigator.msMaxTouchPoints > 0)));
 
       const w = typeof window !== "undefined" ? window.innerWidth : 0;
       const tpad = touchCapable && w >= 700 && w <= 1400;
@@ -42,9 +44,10 @@ export default function Vivko() {
         id: "heart",
         bg: "/vivko-ny-1.jpg",
         blur: "right",
-        hScript: "Adventi Szezon",
-        hStrongTop: "Vivkóval New Yorkban",
-        sub: "Fedezd fel a Times Square varázsát Vivkóval az ünnepi Szezonban.",
+        hScript: "2026 február",
+        hStrongTop: "Vivkóval New Yorkban és Washington DC-ben",
+        sub:
+          "Fedezd fel New Yorkot és az USA fővárosát, Washingtont Vivkóval.",
         ui: "prevnext",
         back: "VISSZA",
         next: "TOVÁBB",
@@ -82,8 +85,7 @@ export default function Vivko() {
           "1. forduló: Online kvíz, lezárás 2025. október 11 — 23:59 (CET)",
         phase2:
           "2. forduló: Online élő verseny, kezdés 2025. október 18 — 18:00 (CET)",
-        phase3:
-          "3. Utazás: november 27 – december 3 (7 nap/5 éjszaka)",
+        phase3: "3. Utazás: november 27 – december 3 (7 nap/5 éjszaka)",
         sub:
           "Nyertesként Te és egy általad választott kísérő a Grand Slam Travel és a Vivkó Nails kíséretében utazhattok New Yorkba. Az utazás teljes körűen megszervezett, így sem tapasztalatra, sem nyelvtudásra nincs szükség. A nyeremény tartalmazza az ESTA ügyintézést, a repülőjegyeket, a transzfereket, egy manhattani szállodát reggelivel, belépőket több nevezetességhez, valamint egy különleges meglepetést. Csak az ebédhez és vacsorához, illetve a költőpénzhez szükséges összeget kell magaddal hoznod.\nAz első forduló lezárása után a rendszer kiértékeli az eredményeket, és kiválasztja azt a hat versenyzőt, akik a kvízt helyesen a legrövidebb idő alatt teljesítették, valamint további versenyzőket is kiválaszt tartaléklistára (a befejezési idő alapján) azok közül, akik szintén helyesen teljesítették a kvízt, arra az esetre, ha a legjobb hatból valaki nem lépne be a 2. fordulóba (élő verseny), mindaddig, amíg 6 versenyző jelen nincs az élő versenyen. Minden, a kvízt sikeresen teljesítő felhasználónév felkerül a GrandLucky Travel weboldalára vagy aloldalára 2025. október 12-én 20:00-kor (CT) a befejezés idejével együtt.",
         ui: "cta",
@@ -96,10 +98,10 @@ export default function Vivko() {
         id: "heart",
         bg: "/vivko-ny-1.jpg",
         blur: "right",
-        hScript: "Advent Season",
-        hStrongTop: "In New York with Vivko",
+        hScript: "February 2026",
+        hStrongTop: "In New York and Washington DC with Vivko",
         sub:
-          "Discover the magic of Times Square with Vivko during the holiday season.",
+          "Discover New York and the capital city of the US with Vivko.",
         ui: "prevnext",
         back: "BACK",
         next: "NEXT",
@@ -138,8 +140,7 @@ export default function Vivko() {
           "1st Round: Online trivia, closes October 11, 2025 — 11:59 PM (CET)",
         phase2:
           "2nd Round: Online Live Contest, starts October 18, 2025 — 18:00 (CET)",
-        phase3:
-          "3. Travel: November 27 – December 3 (7 days / 5 nights)",
+        phase3: "3. Travel: November 27 – December 3 (7 days / 5 nights)",
         sub:
           "As the winner, you and a companion of your choice will travel to the Big Apple, accompanied by Grand Slam Travel and Vivko Nails. The trip is fully organized, so no prior experience or language skills are required. The prize includes ESTA processing, flights, transfers, a Manhattan hotel with breakfast, tickets to several attractions, and a special surprise. You only need to bring your own money for lunch and dinner and for spending money.\nAfter the first round closes, the system will evaluate and pick six contestants who completed the trivia  correctly in the shortest time, and pick additional contestants who also competed the trivia correctly (by the completion time) as standby in case any of the top six do not enter Round 2 (the live contest) until 6 contestant present at the live contest. All usernames that successfully complete the trivia will be listed on the GrandLucky Travel website or a subsite on October 12, 2025 at 20:00 CT with their completion time.",
         ui: "cta",
@@ -408,12 +409,17 @@ export default function Vivko() {
         /* Slide 3 description yellow */
         .s-bridge .sub {
           color: var(--yellow);
-          text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25), 0 2px 6px rgba(0, 0, 0, 0.18);
+          text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25),
+            0 2px 6px rgba(0, 0, 0, 0.18);
         }
 
         /* === Slide 2 (times) — make title & subtitle white (HU & EN) === */
-        .s-times .strong { color: #fff; }
-        .s-times .sub { color: #fff; }
+        .s-times .strong {
+          color: #fff;
+        }
+        .s-times .sub {
+          color: #fff;
+        }
 
         .row {
           display: flex;
@@ -451,11 +457,14 @@ export default function Vivko() {
           display: grid;
           grid-template-rows: auto 1fr auto; /* title | scroll | buttons */
           gap: 10px;
-          max-height: calc(100svh - var(--top-pad) - max(12px, env(safe-area-inset-bottom)));
+          max-height: calc(
+            100svh - var(--top-pad) -
+              max(12px, env(safe-area-inset-bottom))
+          );
           padding-bottom: max(8px, env(safe-area-inset-bottom));
         }
         .text-draw .subwrap {
-          min-height: 0;       /* so 1fr can shrink on iOS */
+          min-height: 0; /* so 1fr can shrink on iOS */
           overflow: auto;
           -webkit-overflow-scrolling: touch;
           padding-right: 4px;
@@ -495,23 +504,43 @@ export default function Vivko() {
         }
 
         /* === NEW: Slide 3 (bridge) — footer text & link white === */
-        .s-bridge .legal { color: #fff; }
-        .s-bridge .legal a { color: #fff; }
+        .s-bridge .legal {
+          color: #fff;
+        }
+        .s-bridge .legal a {
+          color: #fff;
+        }
 
         /* ---------- Laptop tuning (existing), slides 1–3 ONLY ---------- */
         @media (min-width: 900px) and (max-width: 1400px) {
-          .text { --top-pad: clamp(16px, 4.4vw, 56px); }
-          .s-times .text { --top-pad: clamp(12px, 3.8vw, 48px); }
-          .s-bridge .text { --top-pad: clamp(14px, 4.2vw, 52px); }
-          .s-heart .text { transform: translateY(-1.4vh); }
-          .s-times .text { transform: translateY(-2.0vh); }
-          .s-bridge .text { transform: translateY(-1.4vh); }
+          .text {
+            --top-pad: clamp(16px, 4.4vw, 56px);
+          }
+          .s-times .text {
+            --top-pad: clamp(12px, 3.8vw, 48px);
+          }
+          .s-bridge .text {
+            --top-pad: clamp(14px, 4.2vw, 52px);
+          }
+          .s-heart .text {
+            transform: translateY(-1.4vh);
+          }
+          .s-times .text {
+            transform: translateY(-2.0vh);
+          }
+          .s-bridge .text {
+            transform: translateY(-1.4vh);
+          }
           .s-heart .script,
           .s-times .script,
-          .s-bridge .script { font-size: clamp(48px, 5.4vw, 78px); }
+          .s-bridge .script {
+            font-size: clamp(48px, 5.4vw, 78px);
+          }
           .s-heart .strong,
           .s-times .strong,
-          .s-bridge .strong { font-size: clamp(38px, 4.6vw, 68px); }
+          .s-bridge .strong {
+            font-size: clamp(38px, 4.6vw, 68px);
+          }
         }
 
         /* ---------- Mobile tweaks (unchanged) ---------- */
@@ -535,8 +564,12 @@ export default function Vivko() {
             padding-top: var(--top-pad);
             text-align: left;
           }
-          .s-times .text { --top-pad: clamp(18px, 7.8vw, 40px); }
-          .s-bridge .text { --top-pad: clamp(22px, 8.2vw, 42px); }
+          .s-times .text {
+            --top-pad: clamp(18px, 7.8vw, 40px);
+          }
+          .s-bridge .text {
+            --top-pad: clamp(22px, 8.2vw, 42px);
+          }
 
           .lang {
             padding: 9px 14px;
@@ -544,18 +577,32 @@ export default function Vivko() {
             right: 8px;
           }
 
-          .script { font-size: clamp(44px, 10vw, 66px); }
-          .strong { font-size: clamp(32px, 8.5vw, 48px); }
+          .script {
+            font-size: clamp(44px, 10vw, 66px);
+          }
+          .strong {
+            font-size: clamp(32px, 8.5vw, 48px);
+          }
           .phase {
             font-size: clamp(16px, 4.6vw, 22px);
             white-space: normal;
           }
-          .sub { font-size: clamp(16px, 4.4vw, 20px); }
-          .row { gap: 10px; }
-          .btn { font-size: 12px; padding: 12px 20px; }
+          .sub {
+            font-size: clamp(16px, 4.4vw, 20px);
+          }
+          .row {
+            gap: 10px;
+          }
+          .btn {
+            font-size: 12px;
+            padding: 12px 20px;
+          }
 
           .text-draw {
-            max-height: calc(100svh - var(--top-pad) - max(16px, env(safe-area-inset-bottom)));
+            max-height: calc(
+              100svh - var(--top-pad) -
+                max(16px, env(safe-area-inset-bottom))
+            );
           }
         }
 
@@ -564,15 +611,36 @@ export default function Vivko() {
         @media (min-width: 700px) and (max-width: 1400px) {
           /* LANDSCAPE: stronger nudge + smaller top lines */
           @media (orientation: landscape) {
-            .androidchrome.s-heart .text, .tpad.s-heart .text { transform: translateY(-6vh); }
-            .androidchrome.s-times .text, .tpad.s-times .text { transform: translateY(-6.5vh); }
-            .androidchrome.s-bridge .text, .tpad.s-bridge .text { transform: translateY(-6vh); }
+            .androidchrome.s-heart .text,
+            .tpad.s-heart .text {
+              transform: translateY(-6vh);
+            }
+            .androidchrome.s-times .text,
+            .tpad.s-times .text {
+              transform: translateY(-6.5vh);
+            }
+            .androidchrome.s-bridge .text,
+            .tpad.s-bridge .text {
+              transform: translateY(-6vh);
+            }
 
-            .androidchrome .script, .tpad .script { font-size: clamp(40px, 4.6vw, 64px); line-height: 1.0; }
-            .androidchrome .strong, .tpad .strong { font-size: clamp(32px, 3.8vw, 54px); line-height: 1.02; }
+            .androidchrome .script,
+            .tpad .script {
+              font-size: clamp(40px, 4.6vw, 64px);
+              line-height: 1.0;
+            }
+            .androidchrome .strong,
+            .tpad .strong {
+              font-size: clamp(32px, 3.8vw, 54px);
+              line-height: 1.02;
+            }
 
-            .androidchrome .script, .androidchrome .strong, .androidchrome .sub,
-            .tpad .script, .tpad .strong, .tpad .sub {
+            .androidchrome .script,
+            .androidchrome .strong,
+            .androidchrome .sub,
+            .tpad .script,
+            .tpad .strong,
+            .tpad .sub {
               overflow-wrap: anywhere;
               word-break: normal;
               hyphens: auto;
@@ -582,12 +650,29 @@ export default function Vivko() {
 
           /* PORTRAIT: moderate nudge */
           @media (orientation: portrait) {
-            .androidchrome.s-heart .text, .tpad.s-heart .text { transform: translateY(-4vh); }
-            .androidchrome.s-times .text, .tpad.s-times .text { transform: translateY(-4.5vh); }
-            .androidchrome.s-bridge .text, .tpad.s-bridge .text { transform: translateY(-4vh); }
+            .androidchrome.s-heart .text,
+            .tpad.s-heart .text {
+              transform: translateY(-4vh);
+            }
+            .androidchrome.s-times .text,
+            .tpad.s-times .text {
+              transform: translateY(-4.5vh);
+            }
+            .androidchrome.s-bridge .text,
+            .tpad.s-bridge .text {
+              transform: translateY(-4vh);
+            }
 
-            .androidchrome .script, .tpad .script { font-size: clamp(42px, 5.0vw, 68px); line-height: 1.02; }
-            .androidchrome .strong, .tpad .strong { font-size: clamp(34px, 4.2vw, 56px); line-height: 1.04; }
+            .androidchrome .script,
+            .tpad .script {
+              font-size: clamp(42px, 5.0vw, 68px);
+              line-height: 1.02;
+            }
+            .androidchrome .strong,
+            .tpad .strong {
+              font-size: clamp(34px, 4.2vw, 56px);
+              line-height: 1.04;
+            }
           }
         }
       `}</style>
