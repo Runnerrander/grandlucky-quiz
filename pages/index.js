@@ -11,23 +11,27 @@ export default function Welcome() {
       script: "Üdvözlünk",
       strongTop: "a\u00A0GrandLuckyTravel",
       strongBottom: "weboldalán!",
-      subTop: "Fedezd fel New Yorkot és Washingtont",
+      // Updated copy
+      subTop: "Fedezd fel New Yorkot és Washington DC-t",
       subBottom: "Vivkóval februárban!",
       cta: "KATTINTS A RÉSZLETEKÉRT!",
       tagTop: "Egy kis tudással és gyorsasággal",
       tagBottom: "egy reggeli áráért velünk utazhatsz!",
-      href: "/vivko",
+      // Go to winners first
+      href: "/winners",
     },
     en: {
       script: "Welcome",
       strongTop: "to\u00A0GrandLuckyTravel",
       strongBottom: "website!",
+      // Updated copy
       subTop: "Explore New York and Washington DC",
       subBottom: "with Vivko in February!",
       cta: "CLICK FOR DETAILS",
       tagTop: "With a little knowledge and fastness",
       tagBottom: "you can travel with us for the price of a breakfast!",
-      href: "/vivko",
+      // Go to winners first
+      href: "/winners",
     },
   };
 
@@ -383,10 +387,18 @@ export default function Welcome() {
         }
 
         @media (max-width: 375px) {
-          .script { font-size: 36px; }
-          .strong { font-size: 28px; }
-          .subline { font-size: 15px; }
-          .btn { padding: 12px 18px; }
+          .script {
+            font-size: 36px;
+          }
+          .strong {
+            font-size: 28px;
+          }
+          .subline {
+            font-size: 15px;
+          }
+          .btn {
+            padding: 12px 18px;
+          }
         }
       `}</style>
     </main>
