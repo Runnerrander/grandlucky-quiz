@@ -1,11 +1,11 @@
 // pages/winners.js
 import { useState } from "react";
-import Link from "next/link";
+import Head from "next/head";
 
 export default function WinnersPage() {
-  const [lang, setLang] = useState("hu"); // default HU
+  const [lang, setLang] = useState<"hu" | "en">("hu");
 
-  const dict = {
+  const copy = {
     hu: {
       badge: "AZ ELŐZŐ JÁTÉK NYERTESE:",
       title: "Napsugár Budapestről",
@@ -13,199 +13,194 @@ export default function WinnersPage() {
       p2: "Gratulálunk! Találkozz velünk a következő fordulóban — most egy új nyereményjáték indul.",
       cta1: "Tovább a részletekhez",
       cta2: "Vissza a kezdőlapra",
+      cta1Href: "/vivko",
+      cta2Href: "/",
     },
     en: {
-      badge: "WINNER OF THE PREVIOUS CONTEST:",
+      badge: "PREVIOUS GAME WINNER:",
       title: "Napsugár from Budapest",
-      p1: "Napsugár and her boyfriend will explore New York’s Advent season with Vivko.",
-      p2: "Congratulations! See you in the next round — a new contest is starting now.",
-      cta1: "Go to details",
+      p1: "Napsugár and her partner explore New York’s holiday spirit with Vivko.",
+      p2: "Congratulations! See you in the next round — a brand-new giveaway starts now.",
+      cta1: "See the details",
       cta2: "Back to home",
+      cta1Href: "/vivko",
+      cta2Href: "/",
     },
-  };
-  const t = dict[lang];
+  }[lang];
 
   return (
-    <main>
-      {/* language toggle */}
-      <div className="lang">
-        <button
-          className={`chip ${lang === "hu" ? "active" : ""}`}
-          onClick={() => setLang("hu")}
-          aria-label="Magyar"
-        >
-          HU
-        </button>
-        <button
-          className={`chip ${lang === "en" ? "active" : ""}`}
-          onClick={() => setLang("en")}
-          aria-label="English"
-        >
-          EN
-        </button>
-      </div>
+    <>
+      <Head>
+        <title>Winner — GrandLucky Travel</title>
+        <meta name="robots" content="noindex" />
+      </Head>
 
-      <div className="wrap">
-        <section className="card">
-          <div className="badge">{t.badge}</div>
-          <h1 className="title">{t.title}</h1>
-          <p>{t.p1}</p>
-          <p>{t.p2}</p>
+      <main>
+        {/* Language toggle */}
+        <div className="lang">
+          <button
+            aria-label="Magyar"
+            className={lang === "hu" ? "on" : ""}
+            onClick={() => setLang("hu")}
+          >
+            HU
+          </button>
+          <button
+            aria-label="English"
+            className={lang === "en" ? "on" : ""}
+            onClick={() => setLang("en")}
+          >
+            EN
+          </button>
+        </div>
 
-          <div className="actions">
-            <Link href="/vivko" className="btn primary">
-              {t.cta1}
-            </Link>
-            <Link href="/" className="btn ghost">
-              {t.cta2}
-            </Link>
-          </div>
-        </section>
+        <div className="wrap">
+          {/* Text card */}
+          <section className="card">
+            <div className="badge">{copy.badge}</div>
+            <h1 className="title">{copy.title}</h1>
+            <p>{copy.p1}</p>
+            <p>{copy.p2}</p>
 
-        <figure className="photo">
-          <img
-            src="/winners/napsugar.jpg"
-            alt="Napsugár — GrandLucky Travel winner"
-            loading="eager"
-            decoding="async"
-          />
-        </figure>
-      </div>
+            <div className="actions">
+              <a className="btn" href={copy.cta1Href}>
+                {copy.cta1}
+              </a>
+              <a className="btn ghost" href={copy.cta2Href}>
+                {copy.cta2}
+              </a>
+            </div>
+          </section>
+
+          {/* Winner photo */}
+          <figure className="photo">
+            <img
+              src="/winners/napsugar.jpg"
+              alt="Napsugár — GrandLucky Travel winner"
+              width="820"
+              height="1025"
+            />
+          </figure>
+        </div>
+      </main>
 
       <style jsx>{`
         :root {
-          --accent: #faaf3b;
-          --accent-deep: #eeaa2a;
-          --shadow: rgba(0, 0, 0, 0.14);
+          --bg: #fff;
+          --text: #1a1a1a;
+          --beige: #fff6e7;
+          --pill: #faaf3b;
+          --pillText: #222;
+          --shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+          --scrim: rgba(255, 255, 255, 0.0); /* keep sharp; no blur */
+          --radius: 18px;
         }
 
-        /* Page */
         main {
-          min-height: 100vh;
           position: relative;
-          padding: clamp(18px, 2.4vw, 28px);
+          min-height: 100vh;
+          color: var(--text);
+          z-index: 0;
         }
-        /* SAFE background layer (always visible) */
+
+        /* SHARP festive background (no blur) */
         main::before {
           content: "";
           position: fixed;
           inset: 0;
-          background:
-            linear-gradient(0deg, rgba(255,255,255,0.20), rgba(255,255,255,0.20)),
-            url("/bg-advent.jpg") center/cover no-repeat;
-          z-index: 0;
+          background-image: url("/winners/bg-advent.jpg");
+          background-position: center;
+          background-repeat: no-repeat;
+          background-size: cover;
+          z-index: -2; /* sit behind everything */
         }
 
-        /* Content sits above background */
-        .wrap, .lang { position: relative; z-index: 2; }
-
-        .lang {
+        /* subtle readability scrim (no blur) */
+        main::after {
+          content: "";
           position: fixed;
-          top: 16px;
-          right: 16px;
-          display: flex;
-          gap: 8px;
-        }
-        .chip {
-          appearance: none;
-          border: 0;
-          font: 600 12px/1.1 Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-          padding: 8px 12px;
-          border-radius: 999px;
-          background: #fff9f0;
-          color: #8a6a2e;
-          box-shadow: 0 6px 20px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.6);
-          cursor: pointer;
-          transition: transform .12s ease;
-        }
-        .chip:active { transform: scale(.98); }
-        .chip.active {
-          background: linear-gradient(180deg, #ffd77a 0%, #ffbf3a 100%);
-          color: #402400;
+          inset: 0;
+          background: var(--scrim);
+          z-index: -1;
         }
 
         .wrap {
           display: grid;
-          grid-template-columns: 1.05fr 1fr;
-          gap: clamp(18px, 3vw, 28px);
+          grid-template-columns: 1fr 680px;
+          gap: 24px;
           align-items: center;
-          max-width: 1180px;
-          margin: clamp(56px, 6vw, 84px) auto;
+          padding: clamp(48px, 4vw, 64px) clamp(18px, 4vw, 40px);
+          max-width: 1280px;
+          margin: 0 auto;
         }
 
         .card {
-          background: #fff;
-          border-radius: 14px;
-          padding: clamp(16px, 3.2vw, 28px);
-          box-shadow: 0 14px 40px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.6);
+          background: rgba(255, 255, 255, 0.9);
+          backdrop-filter: none; /* keep sharp */
+          border-radius: var(--radius);
+          box-shadow: var(--shadow);
+          padding: 28px 28px 24px;
         }
 
         .badge {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
+          display: inline-block;
+          background: var(--pill);
+          color: var(--pillText);
+          font-weight: 800;
+          letter-spacing: 0.3px;
           padding: 8px 14px;
           border-radius: 999px;
-          font: 800 12px/1.1 Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-          letter-spacing: .4px;
-          background: linear-gradient(180deg, #ffd77a 0%, #ffbf3a 100%);
-          color: #3b2a00;
-          border: 2px solid var(--accent-deep);
-          box-shadow: 0 6px 18px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.7);
-          margin-bottom: 12px;
-          /* we pass exact caps with accents in the string */
-          text-transform: none;
+          box-shadow: 0 6px 18px rgba(250, 175, 59, 0.35);
+          margin-bottom: 14px;
+          font-size: 13px;
         }
 
         .title {
-          font: 900 clamp(22px, 3.6vw, 34px)/1.2 "Montserrat", Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-          margin: 4px 0 10px;
-          color: #111;
+          font-size: clamp(28px, 4vw, 36px);
+          line-height: 1.2;
+          margin: 6px 0 10px;
         }
 
         p {
-          margin: 8px 0;
-          font: 500 clamp(14px, 1.6vw, 16px)/1.55 Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-          color: #333;
+          margin: 0 0 10px;
+          font-size: 16px;
         }
 
         .actions {
           display: flex;
-          gap: 12px;
-          margin-top: 16px;
+          gap: 10px;
+          margin-top: 14px;
         }
 
-        /* BUTTONS (restore yellow pill + white pill) */
         .btn {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          padding: 12px 18px;
+          padding: 10px 16px;
           border-radius: 999px;
+          background: #fff;
+          color: #222;
+          border: 2px solid #fff;
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+          font-weight: 700;
+          cursor: pointer;
           text-decoration: none;
-          font: 800 13px/1 Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial;
-          box-shadow: 0 10px 26px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.6);
-          border: 0;
-          transition: transform .12s ease, box-shadow .2s ease;
-          color: #3b2a00;
+          transition: transform 0.08s ease, box-shadow 0.12s ease;
         }
-        .btn:active { transform: translateY(1px); }
-        .btn.primary {
-          background: linear-gradient(180deg, #ffd77a 0%, #ffbf3a 100%);
-          border: 2px solid var(--accent-deep);
+        .btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12);
         }
         .btn.ghost {
-          background: #fff;
-          border: 2px solid #e7e2d9;
-          color: #333;
+          background: transparent;
+          border-color: #fff;
         }
 
         .photo {
-          margin: 0;
-          background: rgba(255,255,255,.55);
-          border-radius: 16px;
-          box-shadow: 0 20px 50px var(--shadow), inset 0 1px 0 rgba(255,255,255,.8);
-          padding: clamp(8px, 1.4vw, 12px);
+          background: #fff;
+          border-radius: var(--radius);
+          box-shadow: var(--shadow);
+          padding: 10px;
         }
         .photo img {
           display: block;
@@ -214,12 +209,41 @@ export default function WinnersPage() {
           border-radius: 12px;
         }
 
-        @media (max-width: 980px) {
-          .wrap { grid-template-columns: 1fr; max-width: 680px; }
-          .photo { order: 2; }
-          .card { order: 1; }
+        /* Language toggle */
+        .lang {
+          position: fixed;
+          top: 18px;
+          right: 18px;
+          display: flex;
+          gap: 8px;
+          z-index: 10;
+        }
+        .lang button {
+          border: 0;
+          padding: 8px 12px;
+          border-radius: 999px;
+          background: rgba(255, 255, 255, 0.9);
+          font-weight: 800;
+          cursor: pointer;
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+        }
+        .lang button.on {
+          background: var(--pill);
+        }
+
+        @media (max-width: 990px) {
+          .wrap {
+            grid-template-columns: 1fr;
+            gap: 18px;
+          }
+          .photo {
+            order: 2;
+          }
+          .card {
+            order: 1;
+          }
         }
       `}</style>
-    </main>
+    </>
   );
 }
