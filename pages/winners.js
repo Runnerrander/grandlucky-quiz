@@ -38,7 +38,6 @@ export default function WinnersPage() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      {/* language toggle */}
       <div className="lang">
         <button
           className={`chip ${lang === "hu" ? "active" : ""}`}
@@ -55,7 +54,6 @@ export default function WinnersPage() {
       </div>
 
       <div className="wrap">
-        {/* left: card */}
         <section className="card">
           <h2 className="titleTop">{t.titleTop}</h2>
           <h1 className="name">{t.name}</h1>
@@ -72,9 +70,11 @@ export default function WinnersPage() {
           </div>
         </section>
 
-        {/* right: photo (NOTE: root path) */}
         <div className="photo">
-          <img src="/napsugar.jpg" alt="Napsugár — GrandLucky Travel winner" />
+          <img
+            src="/winners/napsugar.jpg"
+            alt="Napsugár — GrandLucky Travel winner"
+          />
         </div>
       </div>
 
