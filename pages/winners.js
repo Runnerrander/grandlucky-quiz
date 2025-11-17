@@ -9,7 +9,7 @@ export default function WinnersPage() {
       badge: "AZ ELŐZŐ JÁTÉK NYERTESE:",
       title: "Napsugár Budapestről",
       p1: "Napsugár és a párja Vivkóval együtt fedezik fel New York adventi hangulatát.",
-      p2: "Gratulálunk! Találkozz velünk a következő fordulóban — most egy új nyereményjáték indul.",
+      p2: "Találkozz velünk a következő fordulóban — most egy új nyereményjáték indul.",
       ctaDetails: "TOVÁBB A RÉSZLETEKHEZ",
       ctaBack: "VISSZA A KEZDŐLAPRA",
     },
@@ -17,7 +17,7 @@ export default function WinnersPage() {
       badge: "WINNER OF THE PREVIOUS GAME:",
       title: "Napsugár from Budapest",
       p1: "Napsugár and her partner will explore New York’s Advent vibes with Vivko.",
-      p2: "Congratulations! See you in the next round — a brand-new prize game starts now.",
+      p2: "See you in the next round — a brand-new prize game starts now.",
       ctaDetails: "SEE DETAILS",
       ctaBack: "BACK TO HOME",
     },
@@ -53,8 +53,12 @@ export default function WinnersPage() {
           <p>{t.p2}</p>
 
           <div className="actions">
-            <a className="btn" href="/vivko">{t.ctaDetails}</a>
-            <a className="btn ghost" href="/">{t.ctaBack}</a>
+            <a className="btn" href="/vivko">
+              {t.ctaDetails}
+            </a>
+            <a className="btn ghost" href="/">
+              {t.ctaBack}
+            </a>
           </div>
         </section>
 
@@ -96,11 +100,14 @@ export default function WinnersPage() {
           padding: 6px 12px;
           border-radius: 999px;
           background: #fff;
-          box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 4px 18px rgba(0,0,0,.08);
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06),
+            0 4px 18px rgba(0, 0, 0, 0.08);
           cursor: pointer;
           font-weight: 600;
         }
-        .chip.active { background: #f7b940; }
+        .chip.active {
+          background: #f7b940;
+        }
 
         .wrap {
           display: grid;
@@ -111,11 +118,11 @@ export default function WinnersPage() {
           margin: 0 auto;
         }
         .card {
-          background: rgba(255,255,255,.94);
+          background: rgba(255, 255, 255, 0.94);
           backdrop-filter: saturate(1.02);
           border-radius: 14px;
           padding: 22px 22px 20px;
-          box-shadow: 0 14px 40px rgba(0,0,0,.13);
+          box-shadow: 0 14px 40px rgba(0, 0, 0, 0.13);
         }
         .badge {
           display: inline-block;
@@ -155,7 +162,7 @@ export default function WinnersPage() {
         .photo {
           background: #fff;
           border-radius: 12px;
-          box-shadow: 0 18px 46px rgba(0,0,0,.16);
+          box-shadow: 0 18px 46px rgba(0, 0, 0, 0.16);
           overflow: hidden;
         }
         .photo img {
@@ -165,9 +172,15 @@ export default function WinnersPage() {
         }
 
         @media (max-width: 990px) {
-          .wrap { grid-template-columns: 1fr; }
-          .photo { order: 2; }
-          .card { order: 1; }
+          .wrap {
+            grid-template-columns: 1fr;
+          }
+          .photo {
+            order: 2;
+          }
+          .card {
+            order: 1;
+          }
         }
       `}</style>
     </main>
