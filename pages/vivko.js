@@ -333,6 +333,19 @@ export default function Vivko() {
           );
         }
 
+        /* Extra darkening on the right for slide 4 on desktop only */
+        @media (min-width: 901px) {
+          .s-draw::before {
+            background: linear-gradient(
+              90deg,
+              rgba(0, 0, 0, 0.75) 0%,
+              rgba(0, 0, 0, 0.82) 40%,
+              rgba(0, 0, 0, 0.9) 70%,
+              rgba(0, 0, 0, 0.96) 100%
+            );
+          }
+        }
+
         /* REMOVE overlay/plate where requested (Slides 1–3) */
         .s-heart::before,
         .s-bridge::before {
@@ -425,24 +438,12 @@ export default function Vivko() {
           color: #fff;
         }
 
-        /* === Slide 4 (draw) — phases + sub yellow and panel behind all text === */
+        /* === Slide 4 (draw) — phases + sub yellow === */
         .s-draw .phase,
         .s-draw .sub {
           color: var(--yellow);
-          text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4),
-            0 2px 6px rgba(0, 0, 0, 0.38);
-        }
-
-        .s-draw .text {
-          background: linear-gradient(
-            to bottom,
-            rgba(0, 0, 0, 0.85),
-            rgba(0, 0, 0, 0.7),
-            rgba(0, 0, 0, 0.5),
-            rgba(0, 0, 0, 0.4)
-          );
-          padding: clamp(18px, 2.4vw, 26px);
-          border-radius: 18px;
+          text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45),
+            0 2px 6px rgba(0, 0, 0, 0.5);
         }
 
         .row {
