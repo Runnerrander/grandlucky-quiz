@@ -433,16 +433,15 @@ export default function Vivko() {
             0 2px 6px rgba(0, 0, 0, 0.38);
         }
 
-        /* ★ UPDATED: Slide 4 dark panel — extended medium overlay to the RIGHT ★ */
+        /* UPDATED: Slide 4 dark panel — keep it dark much further to the right */
         .s-draw .text {
           background: linear-gradient(
             90deg,
             rgba(0, 0, 0, 0.85) 0%,
-            rgba(0, 0, 0, 0.80) 24%,
-            rgba(0, 0, 0, 0.70) 48%,
-            rgba(0, 0, 0, 0.55) 70%,
-            rgba(0, 0, 0, 0.40) 88%,
-            rgba(0, 0, 0, 0.32) 100%
+            rgba(0, 0, 0, 0.82) 30%,
+            rgba(0, 0, 0, 0.75) 60%,
+            rgba(0, 0, 0, 0.60) 85%,
+            rgba(0, 0, 0, 0.45) 100%
           );
           padding: clamp(18px, 2.4vw, 26px);
           border-radius: 18px;
