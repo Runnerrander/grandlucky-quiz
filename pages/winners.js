@@ -42,10 +42,7 @@ export default function WinnersPage() {
         />
       </Head>
 
-      {/* Background layer handled in CSS ::before */}
-
       <div className="content">
-        {/* language toggle */}
         <div className="lang">
           <button className={lang === "hu" ? "active" : ""} onClick={() => setLang("hu")}>
             HU
@@ -56,7 +53,6 @@ export default function WinnersPage() {
         </div>
 
         <div className="wrap">
-          {/* left card */}
           <section className="card">
             <p className="badge">{c.badge}</p>
             <h1 className="name">{c.name}</h1>
@@ -73,10 +69,8 @@ export default function WinnersPage() {
             </div>
           </section>
 
-          {/* right photo */}
           <figure className="photo">
-            {/* NOTE: filename is case-sensitive on Vercel */}
-            <img src="/winners/napsugar.JPG" alt="Napsugár — GrandLucky Travel winner" />
+            <img src="/winners/napsugar.jpg" alt="Napsugár — GrandLucky Travel winner" />
           </figure>
         </div>
       </div>
@@ -98,8 +92,6 @@ export default function WinnersPage() {
           isolation: isolate;
           color: #111;
         }
-
-        /* full-bleed background image + soft overlay */
         .winners-hero::before {
           content: "";
           position: fixed;
@@ -109,7 +101,6 @@ export default function WinnersPage() {
             url("/winners/bg-winner.jpg") center / cover no-repeat;
           z-index: -2;
         }
-        /* warm vignette around edges for depth */
         .winners-hero::after {
           content: "";
           position: fixed;
@@ -218,7 +209,6 @@ export default function WinnersPage() {
           height: auto;
         }
 
-        /* mobile */
         @media (max-width: 980px) {
           .wrap {
             grid-template-columns: 1fr;
