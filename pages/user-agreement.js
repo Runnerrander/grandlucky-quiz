@@ -18,15 +18,15 @@ export default function UserAgreement() {
         "A regisztrációhoz legalább 18 évesnek kell lenned.",
         "Nem lehetsz a GrandLucky Travel, a Vivko vagy a Grand Slam Travel családtagja.",
 
-        // ★★★ Updated Rule 3 (HU) ★★★
-        "Amennyiben a verseny nyertese és kísérője nem rendelkezik érvényes ESTA-val vagy turista vízummal, kötelesek az igénylési folyamatot a 2. forduló élő versenyét követő első munkanapon megkezdeni (a Grand Slam Travel segítséget nyújt az igénylésben).",
+        // ★★★ Rule 3 (HU) — final ★★★
+        "Amennyiben a verseny nyertese és kísérője nem rendelkezik érvényes útlevéllel, ESTA-val vagy turista vízummal, kötelesek az igénylési folyamatot a 2. forduló élő versenyét követő első munkanapon megkezdeni (a Grand Slam Travel segítséget nyújt az igénylésben).",
 
         "A Grand Slam Travel, a Vivko és a GrandLucky Travel nem felelős, ha a verseny nyertese vagy kísérője ESTA/VÍZUM igénylése elutasításra kerül. Ilyen esetben a soron következő helyezett utazik.",
         "Az Egyesült Államokban tartózkodás során a nyertesnek és kísérőjének be kell tartania az Egyesült Államok törvényeit és szabályait.",
         "A verseny második fordulója élőben közvetített esemény lesz különböző digitális platformokon. A versenyzők vállalják, hogy részt vesznek ezen az élő eseményen.",
         "Médiahozzájárulás: a nyertes és kísérője hozzájárul, hogy a hitelesítésről és az utazásról készült fotók/videók megjelenjenek a Vivko és a Grand Slam Travel közösségi média felületein, valamint a GrandLucky Travel weboldalán.",
 
-        // ★★★ Updated Rule 8 (HU) ★★★
+        // ★★★ Rule 8 (HU) — final ★★★
         "A 2. forduló élő versenyéhez való csatlakozás határideje: a versenyzőnek a 2. forduló élő eseménye előtt 30 perccel be kell jelentkeznie a Zoom platformra a hitelesítési folyamat elvégzéséhez; ellenkező esetben egy másik, az első fordulót teljesítő versenyző kap lehetőséget a részvételre. A versenyzők egy várakozó chat szobába kerülnek, ahol a hitelesítés megtörténik."
       ],
       note:
@@ -40,9 +40,9 @@ export default function UserAgreement() {
       paymentsC: " és a ",
       paymentsD: "Felhasználói megállapodást",
 
-      // ★★★ Updated Refund Rule (HU) ★★★
+      // ★★★ Refund (HU) — final ★★★
       refund:
-        "Visszatérítési szabályzat: A nevezési díj normál körülmények között nem visszatéríthető. Amennyiben bármilyen előre nem látható okból a GrandLucky Travel versenye vagy az utazás megrendezésére vagy teljesítésére nem kerülhet sor, minden fizető résztvevő teljes visszatérítést kap 14 napon belül, a hivatalos lemondási bejelentéstől számítva.",
+        "Visszatérítési szabályzat: A nevezési díj normál körülmények között nem visszatéríthető. Amennyiben bármilyen előre nem látható okból a GrandLucky Travel versenye vagy az utazás megrendezésére vagy teljesítésére nem kerülhet sor, minden fizető résztvevő teljes visszatérítést kap 14 napon belül, a hivatalos lemondási bejelentéstől számítva. Nem jár visszatérítés abban az esetben, ha a versenyző vagy kísérője személyes okok miatt, illetve az utazáshoz vagy hitelesítéshez szükséges feltételek elmulasztása miatt nem tud részt venni az utazáson, vagy ha emiatt a GrandLucky Travel már nem tud egy másik jogosult versenyzőt és kísérőjét időben felkészíteni az utazásra.",
 
       agreeLbl:
         "Elolvastam és elfogadom a Szabályokat és a Felhasználói Feltételeket",
@@ -58,15 +58,15 @@ export default function UserAgreement() {
         "You must be at least 18 years old to register.",
         "You cannot be a family member of GrandLucky Travel, Vivko, or Grand Slam Travel.",
 
-        // ★★★ Updated Rule 3 (EN) ★★★
-        "If the winner and their companion do not already have a valid ESTA or tourist visa, they must start the application process (Grand Slam Travel assists with the application) on the first workday after the live contest day.",
+        // ★★★ Rule 3 (EN) — final ★★★
+        "If the winner and their companion do not already have a valid passport, ESTA, or tourist visa, they must start the application process (Grand Slam Travel assists with the application) on the first workday after the live contest day.",
 
         "Grand Slam Travel, Vivko, and GrandLucky Travel are not responsible if the contest winner’s or companion’s ESTA/VISA is denied. In such a case, the next place winner will travel.",
         "While in the United States, the winner and companion must follow all US laws and regulations.",
         "The second round of the contest will be a live-streamed event on various digital platforms. Contestants agree to attend this live event.",
         "Media consent: the Winner and companion consent that photos/videos from verification and the trip may be shared on Vivko’s and Grand Slam Travel’s social media and the GrandLucky Travel webpage.",
 
-        // ★★★ Updated Rule 8 (EN) ★★★
+        // ★★★ Rule 8 (EN) — final ★★★
         "Deadline to enter Round 2 Live contest: a contestant has to sign in to the Zoom platform 30 minutes before the Round 2 live contest event starts for a verification process; otherwise another contestant who completed the first round will get a chance to compete. Contestants will be placed in a waiting chat room where the verification takes place."
       ],
       note:
@@ -80,9 +80,9 @@ export default function UserAgreement() {
       paymentsC: " and ",
       paymentsD: "User Agreement",
 
-      // ★★★ Updated Refund Rule (EN) ★★★
+      // ★★★ Refund (EN) — final ★★★
       refund:
-        "Refund policy: The entry fee is non-refundable under normal circumstances. However, if for any unexpected reason the GrandLucky Travel contest or the trip cannot be held or fulfilled, all participants who paid the entry fee will receive a full refund within 14 days from the official cancellation announcement.",
+        "Refund policy: The entry fee is non-refundable under normal circumstances. However, if for any unexpected reason the GrandLucky Travel contest or the trip cannot be held or fulfilled, all participants who paid the entry fee will receive a full refund within 14 days from the official cancellation announcement. No refund will be issued if a contestant or their companion is unable to travel due to personal circumstances, failure to meet the required travel or verification conditions, or if GrandLucky Travel cannot prepare another eligible contestant and companion in time as a result of such circumstances.",
 
       agreeLbl: "I’ve read and accept the Rules and Terms of Use",
       back: "BACK",
