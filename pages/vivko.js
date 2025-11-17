@@ -333,30 +333,17 @@ export default function Vivko() {
           );
         }
 
-        /* Extra darkening on the right for slide 4 on desktop only */
-        @media (min-width: 901px) {
-          .s-draw::before {
-            background: linear-gradient(
-              90deg,
-              rgba(0, 0, 0, 0.75) 0%,
-              rgba(0, 0, 0, 0.82) 40%,
-              rgba(0, 0, 0, 0.9) 70%,
-              rgba(0, 0, 0, 0.96) 100%
-            );
-          }
-        }
-
         /* REMOVE overlay/plate where requested (Slides 1–3) */
         .s-heart::before,
         .s-bridge::before {
-          background: none !important; /* Slide 1 & 3: no blur overlay */
+          background: none !important;
         }
         .s-times::before,
         .s-times.blur-left::before {
-          background: none !important; /* Slide 2: no blur overlay */
+          background: none !important;
         }
         .s-times::after {
-          content: none !important; /* remove plate entirely */
+          content: none !important;
           display: none !important;
         }
 
@@ -379,7 +366,7 @@ export default function Vivko() {
           z-index: 2;
           max-width: min(980px, 86vw);
           margin-left: clamp(24px, 6.2vw, 80px);
-          --top-pad: clamp(38px, 7.2vw, 100px); /* Desktop default */
+          --top-pad: clamp(38px, 7.2vw, 100px);
           padding-top: var(--top-pad);
           display: block;
         }
@@ -430,7 +417,7 @@ export default function Vivko() {
             0 2px 6px rgba(0, 0, 0, 0.18);
         }
 
-        /* === Slide 2 (times) — make title & subtitle white (HU & EN) === */
+        /* === Slide 2 (times) — make title & subtitle white === */
         .s-times .strong {
           color: #fff;
         }
@@ -442,8 +429,23 @@ export default function Vivko() {
         .s-draw .phase,
         .s-draw .sub {
           color: var(--yellow);
-          text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45),
-            0 2px 6px rgba(0, 0, 0, 0.5);
+          text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4),
+            0 2px 6px rgba(0, 0, 0, 0.38);
+        }
+
+        /* ★ UPDATED: Slide 4 dark panel — extended medium overlay to the RIGHT ★ */
+        .s-draw .text {
+          background: linear-gradient(
+            90deg,
+            rgba(0, 0, 0, 0.85) 0%,
+            rgba(0, 0, 0, 0.80) 24%,
+            rgba(0, 0, 0, 0.70) 48%,
+            rgba(0, 0, 0, 0.55) 70%,
+            rgba(0, 0, 0, 0.40) 88%,
+            rgba(0, 0, 0, 0.32) 100%
+          );
+          padding: clamp(18px, 2.4vw, 26px);
+          border-radius: 18px;
         }
 
         .row {
@@ -480,16 +482,15 @@ export default function Vivko() {
         /* ---------- Slide 4 (draw) — GRID so middle scrolls, buttons stay visible ---------- */
         .text-draw {
           display: grid;
-          grid-template-rows: auto 1fr auto; /* title | scroll | buttons */
+          grid-template-rows: auto 1fr auto;
           gap: 10px;
           max-height: calc(
-            100svh - var(--top-pad) -
-              max(12px, env(safe-area-inset-bottom))
+            100svh - var(--top-pad) - max(12px, env(safe-area-inset-bottom))
           );
           padding-bottom: max(8px, env(safe-area-inset-bottom));
         }
         .text-draw .subwrap {
-          min-height: 0; /* so 1fr can shrink and scroll */
+          min-height: 0;
           overflow: auto;
           -webkit-overflow-scrolling: touch;
           padding-right: 4px;
@@ -528,7 +529,7 @@ export default function Vivko() {
           text-decoration: underline;
         }
 
-        /* === Slide 3 (bridge) — footer text & link white === */
+        /* Slide 3 footer white */
         .s-bridge .legal {
           color: #fff;
         }
@@ -536,7 +537,7 @@ export default function Vivko() {
           color: #fff;
         }
 
-        /* ---------- Laptop tuning (slides 1–3 ONLY) ---------- */
+        /* ---------- Laptop tuning ---------- */
         @media (min-width: 900px) and (max-width: 1400px) {
           .text {
             --top-pad: clamp(16px, 4.4vw, 56px);
@@ -631,9 +632,8 @@ export default function Vivko() {
           }
         }
 
-        /* ---------- ANDROID CHROME / TOUCH TABLET HARD OVERRIDE (slides 1–3) ---------- */
+        /* ---------- ANDROID CHROME / TOUCH TABLET HARD OVERRIDE ---------- */
         @media (min-width: 700px) and (max-width: 1400px) {
-          /* LANDSCAPE: stronger nudge + smaller top lines */
           @media (orientation: landscape) {
             .androidchrome.s-heart .text,
             .tpad.s-heart .text {
@@ -672,7 +672,6 @@ export default function Vivko() {
             }
           }
 
-          /* PORTRAIT: moderate nudge */
           @media (orientation: portrait) {
             .androidchrome.s-heart .text,
             .tpad.s-heart .text {
