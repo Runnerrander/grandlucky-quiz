@@ -375,6 +375,13 @@ export default function Vivko() {
         }
         .s-draw .text {
           --top-pad: clamp(48px, 8.2vw, 110px);
+          /* Solid dark overlay and FULL width with side margins on desktop */
+          background: rgba(0, 0, 0, 0.82);
+          padding: clamp(18px, 2.4vw, 26px);
+          border-radius: 18px;
+          max-width: none;
+          margin-left: clamp(16px, 4vw, 40px);
+          margin-right: clamp(16px, 4vw, 40px);
         }
 
         .title {
@@ -431,13 +438,6 @@ export default function Vivko() {
           color: var(--yellow);
           text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4),
             0 2px 6px rgba(0, 0, 0, 0.38);
-        }
-
-        /* Slide 4 dark panel: solid overlay, width set in desktop media query */
-        .s-draw .text {
-          background: rgba(0, 0, 0, 0.82);
-          padding: clamp(18px, 2.4vw, 26px);
-          border-radius: 18px;
         }
 
         .row {
@@ -529,7 +529,7 @@ export default function Vivko() {
           color: #fff;
         }
 
-        /* ---------- Laptop tuning ---------- */
+        /* ---------- Laptop tuning (slides 1–3) ---------- */
         @media (min-width: 900px) and (max-width: 1400px) {
           .text {
             --top-pad: clamp(16px, 4.4vw, 56px);
@@ -558,12 +558,6 @@ export default function Vivko() {
           .s-times .strong,
           .s-bridge .strong {
             font-size: clamp(38px, 4.6vw, 68px);
-          }
-
-          /* ★ Slide 4 desktop: make panel almost full width */
-          .s-draw .text {
-            max-width: 96vw;
-            margin-left: 2vw;
           }
         }
 
@@ -627,6 +621,12 @@ export default function Vivko() {
               100svh - var(--top-pad) -
                 max(16px, env(safe-area-inset-bottom))
             );
+          }
+
+          /* On mobile, pull Slide 4 panel back to centered narrow width */
+          .s-draw .text {
+            max-width: 92vw;
+            margin: 0 auto;
           }
         }
 
