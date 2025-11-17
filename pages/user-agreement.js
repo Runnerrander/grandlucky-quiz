@@ -17,12 +17,17 @@ export default function UserAgreement() {
       rules: [
         "A regisztrációhoz legalább 18 évesnek kell lenned.",
         "Nem lehetsz a GrandLucky Travel, a Vivko vagy a Grand Slam Travel családtagja.",
-        "A verseny nyertese és kísérője köteles ESTA-t vagy turista vízumot igényelni (a Grand Slam Travel segítséget nyújt az igénylésben).",
+
+        // ★★★ Updated Rule 3 (HU) ★★★
+        "Amennyiben a verseny nyertese és kísérője nem rendelkezik érvényes ESTA-val vagy turista vízummal, kötelesek az igénylési folyamatot a 2. forduló élő versenyét követő első munkanapon megkezdeni (a Grand Slam Travel segítséget nyújt az igénylésben).",
+
         "A Grand Slam Travel, a Vivko és a GrandLucky Travel nem felelős, ha a verseny nyertese vagy kísérője ESTA/VÍZUM igénylése elutasításra kerül. Ilyen esetben a soron következő helyezett utazik.",
         "Az Egyesült Államokban tartózkodás során a nyertesnek és kísérőjének be kell tartania az Egyesült Államok törvényeit és szabályait.",
         "A verseny második fordulója élőben közvetített esemény lesz különböző digitális platformokon. A versenyzők vállalják, hogy részt vesznek ezen az élő eseményen.",
         "Médiahozzájárulás: a nyertes és kísérője hozzájárul, hogy a hitelesítésről és az utazásról készült fotók/videók megjelenjenek a Vivko és a Grand Slam Travel közösségi média felületein, valamint a GrandLucky Travel weboldalán.",
-        "Határidő a 2. forduló élő versenyéhez való csatlakozáshoz: a verseny kezdete után 5 perc áll rendelkezésre a csatlakozásra; ellenkező esetben egy másik, az első fordulót teljesítő versenyző kap lehetőséget. A 2. forduló versenyzői a Zoom digitális platformon keresztül csatlakoznak.",
+
+        // ★★★ Updated Rule 8 (HU) ★★★
+        "A 2. forduló élő versenyéhez való csatlakozás határideje: a versenyzőnek a 2. forduló élő eseménye előtt 30 perccel be kell jelentkeznie a Zoom platformra a hitelesítési folyamat elvégzéséhez; ellenkező esetben egy másik, az első fordulót teljesítő versenyző kap lehetőséget a részvételre. A versenyzők egy várakozó chat szobába kerülnek, ahol a hitelesítés megtörténik."
       ],
       note:
         "Megjegyzés: Kérjük, győződj meg róla a fenti Zoom linken, hogy a Zoom telepítve van az eszközödre a hitelesítési folyamat előtt.",
@@ -34,13 +39,17 @@ export default function UserAgreement() {
       paymentsB: "Adatvédelmi nyilatkozatot",
       paymentsC: " és a ",
       paymentsD: "Felhasználói megállapodást",
+
+      // ★★★ Updated Refund Rule (HU) ★★★
       refund:
-        "Visszatérítési szabályzat: A nevezési díj semmilyen körülmények között nem visszatéríthető.",
+        "Visszatérítési szabályzat: A nevezési díj normál körülmények között nem visszatéríthető. Amennyiben bármilyen előre nem látható okból a GrandLucky Travel versenye vagy az utazás megrendezésére vagy teljesítésére nem kerülhet sor, minden fizető résztvevő teljes visszatérítést kap 14 napon belül, a hivatalos lemondási bejelentéstől számítva.",
+
       agreeLbl:
         "Elolvastam és elfogadom a Szabályokat és a Felhasználói Feltételeket",
       back: "VISSZA",
       next: "TOVÁBB A FIZETÉSHEZ",
     },
+
     en: {
       langBtn: "MAGYAR",
       titleScript: "Rules & Terms of Use",
@@ -48,12 +57,17 @@ export default function UserAgreement() {
       rules: [
         "You must be at least 18 years old to register.",
         "You cannot be a family member of GrandLucky Travel, Vivko, or Grand Slam Travel.",
-        "The winner of the contest and their companion must obtain an ESTA or tourist visa (Grand Slam Travel assists with the application).",
+
+        // ★★★ Updated Rule 3 (EN) ★★★
+        "If the winner and their companion do not already have a valid ESTA or tourist visa, they must start the application process (Grand Slam Travel assists with the application) on the first workday after the live contest day.",
+
         "Grand Slam Travel, Vivko, and GrandLucky Travel are not responsible if the contest winner’s or companion’s ESTA/VISA is denied. In such a case, the next place winner will travel.",
         "While in the United States, the winner and companion must follow all US laws and regulations.",
         "The second round of the contest will be a live-streamed event on various digital platforms. Contestants agree to attend this live event.",
         "Media consent: the Winner and companion consent that photos/videos from verification and the trip may be shared on Vivko’s and Grand Slam Travel’s social media and the GrandLucky Travel webpage.",
-        "Deadline to enter Round 2 Live contest: a contestant has 5 minutes to join the Round 2 live contest after the event starts; otherwise another contestant who completed the first round will get a chance to compete. Contestants for the 2nd round will join the contest on the Zoom digital platform.",
+
+        // ★★★ Updated Rule 8 (EN) ★★★
+        "Deadline to enter Round 2 Live contest: a contestant has to sign in to the Zoom platform 30 minutes before the Round 2 live contest event starts for a verification process; otherwise another contestant who completed the first round will get a chance to compete. Contestants will be placed in a waiting chat room where the verification takes place."
       ],
       note:
         "Note: Please ensure Zoom is installed on your device via the link above before verification.",
@@ -65,7 +79,11 @@ export default function UserAgreement() {
       paymentsB: "Privacy Statement",
       paymentsC: " and ",
       paymentsD: "User Agreement",
-      refund: "Refund policy: The entry fee is non-refundable in all cases.",
+
+      // ★★★ Updated Refund Rule (EN) ★★★
+      refund:
+        "Refund policy: The entry fee is non-refundable under normal circumstances. However, if for any unexpected reason the GrandLucky Travel contest or the trip cannot be held or fulfilled, all participants who paid the entry fee will receive a full refund within 14 days from the official cancellation announcement.",
+
       agreeLbl: "I’ve read and accept the Rules and Terms of Use",
       back: "BACK",
       next: "PROCEED TO PAYMENT",
@@ -74,7 +92,6 @@ export default function UserAgreement() {
 
   const c = t[lang];
 
-  // Locale-aware PayPal legal links (Hungary jurisdiction)
   const privacyHref =
     lang === "hu"
       ? "https://www.paypal.com/hu/legalhub/paypal/privacy-full"
@@ -90,6 +107,7 @@ export default function UserAgreement() {
       <Head>
         <title>GrandLuckyTravel — {c.titleScript}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Montserrat:wght@500;700;900&display=swap"
@@ -133,6 +151,7 @@ export default function UserAgreement() {
 
         <h2 className="h2">{c.termsH}</h2>
         <p className="p">{c.privacy}</p>
+
         <p className="p">
           {c.paymentsA}
           <a
@@ -154,6 +173,7 @@ export default function UserAgreement() {
           </a>
           .
         </p>
+
         <p className="p">{c.refund}</p>
 
         <label className="agree">
@@ -169,6 +189,7 @@ export default function UserAgreement() {
           <Link href="/vivko" legacyBehavior>
             <a className="btn ghost">{c.back}</a>
           </Link>
+
           <button
             className="btn"
             disabled={!agree}
@@ -180,36 +201,30 @@ export default function UserAgreement() {
       </section>
 
       <style jsx>{`
-        :global(:root) {
-          --paper: #f6a83b;
-          --paper-deep: #e79a2f;
-          --ink: #222;
-          --muted: rgba(0, 0, 0, 0.76);
-          --chip: #fff;
-          --chip-border: #e8e8e8;
+        :global(html), :global(body) {
+          height: auto !important;
+          overflow-y: auto !important;
         }
 
         .wrap {
           min-height: 100dvh;
-          background: var(--paper);
+          background: #f6a83b;
           font-family: "Montserrat", system-ui, sans-serif;
-          color: var(--ink);
+          color: #222;
           position: relative;
           overflow-x: hidden;
         }
 
-        /* language */
         .lang {
           position: fixed;
           top: clamp(14px, 2.2vw, 24px);
           right: clamp(14px, 2.2vw, 24px);
-          z-index: 4;
+          z-index: 10;
           background: #ffdca7;
-          border: 3px solid var(--paper-deep);
+          border: 3px solid #e79a2f;
           padding: 12px 20px;
           border-radius: 999px;
           font-weight: 900;
-          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12), inset 0 2px 0 #fff6;
         }
 
         .container {
@@ -220,8 +235,8 @@ export default function UserAgreement() {
         .title {
           margin: 0 0 10px;
         }
+
         .script {
-          display: inline-block;
           font: 700 clamp(40px, 5.2vw, 56px) "Caveat", cursive;
           color: #fff;
           text-shadow: 0 2px 0 rgba(0, 0, 0, 0.18);
@@ -239,43 +254,27 @@ export default function UserAgreement() {
           display: grid;
           gap: 6px;
           font-size: clamp(16px, 1.6vw, 18px);
-          color: var(--muted);
-        }
-        .list li {
-          padding-left: 6px;
-          line-height: 1.45;
+          color: rgba(0,0,0,0.76);
         }
 
         .note {
           margin: 6px 0 18px;
           font-style: italic;
-          color: var(--muted);
-          font-size: clamp(14px, 1.4vw, 16px);
+          color: rgba(0, 0, 0, 0.76);
         }
 
         .p {
           margin: 6px 0;
-          color: var(--muted);
           font-size: clamp(16px, 1.6vw, 18px);
+          color: rgba(0, 0, 0, 0.76);
           line-height: 1.55;
-        }
-        .link {
-          color: #1a1a1a;
-          font-weight: 800;
-          text-decoration: underline;
         }
 
         .agree {
           margin-top: 14px;
           display: flex;
           gap: 10px;
-          align-items: flex-start;
           font-weight: 700;
-        }
-        .agree input {
-          margin-top: 4px;
-          width: 18px;
-          height: 18px;
         }
 
         .actions {
@@ -284,45 +283,41 @@ export default function UserAgreement() {
           margin-top: 16px;
           flex-wrap: wrap;
         }
+
         .btn {
-          appearance: none;
-          border: 3px solid var(--paper-deep);
+          border: 3px solid #e79a2f;
           background: #ffdca7;
-          color: var(--ink);
-          font-weight: 900;
           border-radius: 999px;
+          font-weight: 900;
           padding: 14px 22px;
-          text-transform: uppercase;
-          box-shadow: 0 14px 26px rgba(0, 0, 0, 0.16), inset 0 2px 0 #fff6;
-        }
-        .btn:disabled {
-          opacity: 0.45;
-          cursor: not-allowed;
-        }
-        .btn.ghost {
-          background: #fff;
-          border-color: var(--chip-border);
         }
 
-        /* doodles */
+        .btn.ghost {
+          background: #fff;
+          border-color: #e8e8e8;
+        }
+
         .plane,
         .passport,
         .camera {
           position: absolute;
           pointer-events: none;
-          filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.12));
+          filter: drop-shadow(0 4px 0 rgba(0,0,0,0.12));
         }
+
         .plane {
           top: clamp(78px, 9vw, 120px);
           right: clamp(36px, 7vw, 100px);
           width: clamp(180px, 18vw, 260px);
         }
+
         .passport {
           right: clamp(200px, 18vw, 330px);
           bottom: clamp(54px, 6vw, 84px);
           width: clamp(90px, 9vw, 140px);
           transform: rotate(18deg);
         }
+
         .camera {
           right: clamp(44px, 6vw, 84px);
           bottom: clamp(36px, 6vw, 84px);
@@ -331,26 +326,16 @@ export default function UserAgreement() {
         }
 
         @media (max-width: 900px) {
-          .script {
-            color: #222;
-            text-shadow: none;
-          }
-          .plane {
-            width: 160px;
-            right: 16px;
-            top: 16px;
-          }
           .passport,
           .camera {
             display: none;
           }
           .container {
-            width: calc(100vw - 28px);
             margin: 18px auto;
+            width: calc(100vw - 28px);
           }
           .actions .btn {
             width: 100%;
-            justify-content: center;
           }
         }
       `}</style>
