@@ -6,159 +6,175 @@ import { useState } from "react";
 export default function WinnersPage() {
   const [lang, setLang] = useState("hu");
 
-  const STR = {
+  const t = {
     hu: {
-      titleTop: "Ő az előző játék nyertese:",
+      badge: "Ő az előző játék nyertese:",
       name: "Napsugár Budapestről",
-      p1: "Napsugár és a párja Vivkóval együtt fedezik fel New York adventi hangulatát.",
-      p2: "Gratulálunk! Találkozz velünk a következő fordulóban — most egy új nyereményjáték indul.",
-      ctaPrimary: "TOVÁBB A RÉSZLETEKHEZ",
-      ctaSecondary: "VISSZA A KEZDŐLAPRA",
-      langHU: "HU",
-      langEN: "EN",
+      line1:
+        "Napsugár és a párja Vivkóval együtt fedezik fel New York adventi hangulatát.",
+      line2:
+        "Gratulálunk! Találkozz velünk a következő fordulóban — most egy új nyereményjáték indul.",
+      cta1: "TOVÁBB A RÉSZLETEKHEZ",
+      cta2: "VISSZA A KEZDŐLAPRA",
     },
     en: {
-      titleTop: "Winner of the previous contest:",
+      badge: "Winner of the previous contest:",
       name: "Napsugár from Budapest",
-      p1: "Napsugár and her boyfriend will explore New York’s Advent season with Vivko.",
-      p2: "Congratulations! See you in the next round — a brand-new contest starts now.",
-      ctaPrimary: "GO TO DETAILS",
-      ctaSecondary: "BACK TO HOME",
-      langHU: "HU",
-      langEN: "EN",
+      line1:
+        "Napsugár and her boyfriend will explore New York’s Advent season with Vivko.",
+      line2:
+        "Congratulations! See you in the next round — a brand-new contest starts now.",
+      cta1: "GO TO DETAILS",
+      cta2: "BACK TO HOME",
     },
   };
 
-  const t = STR[lang];
+  const c = t[lang];
 
   return (
-    <main className="page">
+    <main className={`winners-hero ${lang === "hu" ? "is-hu" : "is-en"}`}>
       <Head>
         <title>GrandLucky Travel — Winner</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Montserrat:wght@500;700;900&display=swap"
+        />
       </Head>
 
-      <div className="lang">
-        <button
-          className={`chip ${lang === "hu" ? "active" : ""}`}
-          onClick={() => setLang("hu")}
-        >
-          {t.langHU}
-        </button>
-        <button
-          className={`chip ${lang === "en" ? "active" : ""}`}
-          onClick={() => setLang("en")}
-        >
-          {t.langEN}
-        </button>
-      </div>
+      {/* Background layer handled in CSS ::before */}
 
-      <div className="wrap">
-        <section className="card">
-          <h2 className="titleTop">{t.titleTop}</h2>
-          <h1 className="name">{t.name}</h1>
-          <p className="p">{t.p1}</p>
-          <p className="p">{t.p2}</p>
+      <div className="content">
+        {/* language toggle */}
+        <div className="lang">
+          <button className={lang === "hu" ? "active" : ""} onClick={() => setLang("hu")}>
+            HU
+          </button>
+          <button className={lang === "en" ? "active" : ""} onClick={() => setLang("en")}>
+            EN
+          </button>
+        </div>
 
-          <div className="actions">
-            <Link href="/vivko" legacyBehavior>
-              <a className="btn primary">{t.ctaPrimary}</a>
-            </Link>
-            <Link href="/" legacyBehavior>
-              <a className="btn">{t.ctaSecondary}</a>
-            </Link>
-          </div>
-        </section>
+        <div className="wrap">
+          {/* left card */}
+          <section className="card">
+            <p className="badge">{c.badge}</p>
+            <h1 className="name">{c.name}</h1>
+            <p className="p">{c.line1}</p>
+            <p className="p">{c.line2}</p>
 
-        <div className="photo">
-          <img
-            src="/winners/napsugar.jpg"
-            alt="Napsugár — GrandLucky Travel winner"
-          />
+            <div className="actions">
+              <Link href="/vivko" legacyBehavior>
+                <a className="btn primary">{c.cta1}</a>
+              </Link>
+              <Link href="/" legacyBehavior>
+                <a className="btn ghost">{c.cta2}</a>
+              </Link>
+            </div>
+          </section>
+
+          {/* right photo */}
+          <figure className="photo">
+            {/* NOTE: filename is case-sensitive on Vercel */}
+            <img src="/winners/napsugar.JPG" alt="Napsugár — GrandLucky Travel winner" />
+          </figure>
         </div>
       </div>
 
       <style jsx>{`
         :global(:root) {
-          --ink: #111;
-          --muted: rgba(0, 0, 0, 0.7);
-          --card: #fff;
-          --beige: #fff7ea;
+          --beige: #fff6e6;
+          --shadow: rgba(0, 0, 0, 0.12);
+          --muted: #444;
           --yellow: #ffbf3b;
           --yellow-border: #eaa21a;
-          --border: #eee2c9;
         }
 
-        .page {
+        .winners-hero {
+          position: relative;
           min-height: 100dvh;
+          display: grid;
+          align-items: start;
+          isolation: isolate;
+          color: #111;
+        }
+
+        /* full-bleed background image + soft overlay */
+        .winners-hero::before {
+          content: "";
+          position: fixed;
+          inset: 0;
           background:
-            linear-gradient(180deg, #fffdf8 0%, #fff7e6 100%),
-            url("/bg-advent.jpg") center/cover no-repeat fixed;
-          color: var(--ink);
+            linear-gradient(0deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.86)),
+            url("/winners/bg-winner.jpg") center / cover no-repeat;
+          z-index: -2;
+        }
+        /* warm vignette around edges for depth */
+        .winners-hero::after {
+          content: "";
+          position: fixed;
+          inset: 0;
+          box-shadow: inset 0 0 180px rgba(0, 0, 0, 0.12);
+          z-index: -1;
+          pointer-events: none;
+        }
+
+        .content {
+          width: min(1200px, 92vw);
+          margin: clamp(18px, 3vw, 28px) auto;
         }
 
         .lang {
-          position: sticky;
-          top: 0;
-          z-index: 5;
           display: flex;
           gap: 8px;
           justify-content: flex-end;
-          max-width: 1180px;
-          margin: 10px auto 0;
-          padding: 10px 14px;
+          margin-bottom: clamp(10px, 1.6vw, 14px);
         }
-        .chip {
-          padding: 8px 14px;
+        .lang button {
+          padding: 6px 10px;
           border-radius: 999px;
           border: 1px solid #e5e7eb;
           background: #fff;
-          font-weight: 800;
-          font-size: 12px;
+          font: 700 12px/1 "Montserrat", system-ui, sans-serif;
           cursor: pointer;
         }
-        .chip.active {
-          background: var(--yellow);
-          border-color: var(--yellow-border);
+        .lang .active {
+          border-color: #111;
         }
 
         .wrap {
-          max-width: 1180px;
-          margin: 26px auto 56px;
-          padding: 0 14px;
           display: grid;
-          grid-template-columns: 1.05fr 0.95fr;
-          gap: clamp(16px, 3vw, 36px);
-          align-items: start;
+          grid-template-columns: 1.1fr 1fr;
+          gap: clamp(20px, 3vw, 30px);
+          align-items: center;
         }
 
         .card {
-          background: var(--card);
-          border: 1px solid var(--border);
-          border-radius: 16px;
-          padding: clamp(16px, 3.2vw, 26px);
-          box-shadow: 0 14px 28px rgba(0, 0, 0, 0.08);
+          background: #fff;
+          border-radius: 14px;
+          padding: clamp(18px, 2.6vw, 24px);
+          box-shadow: 0 10px 30px var(--shadow);
         }
-        .titleTop {
-          font: 700 clamp(18px, 2vw, 22px) "Caveat", ui-sans-serif;
-          color: #f0a800;
+        .badge {
+          font: 700 clamp(18px, 2.2vw, 22px) "Caveat", cursive;
+          color: var(--yellow);
           margin: 0 0 6px;
+          text-shadow: 0 1px 0 #fff;
         }
         .name {
-          margin: 0 0 10px;
-          font: 900 clamp(22px, 3vw, 30px) ui-sans-serif;
+          font: 900 clamp(26px, 3.2vw, 34px) "Montserrat", system-ui, sans-serif;
+          margin: 0 0 8px;
         }
         .p {
-          margin: 8px 0;
+          margin: 6px 0;
           color: var(--muted);
-          line-height: 1.5;
+          font: 500 16px/1.55 "Montserrat", system-ui, sans-serif;
         }
 
         .actions {
-          margin-top: 14px;
           display: flex;
-          gap: 12px;
-          flex-wrap: wrap;
+          gap: 10px;
+          margin-top: clamp(12px, 1.8vw, 16px);
         }
         .btn {
           display: inline-flex;
@@ -166,40 +182,56 @@ export default function WinnersPage() {
           justify-content: center;
           padding: 12px 18px;
           border-radius: 999px;
-          font: 800 12px/1 ui-sans-serif;
+          font: 900 12px/1 "Montserrat", system-ui, sans-serif;
           text-transform: uppercase;
           text-decoration: none;
-          color: #222;
-          background: #fff;
-          border: 1px solid #e5e7eb;
+          transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+          border: 3px solid var(--yellow-border);
         }
         .btn.primary {
           background: linear-gradient(180deg, #ffd767 0%, #ffbf3b 100%);
-          border: 3px solid var(--yellow-border);
-          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12),
-            inset 0 1.5px 0 rgba(255, 255, 255, 0.6);
+          color: #1b1b1b;
+          box-shadow:
+            0 10px 20px rgba(0, 0, 0, 0.14),
+            inset 0 1.5px 0 rgba(255, 255, 255, 0.55);
+        }
+        .btn.primary:hover {
+          transform: translateY(-2px);
+          filter: saturate(1.05);
+        }
+        .btn.ghost {
+          background: #fff;
+          color: #1b1b1b;
+          border-color: #e5e7eb;
         }
 
         .photo {
-          display: grid;
-          place-items: center;
-          padding: clamp(6px, 1vw, 10px);
+          margin: 0;
+          position: relative;
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
         }
         .photo img {
           display: block;
-          width: min(520px, 40vw);
+          width: 100%;
           height: auto;
-          border-radius: 14px;
-          box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
-          background: var(--beige);
         }
 
+        /* mobile */
         @media (max-width: 980px) {
           .wrap {
             grid-template-columns: 1fr;
+            gap: 16px;
           }
-          .photo img {
-            width: min(640px, 92vw);
+          .photo {
+            order: 2;
+          }
+          .card {
+            order: 1;
+          }
+          .lang {
+            justify-content: center;
           }
         }
       `}</style>
