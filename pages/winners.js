@@ -1,227 +1,189 @@
-// pages/winners.js
-import Head from "next/head";
-import Link from "next/link";
-import { useState } from "react";
-
 export default function WinnersPage() {
-  const [lang, setLang] = useState("hu");
-
-  const t = {
-    hu: {
-      badge: "Ő az előző játék nyertese:",
-      name: "Napsugár Budapestről",
-      line1:
-        "Napsugár és a párja Vivkóval együtt fedezik fel New York adventi hangulatát.",
-      line2:
-        "Gratulálunk! Találkozz velünk a következő fordulóban — most egy új nyereményjáték indul.",
-      cta1: "TOVÁBB A RÉSZLETEKHEZ",
-      cta2: "VISSZA A KEZDŐLAPRA",
-    },
-    en: {
-      badge: "Winner of the previous contest:",
-      name: "Napsugár from Budapest",
-      line1:
-        "Napsugár and her boyfriend will explore New York’s Advent season with Vivko.",
-      line2:
-        "Congratulations! See you in the next round — a brand-new contest starts now.",
-      cta1: "GO TO DETAILS",
-      cta2: "BACK TO HOME",
-    },
-  };
-
-  const c = t[lang];
+  const isEN =
+    typeof window !== "undefined" &&
+    (location.search.includes("lang=en") ||
+      document.documentElement.lang === "en");
 
   return (
-    <main className={`winners-hero ${lang === "hu" ? "is-hu" : "is-en"}`}>
-      <Head>
-        <title>GrandLucky Travel — Winner</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Montserrat:wght@500;700;900&display=swap"
+    <main>
+      <div className="bg">
+        <img
+          src="/bg-advent.jpg"
+          alt="Festive New York background"
+          className="bg-img"
+          loading="eager"
         />
-      </Head>
+        <div className="scrim" />
+      </div>
 
-      <div className="content">
-        <div className="lang">
-          <button className={lang === "hu" ? "active" : ""} onClick={() => setLang("hu")}>
-            HU
-          </button>
-          <button className={lang === "en" ? "active" : ""} onClick={() => setLang("en")}>
-            EN
-          </button>
-        </div>
+      <div className="wrap">
+        <section className="card">
+          <p className="badge">
+            {isEN ? "PREVIOUS CONTEST WINNER" : "AZ ELOZO JATEK NYERTESE"}
+          </p>
 
-        <div className="wrap">
-          <section className="card">
-            <p className="badge">{c.badge}</p>
-            <h1 className="name">{c.name}</h1>
-            <p className="p">{c.line1}</p>
-            <p className="p">{c.line2}</p>
+          <h1>{isEN ? "Napsugár from Budapest" : "Napsugár Budapestről"}</h1>
 
-            <div className="actions">
-              <Link href="/vivko" legacyBehavior>
-                <a className="btn primary">{c.cta1}</a>
-              </Link>
-              <Link href="/" legacyBehavior>
-                <a className="btn ghost">{c.cta2}</a>
-              </Link>
-            </div>
-          </section>
+          <p className="lead">
+            {isEN
+              ? "Napsugár and her boyfriend will explore New York’s Advent season with Vivko."
+              : "Napsugár és a párja Vivkóval együtt fedezik fel New York adventi hangulatát."}
+          </p>
 
-          <figure className="photo">
-            <img src="/winners/napsugar.jpg" alt="Napsugár — GrandLucky Travel winner" />
-          </figure>
-        </div>
+          <p className="lead">
+            {isEN
+              ? "Congratulations! See you in the next round — a new prize game starts now."
+              : "Gratulálunk! Találkozz velünk a következő fordulóban — most egy új nyereményjáték indul."}
+          </p>
+
+          <div className="actions">
+            <a href={isEN ? "/vivko?lang=en" : "/vivko"} className="btn">
+              {isEN ? "Go to details" : "Tovább a részletekhez"}
+            </a>
+            <a href={isEN ? "/?lang=en" : "/"} className="btn ghost">
+              {isEN ? "Back to home" : "Vissza a kezdőlapra"}
+            </a>
+          </div>
+        </section>
+
+        <figure className="photo">
+          <img
+            src="/winners/napsugar.jpg"
+            alt="Napsugár — GrandLucky Travel winner"
+            loading="eager"
+          />
+        </figure>
       </div>
 
       <style jsx>{`
-        :global(:root) {
-          --beige: #fff6e6;
-          --shadow: rgba(0, 0, 0, 0.12);
-          --muted: #444;
-          --yellow: #ffbf3b;
-          --yellow-border: #eaa21a;
+        main {
+          position: relative;
+          min-height: 100vh;
+          overflow: hidden;
         }
 
-        .winners-hero {
-          position: relative;
-          min-height: 100dvh;
-          display: grid;
-          align-items: start;
-          isolation: isolate;
-          color: #111;
-        }
-        .winners-hero::before {
-          content: "";
+        /* ---- Background: sharp (NO BLUR) ---- */
+        .bg {
           position: fixed;
           inset: 0;
-          background:
-            linear-gradient(0deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.86)),
-            url("/winners/bg-winner.jpg") center / cover no-repeat;
-          z-index: -2;
+          z-index: 0;
         }
-        .winners-hero::after {
-          content: "";
-          position: fixed;
+        .bg-img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transform: translateZ(0); /* ensure crisp rendering */
+          filter: none; /* <- no blur */
+        }
+        .scrim {
+          position: absolute;
           inset: 0;
-          box-shadow: inset 0 0 180px rgba(0, 0, 0, 0.12);
-          z-index: -1;
+          background: linear-gradient(
+            rgba(255, 255, 255, 0.80),
+            rgba(255, 255, 255, 0.80)
+          ); /* gentle readability layer */
           pointer-events: none;
         }
 
-        .content {
-          width: min(1200px, 92vw);
-          margin: clamp(18px, 3vw, 28px) auto;
-        }
-
-        .lang {
-          display: flex;
-          gap: 8px;
-          justify-content: flex-end;
-          margin-bottom: clamp(10px, 1.6vw, 14px);
-        }
-        .lang button {
-          padding: 6px 10px;
-          border-radius: 999px;
-          border: 1px solid #e5e7eb;
-          background: #fff;
-          font: 700 12px/1 "Montserrat", system-ui, sans-serif;
-          cursor: pointer;
-        }
-        .lang .active {
-          border-color: #111;
-        }
-
+        /* ---- Content layout ---- */
         .wrap {
+          position: relative;
+          z-index: 1;
           display: grid;
-          grid-template-columns: 1.1fr 1fr;
-          gap: clamp(20px, 3vw, 30px);
-          align-items: center;
+          grid-template-columns: 1fr 560px;
+          gap: 28px;
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 48px 20px 80px;
         }
 
         .card {
+          align-self: center;
           background: #fff;
           border-radius: 14px;
-          padding: clamp(18px, 2.6vw, 24px);
-          box-shadow: 0 10px 30px var(--shadow);
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+          padding: 28px 28px 26px;
         }
+
         .badge {
-          font: 700 clamp(18px, 2.2vw, 22px) "Caveat", cursive;
-          color: var(--yellow);
-          margin: 0 0 6px;
-          text-shadow: 0 1px 0 #fff;
+          display: inline-block;
+          font-weight: 800;
+          letter-spacing: 0.4px;
+          font-size: 14px;
+          color: #f1b11b;
+          padding: 8px 14px;
+          border-radius: 999px;
+          border: 2px solid #f1b11b;
+          background: #fff7e0;
+          margin: 0 0 12px 0;
+          text-transform: uppercase;
         }
-        .name {
-          font: 900 clamp(26px, 3.2vw, 34px) "Montserrat", system-ui, sans-serif;
-          margin: 0 0 8px;
+
+        h1 {
+          font-size: clamp(26px, 3.4vw, 36px);
+          line-height: 1.15;
+          margin: 6px 0 12px;
+          font-weight: 900;
+          color: #111;
         }
-        .p {
-          margin: 6px 0;
-          color: var(--muted);
-          font: 500 16px/1.55 "Montserrat", system-ui, sans-serif;
+
+        .lead {
+          font-size: 16px;
+          line-height: 1.55;
+          color: #333;
+          margin: 10px 0;
         }
 
         .actions {
           display: flex;
-          gap: 10px;
-          margin-top: clamp(12px, 1.8vw, 16px);
+          gap: 14px;
+          margin-top: 18px;
         }
+
         .btn {
           display: inline-flex;
           align-items: center;
           justify-content: center;
           padding: 12px 18px;
           border-radius: 999px;
-          font: 900 12px/1 "Montserrat", system-ui, sans-serif;
-          text-transform: uppercase;
+          font-weight: 800;
           text-decoration: none;
-          transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
-          border: 3px solid var(--yellow-border);
-        }
-        .btn.primary {
-          background: linear-gradient(180deg, #ffd767 0%, #ffbf3b 100%);
-          color: #1b1b1b;
-          box-shadow:
-            0 10px 20px rgba(0, 0, 0, 0.14),
+          border: 2px solid #f1b11b;
+          background: linear-gradient(180deg, #ffd667 0%, #ffb92f 100%);
+          color: #192200;
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12),
             inset 0 1.5px 0 rgba(255, 255, 255, 0.55);
-        }
-        .btn.primary:hover {
-          transform: translateY(-2px);
-          filter: saturate(1.05);
         }
         .btn.ghost {
           background: #fff;
-          color: #1b1b1b;
-          border-color: #e5e7eb;
+          border-color: #d7d7d7;
+          color: #111;
         }
 
         .photo {
+          align-self: center;
           margin: 0;
-          position: relative;
-          border-radius: 16px;
-          overflow: hidden;
-          box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+          background: #fff;
+          border-radius: 18px;
+          padding: 10px;
+          box-shadow: 0 24px 60px rgba(0, 0, 0, 0.14);
         }
         .photo img {
           display: block;
           width: 100%;
           height: auto;
+          border-radius: 12px;
         }
 
         @media (max-width: 980px) {
           .wrap {
             grid-template-columns: 1fr;
-            gap: 16px;
           }
           .photo {
             order: 2;
           }
           .card {
             order: 1;
-          }
-          .lang {
-            justify-content: center;
           }
         }
       `}</style>
