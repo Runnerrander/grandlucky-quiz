@@ -374,7 +374,21 @@ export default function Vivko() {
           --top-pad: clamp(26px, 6.0vw, 80px);
         }
         .s-draw .text {
-          --top-pad: clamp(48px, 8.2vw, 110px);
+          /* FULL-WIDTH dark panel on slide 4 */
+          max-width: none;
+          width: 100%;
+          margin-left: 0;
+          margin-right: 0;
+          padding: clamp(18px, 2.4vw, 26px)
+            clamp(24px, 6.2vw, 80px); /* top/bottom, left/right */
+          background: linear-gradient(
+            to bottom,
+            rgba(0, 0, 0, 0.9),
+            rgba(0, 0, 0, 0.78),
+            rgba(0, 0, 0, 0.6),
+            rgba(0, 0, 0, 0.5)
+          );
+          border-radius: 0;
         }
 
         .title {
@@ -425,24 +439,12 @@ export default function Vivko() {
           color: #fff;
         }
 
-        /* === Slide 4 (draw) — phases + sub yellow and panel behind all text === */
+        /* === Slide 4 (draw) — phases + sub yellow === */
         .s-draw .phase,
         .s-draw .sub {
           color: var(--yellow);
           text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4),
             0 2px 6px rgba(0, 0, 0, 0.38);
-        }
-
-        .s-draw .text {
-          background: linear-gradient(
-            to bottom,
-            rgba(0, 0, 0, 0.85),
-            rgba(0, 0, 0, 0.7),
-            rgba(0, 0, 0, 0.5),
-            rgba(0, 0, 0, 0.4)
-          );
-          padding: clamp(18px, 2.4vw, 26px);
-          border-radius: 18px;
         }
 
         .row {
@@ -620,6 +622,11 @@ export default function Vivko() {
           .btn {
             font-size: 12px;
             padding: 12px 20px;
+          }
+
+          .s-draw .text {
+            /* on mobile we let it behave like full-width card with some rounding */
+            border-radius: 18px;
           }
 
           .text-draw {
