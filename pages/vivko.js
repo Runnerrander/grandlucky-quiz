@@ -336,14 +336,14 @@ export default function Vivko() {
         /* REMOVE overlay/plate where requested (Slides 1–3) */
         .s-heart::before,
         .s-bridge::before {
-          background: none !important; /* Slide 1 & 3: no blur overlay */
+          background: none !important;
         }
         .s-times::before,
         .s-times.blur-left::before {
-          background: none !important; /* Slide 2: no blur overlay */
+          background: none !important;
         }
         .s-times::after {
-          content: none !important; /* remove plate entirely */
+          content: none !important;
           display: none !important;
         }
 
@@ -366,7 +366,7 @@ export default function Vivko() {
           z-index: 2;
           max-width: min(980px, 86vw);
           margin-left: clamp(24px, 6.2vw, 80px);
-          --top-pad: clamp(38px, 7.2vw, 100px); /* Desktop default */
+          --top-pad: clamp(38px, 7.2vw, 100px);
           padding-top: var(--top-pad);
           display: block;
         }
@@ -374,21 +374,14 @@ export default function Vivko() {
           --top-pad: clamp(26px, 6.0vw, 80px);
         }
         .s-draw .text {
-          /* FULL-WIDTH dark panel on slide 4 */
+          --top-pad: clamp(48px, 8.2vw, 110px);
+          /* Solid dark overlay and FULL width with side margins on desktop */
+          background: rgba(0, 0, 0, 0.82);
+          padding: clamp(18px, 2.4vw, 26px);
+          border-radius: 18px;
           max-width: none;
-          width: 100%;
-          margin-left: 0;
-          margin-right: 0;
-          padding: clamp(18px, 2.4vw, 26px)
-            clamp(24px, 6.2vw, 80px); /* top/bottom, left/right */
-          background: linear-gradient(
-            to bottom,
-            rgba(0, 0, 0, 0.9),
-            rgba(0, 0, 0, 0.78),
-            rgba(0, 0, 0, 0.6),
-            rgba(0, 0, 0, 0.5)
-          );
-          border-radius: 0;
+          margin-left: clamp(16px, 4vw, 40px);
+          margin-right: clamp(16px, 4vw, 40px);
         }
 
         .title {
@@ -431,7 +424,7 @@ export default function Vivko() {
             0 2px 6px rgba(0, 0, 0, 0.18);
         }
 
-        /* === Slide 2 (times) — make title & subtitle white (HU & EN) === */
+        /* === Slide 2 (times) — make title & subtitle white === */
         .s-times .strong {
           color: #fff;
         }
@@ -481,16 +474,15 @@ export default function Vivko() {
         /* ---------- Slide 4 (draw) — GRID so middle scrolls, buttons stay visible ---------- */
         .text-draw {
           display: grid;
-          grid-template-rows: auto 1fr auto; /* title | scroll | buttons */
+          grid-template-rows: auto 1fr auto;
           gap: 10px;
           max-height: calc(
-            100svh - var(--top-pad) -
-              max(12px, env(safe-area-inset-bottom))
+            100svh - var(--top-pad) - max(12px, env(safe-area-inset-bottom))
           );
           padding-bottom: max(8px, env(safe-area-inset-bottom));
         }
         .text-draw .subwrap {
-          min-height: 0; /* so 1fr can shrink and scroll */
+          min-height: 0;
           overflow: auto;
           -webkit-overflow-scrolling: touch;
           padding-right: 4px;
@@ -529,7 +521,7 @@ export default function Vivko() {
           text-decoration: underline;
         }
 
-        /* === Slide 3 (bridge) — footer text & link white === */
+        /* Slide 3 footer white */
         .s-bridge .legal {
           color: #fff;
         }
@@ -537,7 +529,7 @@ export default function Vivko() {
           color: #fff;
         }
 
-        /* ---------- Laptop tuning (slides 1–3 ONLY) ---------- */
+        /* ---------- Laptop tuning (slides 1–3) ---------- */
         @media (min-width: 900px) and (max-width: 1400px) {
           .text {
             --top-pad: clamp(16px, 4.4vw, 56px);
@@ -624,22 +616,22 @@ export default function Vivko() {
             padding: 12px 20px;
           }
 
-          .s-draw .text {
-            /* on mobile we let it behave like full-width card with some rounding */
-            border-radius: 18px;
-          }
-
           .text-draw {
             max-height: calc(
               100svh - var(--top-pad) -
                 max(16px, env(safe-area-inset-bottom))
             );
           }
+
+          /* On mobile, pull Slide 4 panel back to centered narrow width */
+          .s-draw .text {
+            max-width: 92vw;
+            margin: 0 auto;
+          }
         }
 
-        /* ---------- ANDROID CHROME / TOUCH TABLET HARD OVERRIDE (slides 1–3) ---------- */
+        /* ---------- ANDROID CHROME / TOUCH TABLET HARD OVERRIDE ---------- */
         @media (min-width: 700px) and (max-width: 1400px) {
-          /* LANDSCAPE: stronger nudge + smaller top lines */
           @media (orientation: landscape) {
             .androidchrome.s-heart .text,
             .tpad.s-heart .text {
@@ -678,7 +670,6 @@ export default function Vivko() {
             }
           }
 
-          /* PORTRAIT: moderate nudge */
           @media (orientation: portrait) {
             .androidchrome.s-heart .text,
             .tpad.s-heart .text {
