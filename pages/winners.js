@@ -78,10 +78,10 @@ export default function WinnersPage() {
           padding: clamp(24px, 1.4vw, 28px);
           isolation: isolate; /* so ::before stays behind */
         }
-        /* sharp festive background placed behind content (desktop/tablet) */
+        /* festive background behind content (desktop/tablet) */
         .page::before {
           content: "";
-          position: fixed; /* stays put while scrolling */
+          position: fixed;
           inset: 0;
           background: url("/winners/bg-advent.jpg") center/cover no-repeat;
           z-index: -1;
@@ -126,6 +126,8 @@ export default function WinnersPage() {
           border-radius: 14px;
           padding: 22px 22px 20px;
           box-shadow: 0 14px 40px rgba(0, 0, 0, 0.13);
+          position: relative;
+          z-index: 2; /* always above photo */
         }
         .badge {
           display: inline-block;
@@ -168,6 +170,8 @@ export default function WinnersPage() {
           border-radius: 12px;
           box-shadow: 0 18px 46px rgba(0, 0, 0, 0.16);
           overflow: hidden;
+          position: relative;
+          z-index: 1;
         }
         .photo img {
           display: block;
@@ -181,7 +185,7 @@ export default function WinnersPage() {
             min-height: 100vh;
           }
 
-          /* use the winner photo as the full background on mobile */
+          /* use the winner photo as full background on mobile */
           .page::before {
             display: none;
           }
@@ -200,6 +204,8 @@ export default function WinnersPage() {
             inset: 0;
             border-radius: 0;
             box-shadow: none;
+            z-index: 0; /* behind card */
+            pointer-events: none;
           }
 
           .photo img {
@@ -209,7 +215,6 @@ export default function WinnersPage() {
           }
 
           .card {
-            position: relative;
             max-width: 92vw;
             margin: 0 auto;
             background: rgba(255, 255, 255, 0.95);
