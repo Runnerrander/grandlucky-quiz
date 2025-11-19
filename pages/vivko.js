@@ -83,11 +83,11 @@ export default function Vivko() {
         hScript: "",
         hStrongTop: "",
         phase1:
-          "1. forduló: Online kvíz, lezárás 2026. január 11. — 11:59 (CET)",
+          "1. forduló: Online kvíz, lezárás 2026. február 11. — 11:59 (CET)",
         phase2:
           "2. forduló: Online élő verseny, kezdés 2026. január 11. — 18:00 (CET)",
         phase3:
-          "3. Utazás: 2026. február 12–19. (8 nap / 6 éjszaka) New Yorkban és Washington DC-ben",
+          "3. Utazás: 2026. január 12–19. (8 nap / 6 éjszaka) New Yorkban és Washington DC-ben",
         sub:
           "A nyertes egy teljes körűen megszervezett, 8 nap 6 éjszakás utazást nyer New Yorkba és Washington DC-be, Vivkó és a Grand Slam Travel kíséretében.\n\nAz utazás teljes mértékben megszervezett, így sem tapasztalatra, sem nyelvtudásra nincs szükség. A nyeremény tartalmazza az ESTA ügyintézést, a repülőjegyeket, a transzfereket, a szállodát reggelivel, több nevezetesség belépőjét, valamint egy egynapos washingtoni kirándulást. Csak az ebédhez és vacsorához, illetve a költőpénzhez szükséges összeget kell magaddal hoznod.\n\nA rendszer a nyolc hét alatt minden héten kiválasztja azt az egy versenyzőt, aki az adott héten a legrövidebb idő alatt, hibátlanul teljesítette a kvízt. Ezen felül minden héten két további versenyző kerül tartaléklistára, az adott heti helyes kitöltési idők sorrendje alapján, arra az esetre, ha a heti győztes nem lépne be a 2. forduló élő versenyébe.\n\nAz első forduló lezárulta után minden, a kvízt sikeresen teljesítő felhasználónév felkerül a GrandLucky Travel weboldalára vagy aloldalára 2026. január 11-én 16:00-kor (CT) a befejezési időkkel együtt.",
         ui: "cta",
@@ -139,11 +139,11 @@ export default function Vivko() {
         hScript: "",
         hStrongTop: "",
         phase1:
-          "1st Round: Online trivia, closes January 11, 2026 — 11:59 AM (CET)",
+          "1st Round: Online trivia, closes February 11, 2026 — 11:59 AM (CET)",
         phase2:
           "2nd Round: Online Live Contest, starts January 11, 2026 — 18:00 (CET)",
         phase3:
-          "3. Travel: February 12–19, 2026 (8 days / 6 nights) in New York and Washington DC",
+          "3. Travel: January 12–19, 2026 (8 days / 6 nights) in New York and Washington DC",
         sub:
           "The winner will receive a fully organized 8-day, 6-night trip to New York and Washington DC, accompanied by Vivko and Grand Slam Travel.\n\nThe trip is fully organized, so no prior experience or language skills are required. The prize includes ESTA processing, flights, transfers, hotel with breakfast, tickets to several attractions, and a one-day trip to Washington DC. You only need to bring your own money for lunch, dinner, and spending money.\n\nDuring the eight weeks of the first round, the system will select one contestant each week who completed the trivia correctly in the shortest time in that given week. In addition, two more contestants will be placed on a standby list every week, based on their correct completion times for that week, in case the weekly winner does not enter Round 2 (the live contest).\n\nAfter the first round closes, all usernames that successfully completed the trivia will be listed on the GrandLucky Travel website or a subsite on January 11, 2026 at 16:00 CT, together with their completion times.",
         ui: "cta",
@@ -578,15 +578,18 @@ export default function Vivko() {
           .text {
             max-width: 92vw;
             margin: 0 auto;
-            --top-pad: clamp(22px, 8.5vw, 44px);
+            /* move text slightly higher on mobile */
+            --top-pad: clamp(16px, 7vw, 32px);
             padding-top: var(--top-pad);
+            padding-bottom: 8px;
             text-align: left;
           }
           .s-times .text {
-            --top-pad: clamp(18px, 7.8vw, 40px);
+            /* slide 2 specifically a bit higher */
+            --top-pad: clamp(12px, 6.8vw, 28px);
           }
           .s-bridge .text {
-            --top-pad: clamp(22px, 8.2vw, 42px);
+            --top-pad: clamp(18px, 7.4vw, 36px);
           }
 
           .lang {
@@ -596,10 +599,10 @@ export default function Vivko() {
           }
 
           .script {
-            font-size: clamp(44px, 10vw, 66px);
+            font-size: clamp(42px, 9.4vw, 64px);
           }
           .strong {
-            font-size: clamp(32px, 8.5vw, 48px);
+            font-size: clamp(30px, 7.8vw, 46px);
           }
           .phase {
             font-size: clamp(16px, 4.6vw, 22px);
@@ -607,6 +610,8 @@ export default function Vivko() {
           }
           .sub {
             font-size: clamp(16px, 4.4vw, 20px);
+            /* slightly reduce bottom margin to avoid pushing into buttons */
+            margin-bottom: 14px;
           }
           .row {
             gap: 10px;
