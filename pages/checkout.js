@@ -23,7 +23,7 @@ export default function CheckoutPage() {
       paypalBoxLines: [
         "A fizetéshez a PayPal oldalán biztonságosan megadhatod bankkártya-adataidat. A legtöbb esetben választható a „Kártyával fizetek” vagy „Fizetés vendégként” lehetőség, így nem szükséges PayPal-fiókot létrehozni.",
         "Fontos: a „Kártyával fizetek / Fizetés vendégként” gombot a PayPal rendszere automatikusan jeleníti meg. Előfordulhat, hogy egyes felhasználóknál nem látható, például ha a böngészőben korábban be voltál lépve PayPalra, ha a megadott email címhez már tartozik PayPal-fiók, vagy ha a tranzakciót a rendszer nagyobb kockázatúnak ítéli meg.",
-        "Ilyen ritka esetekben a PayPal megkövetelheti a bejelentkezést vagy egy PayPal-fiók létrehozását. Dönthetsz úgy, hogy belépsz egy meglévő fiókkal vagy újat hozol létre, és a sikeres fizetés után ugyanúgy megkapod a felhasználónevedet és jelszavadat a GrandLucky Travel összegző oldalán. Ha nem szeretnél fiókot, megpróbálhatod a fizetést egy másik böngészőben vagy eszközön, ahol megjelenhet a vendégfizetés opció. Ha kérdésed vagy bizonytalan vagy a fizetéssel kapcsolatban, kérjük, írj nekünk a support@grandluckytravel.com címre, és segítünk.",
+        "Ilyen ritka esetekben a PayPal megkövetelheti a bejelentkezést vagy egy PayPal-fiók létrehozását. Dönthetsz úgy, hogy belépsz egy meglévő fiókkal vagy újat hozol létre, és a sikeres fizetés után ugyanúgy megkapod a felhasználónevedet és jelszavadat a GrandLucky Travel összegző oldalán. Ha nem szeretnél fiókot, megpróbálhatod a fizetést egy másik böngészőben vagy eszközön, ahol megjelenhet a vendégfizetés opció. Ha kérdésed van vagy bizonytalan vagy a fizetéssel kapcsolatban, kérjük, írj nekünk a support@grandluckytravel.com címre, és segítünk.",
       ],
       agreeLabel:
         "Elolvastam és elfogadom a Szabályokat és a Felhasználói Feltételeket.",
@@ -367,7 +367,7 @@ export default function CheckoutPage() {
           bottom: clamp(36px, 6vw, 84px);
           width: clamp(120px, 12vw, 180px);
           transform: rotate(8deg);
-          zindex: 1;
+          z-index: 1;
         }
 
         @media (max-width: 900px) {
