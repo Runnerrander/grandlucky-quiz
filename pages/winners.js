@@ -78,7 +78,7 @@ export default function WinnersPage() {
           padding: clamp(24px, 1.4vw, 28px);
           isolation: isolate; /* so ::before stays behind */
         }
-        /* sharp festive background placed behind content */
+        /* sharp festive background placed behind content (desktop/tablet) */
         .page::before {
           content: "";
           position: fixed; /* stays put while scrolling */
@@ -94,6 +94,7 @@ export default function WinnersPage() {
           gap: 8px;
           justify-content: flex-end;
           margin-bottom: 16px;
+          z-index: 2;
         }
         .chip {
           border: 0;
@@ -116,6 +117,8 @@ export default function WinnersPage() {
           align-items: start;
           max-width: 1200px;
           margin: 0 auto;
+          position: relative;
+          z-index: 1;
         }
         .card {
           background: rgba(255, 255, 255, 0.94);
@@ -142,6 +145,7 @@ export default function WinnersPage() {
           display: flex;
           gap: 12px;
           margin-top: 16px;
+          flex-wrap: wrap;
         }
         .btn {
           display: inline-block;
@@ -172,14 +176,52 @@ export default function WinnersPage() {
         }
 
         @media (max-width: 990px) {
+          .page {
+            padding: 16px;
+            min-height: 100vh;
+          }
+
+          /* use the winner photo as the full background on mobile */
+          .page::before {
+            display: none;
+          }
+
           .wrap {
-            grid-template-columns: 1fr;
+            max-width: 100%;
+            margin: 0;
+            min-height: calc(100vh - 32px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
           }
+
           .photo {
-            order: 2;
+            position: absolute;
+            inset: 0;
+            border-radius: 0;
+            box-shadow: none;
           }
+
+          .photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+
           .card {
-            order: 1;
+            position: relative;
+            max-width: 92vw;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+          }
+
+          .actions {
+            flex-direction: column;
+          }
+          .btn,
+          .btn.ghost {
+            text-align: center;
+            width: 100%;
           }
         }
       `}</style>
