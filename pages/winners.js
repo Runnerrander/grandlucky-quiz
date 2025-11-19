@@ -199,14 +199,17 @@ export default function WinnersPage() {
             object-fit: cover; /* nice crop on mobile */
           }
 
+          /* Center and stack buttons on mobile */
           .actions {
             flex-direction: column;
             gap: 10px;
+            align-items: center; /* center the button group */
           }
 
           .btn,
           .btn.ghost {
             width: 100%;
+            max-width: 320px; /* keeps them nicely centered */
             text-align: center;
             white-space: normal; /* allow long HU text to wrap */
           }
