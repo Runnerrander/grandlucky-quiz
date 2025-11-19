@@ -78,7 +78,7 @@ export default function WinnersPage() {
           padding: clamp(24px, 1.4vw, 28px);
           isolation: isolate; /* so ::before stays behind */
         }
-        /* festive background behind content (desktop/tablet) */
+        /* festive background placed behind content (desktop + tablet) */
         .page::before {
           content: "";
           position: fixed;
@@ -117,8 +117,6 @@ export default function WinnersPage() {
           align-items: start;
           max-width: 1200px;
           margin: 0 auto;
-          position: relative;
-          z-index: 1;
         }
         .card {
           background: rgba(255, 255, 255, 0.94);
@@ -126,8 +124,6 @@ export default function WinnersPage() {
           border-radius: 14px;
           padding: 22px 22px 20px;
           box-shadow: 0 14px 40px rgba(0, 0, 0, 0.13);
-          position: relative;
-          z-index: 2; /* always above photo */
         }
         .badge {
           display: inline-block;
@@ -147,7 +143,6 @@ export default function WinnersPage() {
           display: flex;
           gap: 12px;
           margin-top: 16px;
-          flex-wrap: wrap;
         }
         .btn {
           display: inline-block;
@@ -170,8 +165,6 @@ export default function WinnersPage() {
           border-radius: 12px;
           box-shadow: 0 18px 46px rgba(0, 0, 0, 0.16);
           overflow: hidden;
-          position: relative;
-          z-index: 1;
         }
         .photo img {
           display: block;
@@ -185,27 +178,19 @@ export default function WinnersPage() {
             min-height: 100vh;
           }
 
-          /* use the winner photo as full background on mobile */
-          .page::before {
-            display: none;
+          .wrap {
+            grid-template-columns: 1fr;
+            max-width: 100%;
+            margin: 0 auto;
           }
 
-          .wrap {
-            max-width: 100%;
-            margin: 0;
-            min-height: calc(100vh - 32px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+          .card {
+            margin-bottom: 12px;
           }
 
           .photo {
-            position: absolute;
-            inset: 0;
-            border-radius: 0;
-            box-shadow: none;
-            z-index: 0; /* behind card */
-            pointer-events: none;
+            order: 2;
+            max-height: 46vh; /* keep visible, reduce scroll */
           }
 
           .photo img {
@@ -214,19 +199,13 @@ export default function WinnersPage() {
             object-fit: cover;
           }
 
-          .card {
-            max-width: 92vw;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-          }
-
           .actions {
             flex-direction: column;
           }
           .btn,
           .btn.ghost {
-            text-align: center;
             width: 100%;
+            text-align: center;
           }
         }
       `}</style>
