@@ -78,10 +78,10 @@ export default function WinnersPage() {
           padding: clamp(24px, 1.4vw, 28px);
           isolation: isolate; /* so ::before stays behind */
         }
-        /* festive background placed behind content (desktop + tablet) */
+        /* festive background placed behind content */
         .page::before {
           content: "";
-          position: fixed;
+          position: fixed; /* stays put while scrolling */
           inset: 0;
           background: url("/winners/bg-advent.jpg") center/cover no-repeat;
           z-index: -1;
@@ -190,22 +190,25 @@ export default function WinnersPage() {
 
           .photo {
             order: 2;
-            max-height: 46vh; /* keep visible, reduce scroll */
+            max-height: 40vh; /* keeps image visible but limits scroll */
           }
 
           .photo img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: cover; /* nice crop on mobile */
           }
 
           .actions {
             flex-direction: column;
+            gap: 10px;
           }
+
           .btn,
           .btn.ghost {
             width: 100%;
             text-align: center;
+            white-space: normal; /* allow long HU text to wrap */
           }
         }
       `}</style>
