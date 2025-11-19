@@ -21,8 +21,9 @@ export default function CheckoutPage() {
       ],
       paypalBoxTitle: "Nem szükséges PayPal-fiók!",
       paypalBoxLines: [
-        "A fizetéshez egyszerűen add meg az email címedet a PayPal oldalon, majd válaszd a „Kártyával fizetek” vagy „Fizetés vendégként” lehetőséget. Nem kell bejelentkezni és nem kell fiókot létrehozni.",
-        "Tipp: A PayPal oldalon kapcsold ki az „Adatok mentése és PayPal-számla létrehozása” kapcsolót, ha nem szeretnél fiókot — a fizetés így is gond nélkül működik bankkártyával. Előfordulhat, hogy egyes eszközökön ez a kapcsoló nem jelenik meg; ilyen esetben hagyd üresen a PayPal-fiók létrehozására vonatkozó mezőket (ha láthatók), és egyszerűen folytasd a fizetést bankkártyával.",
+        "A fizetéshez a PayPal oldalán biztonságosan megadhatod bankkártya-adataidat. A legtöbb esetben választható a „Kártyával fizetek” vagy „Fizetés vendégként” lehetőség, így nem szükséges PayPal-fiókot létrehozni.",
+        "Fontos: a „Kártyával fizetek / Fizetés vendégként” gombot a PayPal rendszere automatikusan jeleníti meg. Előfordulhat, hogy egyes felhasználóknál nem látható, például ha a böngészőben korábban be voltál lépve PayPalra, ha a megadott email címhez már tartozik PayPal-fiók, vagy ha a tranzakciót a rendszer nagyobb kockázatúnak ítéli meg.",
+        "Ilyen ritka esetekben a PayPal megkövetelheti a bejelentkezést vagy egy PayPal-fiók létrehozását. Dönthetsz úgy, hogy belépsz egy meglévő fiókkal vagy újat hozol létre, és a sikeres fizetés után ugyanúgy megkapod a felhasználónevedet és jelszavadat a GrandLucky Travel összegző oldalán. Ha nem szeretnél fiókot, megpróbálhatod a fizetést egy másik böngészőben vagy eszközön, ahol megjelenhet a vendégfizetés opció. Ha kérdésed vagy bizonytalan vagy a fizetéssel kapcsolatban, kérjük, írj nekünk a support@grandluckytravel.com címre, és segítünk.",
       ],
       agreeLabel:
         "Elolvastam és elfogadom a Szabályokat és a Felhasználói Feltételeket.",
@@ -44,7 +45,9 @@ export default function CheckoutPage() {
       ],
       paypalBoxTitle: "No PayPal account required",
       paypalBoxLines: [
-        "On the PayPal page, you can pay securely with your debit or credit card as a guest, without logging in or creating a PayPal account.",
+        "On the PayPal page you can enter your card details and pay securely. In most cases you will see a “Pay with Debit or Credit Card / Checkout as Guest” option, so you don’t need to create a PayPal account.",
+        "Please note: whether you see this guest button is decided automatically by PayPal. Sometimes it will not appear – for example if there was a previous PayPal login in your browser, if the email address you enter is already linked to a PayPal account, or if PayPal flags the transaction as higher-risk.",
+        "In those rare cases PayPal may require you to log in or create a PayPal account before completing the payment. You can choose to log in with an existing account or create a new one; after a successful payment you will still receive your username and password on the GrandLucky Travel summary page. If you prefer not to create an account, you can try again in a different browser or device where the guest card payment option may appear. If you have any questions or concerns about the payment, please contact us at support@grandluckytravel.com and we’ll be happy to help.",
       ],
       agreeLabel: "I’ve read and accept the Rules and Terms of Use.",
       back: "BACK",
@@ -364,7 +367,7 @@ export default function CheckoutPage() {
           bottom: clamp(36px, 6vw, 84px);
           width: clamp(120px, 12vw, 180px);
           transform: rotate(8deg);
-          z-index: 1;
+          zindex: 1;
         }
 
         @media (max-width: 900px) {
