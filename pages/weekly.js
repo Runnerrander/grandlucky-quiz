@@ -12,7 +12,7 @@ export default function WeeklyFastestPage() {
       titleScript: "Heti eredmények",
       titleStrong: "Leggyorsabb versenyzők",
       intro:
-        "Az átláthatóság érdekében közzétesszük a tudásalapú online kvíz heti leggyorsabb versenyzőjének és tartalékainak felhasználónevét.",
+        "Minden vasárnap 22:00-kor, magyar idő szerint, lezárul az adott heti kvíz. Az átláthatóság érdekében közzétesszük a hét leggyorsabb versenyzőjének és a tartalék versenyzőknek a felhasználónevét a tudásalapú online kvízből.",
       weekLabel: "Időszak: november 16–23.",
       fastestTitle: "A hét leggyorsabb versenyzője:",
       fastestUser: "1. GL-XUPM",
@@ -28,7 +28,7 @@ export default function WeeklyFastestPage() {
       titleScript: "Weekly results",
       titleStrong: "Fastest contestants",
       intro:
-        "For transparency, we publish the username of the week’s fastest contestant and the backup contestants from the online knowledge-based trivia.",
+        "Every Sunday at 22:00 Hungarian time the contest for the given week closes. For transparency, we publish the username of the week’s fastest contestant and the backup contestants from the online knowledge-based trivia.",
       weekLabel: "Period: Nov. 16–23",
       fastestTitle: "Fastest contestant of the week:",
       fastestUser: "1. GL-XUPM",
