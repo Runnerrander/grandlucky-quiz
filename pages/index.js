@@ -16,7 +16,7 @@ export default function Welcome() {
       cta: "KATTINTS A RÉSZLETEKÉRT!",
       tagTop: "Egy kis tudással és gyorsasággal",
       tagBottom: "egy ebéd áráért velünk utazhatsz! $14.99",
-      href: "/winners",
+      href: "/weekly",
     },
     en: {
       script: "Welcome",
@@ -25,10 +25,9 @@ export default function Welcome() {
       subTop: "Explore New York and Washington DC",
       subBottom: "with Vivko in February!",
       cta: "CLICK FOR DETAILS",
-      tagTop: "With a little knowledge and fastness",
-      tagBottom:
-        "you can travel with us for the price of a lunch! $14.99",
-      href: "/winners",
+      tagTop: "With a little knowledge and speed",
+      tagBottom: "you can travel with us for the price of a lunch! $14.99",
+      href: "/weekly",
     },
   };
 
@@ -330,8 +329,8 @@ export default function Welcome() {
           .text {
             margin: 0 auto;
             text-align: center;
-            padding: max(16px, env(safe-area-inset-top)) clamp(16px, 6vw, 36px)
-              clamp(24px, 8vw, 40px);
+            padding: max(16px, env(safe-area-inset-top))
+              clamp(16px, 6vw, 36px) clamp(24px, 8vw, 40px);
           }
 
           /* MOBILE-ONLY: HU/EN chip in yellow */
