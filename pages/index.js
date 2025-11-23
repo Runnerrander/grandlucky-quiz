@@ -15,7 +15,7 @@ export default function Welcome() {
       subBottom: "Vivkóval februárban!",
       cta: "KATTINTS A RÉSZLETEKÉRT!",
       tagTop: "Egy kis tudással és gyorsasággal",
-      tagBottom: "egy reggeli áráért velünk utazhatsz!",
+      tagBottom: "egy ebéd áráért velünk utazhatsz! $14.99",
       href: "/winners",
     },
     en: {
@@ -26,7 +26,8 @@ export default function Welcome() {
       subBottom: "with Vivko in February!",
       cta: "CLICK FOR DETAILS",
       tagTop: "With a little knowledge and fastness",
-      tagBottom: "you can travel with us for the price of a breakfast!",
+      tagBottom:
+        "you can travel with us for the price of a lunch! $14.99",
       href: "/winners",
     },
   };
@@ -383,10 +384,18 @@ export default function Welcome() {
         }
 
         @media (max-width: 375px) {
-          .script { font-size: 36px; }
-          .strong { font-size: 28px; }
-          .subline { font-size: 15px; }
-          .btn { padding: 12px 18px; }
+          .script {
+            font-size: 36px;
+          }
+          .strong {
+            font-size: 28px;
+          }
+          .subline {
+            font-size: 15px;
+          }
+          .btn {
+            padding: 12px 18px;
+          }
         }
       `}</style>
     </main>
