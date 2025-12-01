@@ -12,6 +12,7 @@ export default function WinnersPage() {
       p2: "Találkozz velünk a következő fordulóban — most egy új nyereményjáték indul.",
       ctaDetails: "TOVÁBB A RÉSZLETEKHEZ",
       ctaBack: "VISSZA A KEZDŐLAPRA",
+      ctaJump: "UGRÁS A JÁTÉKRA",
     },
     en: {
       badge: "WINNER OF THE PREVIOUS GAME:",
@@ -20,6 +21,7 @@ export default function WinnersPage() {
       p2: "See you in the next round — a brand-new prize game starts now.",
       ctaDetails: "SEE DETAILS",
       ctaBack: "BACK TO HOME",
+      ctaJump: "JUMP TO THE GAME",
     },
   };
 
@@ -69,6 +71,13 @@ export default function WinnersPage() {
             loading="eager"
           />
         </figure>
+      </div>
+
+      {/* separate jump button, NOT on the plate with the others */}
+      <div className="jump-row">
+        <a className="btn jump" href="/vivko?slide=4">
+          {t.ctaJump}
+        </a>
       </div>
 
       <style jsx>{`
@@ -172,6 +181,27 @@ export default function WinnersPage() {
           height: auto;
         }
 
+        /* separate jump button row */
+        .jump-row {
+          margin-top: 24px;
+          display: flex;
+          justify-content: center;
+        }
+        .btn.jump {
+          background: #ffdca7;
+          color: #222;
+          border-radius: 999px;
+          padding: 14px 32px;
+          font-weight: 900;
+          text-transform: uppercase;
+          box-shadow: 0 14px 26px rgba(0, 0, 0, 0.16),
+            inset 0 2px 0 rgba(255, 255, 255, 0.4);
+          border: 3px solid #e79a2f;
+          font-size: clamp(13px, 1.25vw, 15px);
+          min-width: 260px;
+          text-align: center;
+        }
+
         @media (max-width: 990px) {
           .page {
             padding: 16px;
@@ -212,6 +242,14 @@ export default function WinnersPage() {
             max-width: 320px; /* keeps them nicely centered */
             text-align: center;
             white-space: normal; /* allow long HU text to wrap */
+          }
+
+          .jump-row {
+            margin-top: 20px;
+          }
+          .btn.jump {
+            width: 100%;
+            max-width: 340px;
           }
         }
       `}</style>
