@@ -153,6 +153,25 @@ export default function Vivko() {
     ],
   };
 
+  // Deep-link: open a specific slide via ?slide=4
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const slideParam = params.get("slide");
+      if (!slideParam) return;
+
+      const n = parseInt(slideParam, 10);
+      if (Number.isNaN(n)) return;
+
+      const maxIdx = copy.hu.length - 1; // same length for HU/EN
+      const idx = Math.min(Math.max(n - 1, 0), maxIdx);
+      setI(idx);
+    } catch (e) {
+      // silently ignore invalid URL params
+    }
+  }, []);
+
   const footer = {
     hu: {
       contact: "Ha kérdésed vagy észrevételed van, kérjük, írj nekünk: ",
