@@ -13,19 +13,38 @@ export default function WeeklyFastestPage() {
       titleStrong: "Leggyorsabb versenyzők",
       intro:
         "Minden vasárnap 22:00-kor, magyar idő szerint, lezárul az adott heti kvíz. Az átláthatóság érdekében közzétesszük a hét leggyorsabb versenyzőjének és a tartalék versenyzőknek a felhasználónevét a tudásalapú online kvízből.",
-      weekLabel: "Időszak: november 16–23.",
-      fastestTitle: "A hét leggyorsabb versenyzője:",
-      fastestUser: "1. GL-XUPM",
-      backupsTitle: "Tartalék versenyzők felhasználónevei:",
-      backupsUsers: ["2. GL-UAZL", "3. GL-42RK"],
-      week2Label: "Időszak: november 24–30.",
-      fastestUser2: "1. GL-FNAY",
-      backupsUsers2: ["2. GL-CCZM", "3. GL-XZJ8"],
-      note:
-        "A sorrend a kvíz hibátlan, leggyorsabb kitöltési ideje alapján került meghatározásra.",
+      weeks: [
+        {
+          weekLabel: "Időszak: november 16–23.",
+          fastestTitle: "A hét leggyorsabb versenyzője:",
+          fastestUser: "1. GL-XUPM",
+          backupsTitle: "Tartalék versenyzők felhasználónevei:",
+          backupsUsers: ["2. GL-UAZL", "3. GL-42RK"],
+          note:
+            "A sorrend a kvíz hibátlan, leggyorsabb kitöltési ideje alapján került meghatározásra.",
+        },
+        {
+          weekLabel: "Időszak: november 24–30.",
+          fastestTitle: "A hét leggyorsabb versenyzője:",
+          fastestUser: "1. GL-FNAY",
+          backupsTitle: "Tartalék versenyzők felhasználónevei:",
+          backupsUsers: ["2. GL-CCZM", "3. GL-XZJ8"],
+          note:
+            "A sorrend a kvíz hibátlan, leggyorsabb kitöltési ideje alapján került meghatározásra.",
+        },
+        {
+          weekLabel: "Időszak: december 1–7.",
+          fastestTitle: "A hét leggyorsabb versenyzője:",
+          fastestUser: "1. GL-ZHBD",
+          backupsTitle: "Tartalék versenyzők felhasználónevei:",
+          backupsUsers: ["2. GL-23TB", "3. GL-YZZ6"],
+          note:
+            "A sorrend a kvíz hibátlan, leggyorsabb kitöltési ideje alapján került meghatározásra.",
+        },
+      ],
       backHome: "VISSZA A KEZDŐLAPRA",
       toWinners: "TOVÁBB A KORÁBBI NYERTESEKHEZ",
-      jumpToGame: "Ugrás a játékra",
+      jump: "UGRÁS A JÁTÉKHOZ",
     },
     en: {
       headTitle: "Weekly Fastest Contestants — GrandLuckyTravel",
@@ -33,19 +52,38 @@ export default function WeeklyFastestPage() {
       titleStrong: "Fastest contestants",
       intro:
         "Every Sunday at 22:00 Hungarian time the contest for the given week closes. For transparency, we publish the username of the week’s fastest contestant and the backup contestants from the online knowledge-based trivia.",
-      weekLabel: "Period: Nov. 16–23",
-      fastestTitle: "Fastest contestant of the week:",
-      fastestUser: "1. GL-XUPM",
-      backupsTitle: "Usernames of the backup contestants:",
-      backupsUsers: ["2. GL-UAZL", "3. GL-42RK"],
-      week2Label: "Period: Nov. 24–30",
-      fastestUser2: "1. GL-FNAY",
-      backupsUsers2: ["2. GL-CCZM", "3. GL-XZJ8"],
-      note:
-        "The order is based on the fastest perfect completion time of the trivia quiz.",
+      weeks: [
+        {
+          weekLabel: "Period: Nov. 16–23",
+          fastestTitle: "Fastest contestant of the week:",
+          fastestUser: "1. GL-XUPM",
+          backupsTitle: "Usernames of the backup contestants:",
+          backupsUsers: ["2. GL-UAZL", "3. GL-42RK"],
+          note:
+            "The order is based on the fastest perfect completion time of the trivia quiz.",
+        },
+        {
+          weekLabel: "Period: Nov. 24–30",
+          fastestTitle: "Fastest contestant of the week:",
+          fastestUser: "1. GL-FNAY",
+          backupsTitle: "Usernames of the backup contestants:",
+          backupsUsers: ["2. GL-CCZM", "3. GL-XZJ8"],
+          note:
+            "The order is based on the fastest perfect completion time of the trivia quiz.",
+        },
+        {
+          weekLabel: "Period: Dec. 1–7",
+          fastestTitle: "Fastest contestant of the week:",
+          fastestUser: "1. GL-ZHBD",
+          backupsTitle: "Usernames of the backup contestants:",
+          backupsUsers: ["2. GL-23TB", "3. GL-YZZ6"],
+          note:
+            "The order is based on the fastest perfect completion time of the trivia quiz.",
+        },
+      ],
       backHome: "BACK TO HOME",
       toWinners: "GO TO PREVIOUS WINNERS",
-      jumpToGame: "Jump to the game",
+      jump: "JUMP TO THE GAME",
     },
   };
 
@@ -82,52 +120,37 @@ export default function WeeklyFastestPage() {
 
         <p className="intro">{c.intro}</p>
 
-        {/* Week 1 block – unchanged */}
-        <p className="week">{c.weekLabel}</p>
-        <div className="box">
-          <h2 className="section-title">{c.fastestTitle}</h2>
-          <p className="user-line">{c.fastestUser}</p>
+        {c.weeks.map((w) => (
+          <div className="box" key={w.weekLabel}>
+            <p className="week">{w.weekLabel}</p>
 
-          <h2 className="section-title sub">{c.backupsTitle}</h2>
-          <ul className="list">
-            {c.backupsUsers.map((u) => (
-              <li key={u}>{u}</li>
-            ))}
-          </ul>
+            <h2 className="section-title">{w.fastestTitle}</h2>
+            <p className="user-line">{w.fastestUser}</p>
 
-          <p className="note">{c.note}</p>
-        </div>
+            <h2 className="section-title sub">{w.backupsTitle}</h2>
+            <ul className="list">
+              {w.backupsUsers.map((u) => (
+                <li key={u}>{u}</li>
+              ))}
+            </ul>
 
-        {/* Week 2 block – new */}
-        <p className="week">{c.week2Label}</p>
-        <div className="box">
-          <h2 className="section-title">{c.fastestTitle}</h2>
-          <p className="user-line">{c.fastestUser2}</p>
+            <p className="note">{w.note}</p>
+          </div>
+        ))}
 
-          <h2 className="section-title sub">{c.backupsTitle}</h2>
-          <ul className="list">
-            {c.backupsUsers2.map((u) => (
-              <li key={u}>{u}</li>
-            ))}
-          </ul>
-
-          <p className="note">{c.note}</p>
-        </div>
-
-        {/* Separate jump-to-game button (not on the same plate as the others) */}
-        <div className="jump-row">
-          <Link href="/vivko?slide=4" legacyBehavior>
-            <a className="btn jump">{c.jumpToGame}</a>
-          </Link>
-        </div>
-
-        {/* Original navigation buttons */}
         <div className="actions">
           <Link href="/" legacyBehavior>
             <a className="btn ghost">{c.backHome}</a>
           </Link>
           <Link href="/winners" legacyBehavior>
             <a className="btn">{c.toWinners}</a>
+          </Link>
+        </div>
+
+        {/* Separate jump-to-game button, not on the same plate as the others */}
+        <div className="jump-row">
+          <Link href="/vivko?slide=4" legacyBehavior>
+            <a className="btn jump-btn">{c.jump}</a>
           </Link>
         </div>
       </section>
@@ -184,19 +207,19 @@ export default function WeeklyFastestPage() {
         }
 
         .intro {
-          margin: 10px 0 6px;
+          margin: 10px 0 12px;
           font-size: clamp(15px, 1.6vw, 17px);
           color: rgba(0, 0, 0, 0.78);
         }
 
         .week {
-          margin: 12px 0 8px;
+          margin: 0 0 8px;
           font-weight: 700;
           font-size: clamp(15px, 1.6vw, 17px);
         }
 
         .box {
-          margin: 4px 0 18px;
+          margin: 10px 0 18px;
           padding: 14px 16px;
           border-radius: 14px;
           background: #ffe9c4;
@@ -232,13 +255,6 @@ export default function WeeklyFastestPage() {
           color: rgba(0, 0, 0, 0.8);
         }
 
-        .jump-row {
-          margin-top: 22px;
-          margin-bottom: 6px;
-          display: flex;
-          justify-content: center;
-        }
-
         .actions {
           display: flex;
           gap: 12px;
@@ -267,10 +283,15 @@ export default function WeeklyFastestPage() {
           border-color: #e8e8e8;
         }
 
-        .btn.jump {
+        .jump-row {
+          margin-top: 16px;
+          display: flex;
+          justify-content: center;
+        }
+
+        .jump-btn {
           padding: 14px 32px;
-          font-size: clamp(14px, 1.4vw, 16px);
-          min-width: 260px;
+          font-size: clamp(13px, 1.3vw, 15px);
         }
 
         @media (max-width: 900px) {
@@ -283,10 +304,9 @@ export default function WeeklyFastestPage() {
             justify-content: center;
             text-align: center;
           }
-          .jump-row .btn {
+          .jump-row .jump-btn {
             width: 100%;
             max-width: 360px;
-            justify-content: center;
             text-align: center;
           }
         }
