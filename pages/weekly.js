@@ -50,6 +50,15 @@ export default function WeeklyFastestPage() {
           note:
             "A sorrend a kvíz hibátlan, leggyorsabb kitöltési ideje alapján került meghatározásra.",
         },
+        {
+          weekLabel: "Időszak: december 15–21.",
+          fastestTitle: "A hét leggyorsabb versenyzője:",
+          fastestUser: "1. GL-AJYW",
+          backupsTitle: "Tartalék versenyzők felhasználónevei:",
+          backupsUsers: ["2. GL-VXDG", "3. GL-2KKS"],
+          note:
+            "A sorrend a kvíz hibátlan, leggyorsabb kitöltési ideje alapján került meghatározásra.",
+        },
       ],
       backHome: "VISSZA A KEZDŐLAPRA",
       toWinners: "TOVÁBB A KORÁBBI NYERTESEKHEZ",
@@ -95,6 +104,15 @@ export default function WeeklyFastestPage() {
           fastestUser: "1. GL-R8GQ",
           backupsTitle: "Usernames of the backup contestants:",
           backupsUsers: ["2. GL-UPXD", "3. GL-ZHBD"],
+          note:
+            "The order is based on the fastest perfect completion time of the trivia quiz.",
+        },
+        {
+          weekLabel: "Period: Dec. 15–21",
+          fastestTitle: "Fastest contestant of the week:",
+          fastestUser: "1. GL-AJYW",
+          backupsTitle: "Usernames of the backup contestants:",
+          backupsUsers: ["2. GL-VXDG", "3. GL-2KKS"],
           note:
             "The order is based on the fastest perfect completion time of the trivia quiz.",
         },
