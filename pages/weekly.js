@@ -1,10 +1,22 @@
 // pages/weekly.js
 import Head from "next/head";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
+/* -------- Zoom -------- */
+const ZOOM_URL =
+  "https://us06web.zoom.us/j/88997205839?pwd=4y53rkleBnDMtBizqTfiXrCMnS3Gnk.1";
+
+/* -------- i18n + weekly data -------- */
 export default function WeeklyFastestPage() {
   const [lang, setLang] = useState("hu"); // default Hungarian
+
+  // Zoom gate state
+  const [zoomU, setZoomU] = useState("");
+  const [zoomP, setZoomP] = useState("");
+  const [zoomOk, setZoomOk] = useState(false);
+  const [zoomTried, setZoomTried] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const copy = {
     hu: {
@@ -68,8 +80,6 @@ export default function WeeklyFastestPage() {
           note:
             "A sorrend a kvíz hibátlan, leggyorsabb kitöltési ideje alapján került meghatározásra.",
         },
-
-        // Dec 29 – Jan 4
         {
           weekLabel: "Időszak: december 29.–január 4.",
           fastestTitle: "A hét leggyorsabb versenyzője:",
@@ -79,12 +89,34 @@ export default function WeeklyFastestPage() {
           note:
             "A sorrend a kvíz hibátlan, leggyorsabb kitöltési ideje alapján került meghatározásra.",
         },
+
+        // ✅ NEW WEEK ADDED (Jan 05 – Jan 11, 2026)
+        {
+          weekLabel: "Időszak: január 5.–január 11. (2026)",
+          fastestTitle: "A hét leggyorsabb versenyzője:",
+          fastestUser: "1. GL-B3DH",
+          backupsTitle: "Tartalék versenyzők felhasználónevei:",
+          backupsUsers: ["2. GL-C823", "3. GL-9JRA"],
+          note:
+            "A sorrend a kvíz hibátlan, leggyorsabb kitöltési ideje alapján került meghatározásra.",
+        },
       ],
       backHome: "VISSZA A KEZDŐLAPRA",
       toWinners: "TOVÁBB A KORÁBBI NYERTESEKHEZ",
-      jump: "UGRÁS A JÁTÉKHOZ",
-    },
 
+      // Zoom
+      zoomTitle: "Döntő — Zoom hozzáférés",
+      zoomIntro:
+        "A Zoom link csak a 8 időszak leggyorsabb és tartalék versenyzőinek érhető el. Add meg a felhasználóneved és a jelszavad.",
+      zoomUser: "Felhasználónév",
+      zoomPass: "Jelszó",
+      zoomReveal: "Zoom link megjelenítése",
+      zoomBad:
+        "Hibás adatok, vagy a felhasználó nem jogosult a Zoom hozzáférésre.",
+      zoomShown: "Csatlakozás Zoomhoz",
+      zoomCopy: "Link másolása",
+      zoomCopied: "Másolva!",
+    },
     en: {
       headTitle: "Weekly Fastest Contestants — GrandLuckyTravel",
       titleScript: "Weekly results",
@@ -146,8 +178,6 @@ export default function WeeklyFastestPage() {
           note:
             "The order is based on the fastest perfect completion time of the trivia quiz.",
         },
-
-        // Dec 29 – Jan 4
         {
           weekLabel: "Period: Dec. 29 – Jan. 4",
           fastestTitle: "Fastest contestant of the week:",
@@ -157,14 +187,123 @@ export default function WeeklyFastestPage() {
           note:
             "The order is based on the fastest perfect completion time of the trivia quiz.",
         },
+
+        // ✅ NEW WEEK ADDED (Jan 05 – Jan 11, 2026)
+        {
+          weekLabel: "Period: Jan. 05 – Jan. 11, 2026",
+          fastestTitle: "Fastest contestant of the week:",
+          fastestUser: "1. GL-B3DH",
+          backupsTitle: "Usernames of the backup contestants:",
+          backupsUsers: ["2. GL-C823", "3. GL-9JRA"],
+          note:
+            "The order is based on the fastest perfect completion time of the trivia quiz.",
+        },
       ],
       backHome: "BACK TO HOME",
       toWinners: "GO TO PREVIOUS WINNERS",
-      jump: "JUMP TO THE GAME",
+
+      // Zoom
+      zoomTitle: "Final — Zoom access",
+      zoomIntro:
+        "The Zoom link is available only to the 8 periods’ fastest and backup contestants. Enter your username and password.",
+      zoomUser: "Username",
+      zoomPass: "Password",
+      zoomReveal: "Reveal Zoom link",
+      zoomBad: "Invalid credentials or not eligible for Zoom access.",
+      zoomShown: "Join Zoom",
+      zoomCopy: "Copy link",
+      zoomCopied: "Copied!",
     },
   };
 
   const c = copy[lang];
+
+  /* -------- Password list (ONLY users between Nov 16, 2025 and Jan 11, 2026) --------
+     Note: We only NEED the eligible users. Keeping it tight reduces risk and load.
+  */
+  const R2_CREDENTIALS = useMemo(
+    () => ({
+      // Period: Nov 16–23
+      "GL-XUPM": "7mTreRZd",
+      "GL-UAZL": "zDK9nBFH",
+      "GL-42RK": "8YZCvFps",
+
+      // Period: Nov 24–30
+      "GL-FNAY": "NgnUiaVW",
+      "GL-CCZM": "P2jzF8xP",
+      "GL-XZJ8": "yqB2mQ5C",
+
+      // Period: Dec 1–7
+      "GL-ZHBD": "mKDH6ic8",
+      "GL-23TB": "acfduw2v",
+      "GL-YZZ6": "AqHxHjEV",
+
+      // Period: Dec 8–14
+      "GL-R8GQ": "hyxiWgkd",
+      "GL-UPXD": "mTEgSZMi",
+      // ZHBD already included above
+
+      // Period: Dec 15–21
+      "GL-AJYW": "fcRVLGAG",
+      "GL-VXDG": "tz6vjbJC",
+      "GL-2KKS": "fCRaqZrF",
+
+      // Period: Dec 22–28
+      "GL-S43E": "ACh9Xpgs",
+      "GL-4G4D": "rzbvoQo5",
+      "GL-6B8V": "tVsdVAZf",
+
+      // Period: Dec 29 – Jan 4
+      "GL-MCP5": "UUfe6iJo",
+      "GL-FZW2": "hSV9q4Mu",
+      "GL-Q34U": "5g9LNQfa",
+
+      // Period: Jan 5 – Jan 11
+      "GL-B3DH": "sSeXH6mm",
+      "GL-C823": "cDdka9jC",
+      "GL-9JRA": "NSgbXbRf",
+    }),
+    []
+  );
+
+  /* -------- helpers -------- */
+  const norm = (s) =>
+    (s || "").toString().trim().toUpperCase().replace(/\s+/g, "");
+  const normalizeUsername = (u) =>
+    norm(u).replace(/^GL-/, "GL").replace(/^GL(?=[A-Z0-9]{4}$)/, "GL-");
+
+  const extractGL = (s) => {
+    const m = (s || "").match(/GL-[A-Z0-9]{4}/i);
+    return m ? m[0].toUpperCase() : null;
+  };
+
+  const ELIGIBLE_USERS = useMemo(() => {
+    return new Set(
+      c.weeks
+        .flatMap((w) => [w.fastestUser, ...(w.backupsUsers || [])])
+        .map(extractGL)
+        .filter(Boolean)
+    );
+  }, [c.weeks]);
+
+  const onReveal = (e) => {
+    e.preventDefault();
+    setZoomTried(true);
+
+    const U = normalizeUsername(zoomU);
+    const pass = R2_CREDENTIALS[U] || R2_CREDENTIALS[U.replace(/^GL-/, "GL")];
+
+    const eligible = ELIGIBLE_USERS.has(U);
+    setZoomOk(Boolean(eligible && pass && zoomP === pass));
+  };
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(ZOOM_URL);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1400);
+    } catch {}
+  };
 
   return (
     <main className="wrap">
@@ -224,11 +363,61 @@ export default function WeeklyFastestPage() {
           </Link>
         </div>
 
-        {/* Separate jump-to-game button */}
-        <div className="jump-row">
-          <Link href="/vivko?slide=4" legacyBehavior>
-            <a className="btn jump-btn">{c.jump}</a>
-          </Link>
+        {/* Zoom reveal panel (replaces jump-to-game) */}
+        <div className="zoomCard">
+          <div className="zoomBar">{c.zoomTitle}</div>
+          <div className="zoomInner">
+            <p className="zoomIntro">{c.zoomIntro}</p>
+
+            {!zoomOk ? (
+              <form onSubmit={onReveal} className="zoomForm">
+                <label>
+                  {c.zoomUser}
+                  <input
+                    value={zoomU}
+                    onChange={(e) => setZoomU(e.target.value)}
+                    placeholder="GL-XXXX"
+                    autoComplete="username"
+                    required
+                  />
+                </label>
+
+                <label>
+                  {c.zoomPass}
+                  <input
+                    type="password"
+                    value={zoomP}
+                    onChange={(e) => setZoomP(e.target.value)}
+                    placeholder="********"
+                    autoComplete="current-password"
+                    required
+                  />
+                </label>
+
+                <button type="submit" className="revealBtn">
+                  {c.zoomReveal}
+                </button>
+
+                {zoomTried ? (
+                  <div className="zoomError">{c.zoomBad}</div>
+                ) : null}
+              </form>
+            ) : (
+              <div className="zoomReveal">
+                <a
+                  className="zoomLink"
+                  href={ZOOM_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {c.zoomShown}
+                </a>
+                <button className="copyBtn" onClick={copyLink} type="button">
+                  {copied ? c.zoomCopied : c.zoomCopy}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </section>
 
@@ -254,7 +443,6 @@ export default function WeeklyFastestPage() {
           font-weight: 900;
           box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12),
             inset 0 2px 0 rgba(255, 255, 255, 0.4);
-          cursor: pointer;
         }
 
         .container {
@@ -354,9 +542,6 @@ export default function WeeklyFastestPage() {
           cursor: pointer;
           font-size: clamp(13px, 1.2vw, 14px);
           text-decoration: none;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
         }
 
         .btn.ghost {
@@ -364,15 +549,99 @@ export default function WeeklyFastestPage() {
           border-color: #e8e8e8;
         }
 
-        .jump-row {
-          margin-top: 16px;
-          display: flex;
-          justify-content: center;
+        /* Zoom card */
+        .zoomCard {
+          margin-top: 18px;
+          border-radius: 14px;
+          overflow: hidden;
+          border: 1px solid #f1c27a;
+          background: #fffdf6;
+          box-shadow: 0 12px 26px rgba(0, 0, 0, 0.12);
         }
-
-        .jump-btn {
-          padding: 14px 32px;
-          font-size: clamp(13px, 1.3vw, 15px);
+        .zoomBar {
+          background: #ffe9c4;
+          border-bottom: 1px solid #f1c27a;
+          padding: 10px 14px;
+          font-weight: 900;
+        }
+        .zoomInner {
+          padding: 12px 14px;
+        }
+        .zoomIntro {
+          margin: 8px 0 12px;
+          font-size: 14px;
+          color: rgba(0, 0, 0, 0.8);
+        }
+        .zoomForm {
+          display: grid;
+          gap: 10px;
+        }
+        .zoomForm label {
+          display: grid;
+          gap: 6px;
+          font-weight: 800;
+          font-size: 13px;
+        }
+        .zoomForm input {
+          height: 42px;
+          padding: 10px 12px;
+          border-radius: 10px;
+          border: 1px solid #e79a2f;
+          background: #fff;
+          font-size: 14px;
+        }
+        .revealBtn {
+          height: 46px;
+          border-radius: 999px;
+          border: 3px solid #e79a2f;
+          background: #ffdca7;
+          font-weight: 900;
+          cursor: pointer;
+          text-transform: uppercase;
+          box-shadow: 0 14px 26px rgba(0, 0, 0, 0.16),
+            inset 0 2px 0 rgba(255, 255, 255, 0.4);
+        }
+        .zoomError {
+          margin-top: 4px;
+          font-weight: 800;
+          color: #7a1f1f;
+          background: rgba(255, 0, 0, 0.08);
+          border: 1px solid rgba(255, 0, 0, 0.18);
+          padding: 10px 12px;
+          border-radius: 12px;
+        }
+        .zoomReveal {
+          display: flex;
+          gap: 10px;
+          align-items: center;
+          margin-top: 6px;
+          flex-wrap: wrap;
+        }
+        .zoomLink {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          min-width: 180px;
+          height: 48px;
+          padding: 0 18px;
+          border-radius: 999px;
+          border: 3px solid #b97a13;
+          background: #ffd35a;
+          font-weight: 900;
+          text-decoration: none;
+          color: #111;
+          font-size: 16px;
+          box-shadow: 0 8px 16px rgba(0, 0, 0, 0.14);
+        }
+        .copyBtn {
+          height: 48px;
+          padding: 0 14px;
+          border-radius: 999px;
+          border: 1px solid #e79a2f;
+          background: #fff;
+          cursor: pointer;
+          font-weight: 900;
+          text-transform: uppercase;
         }
 
         @media (max-width: 900px) {
@@ -382,10 +651,17 @@ export default function WeeklyFastestPage() {
           }
           .actions .btn {
             width: 100%;
+            justify-content: center;
+            text-align: center;
           }
-          .jump-row .jump-btn {
+          .zoomReveal {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          .zoomLink,
+          .copyBtn {
             width: 100%;
-            max-width: 360px;
+            justify-content: center;
           }
         }
       `}</style>
