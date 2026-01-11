@@ -9,19 +9,15 @@ export default function WinnersPage() {
       badge: "AZ ELŐZŐ JÁTÉK NYERTESE:",
       title: "Napsugár Budapestről",
       p1: "Napsugár és a párja Vivkóval együtt fedezik fel New York adventi hangulatát.",
-      p2: "Találkozz velünk a következő fordulóban — most egy új nyereményjáték indul.",
-      ctaDetails: "TOVÁBB A RÉSZLETEKHEZ",
+      p2: "Találkozz velünk a következő fordulóban — hamarosan új játék indul.",
       ctaBack: "VISSZA A KEZDŐLAPRA",
-      ctaJump: "UGRÁS A JÁTÉKRA",
     },
     en: {
       badge: "WINNER OF THE PREVIOUS GAME:",
       title: "Napsugár from Budapest",
       p1: "Napsugár and her partner will explore New York’s Advent vibes with Vivko.",
-      p2: "See you in the next round — a brand-new prize game starts now.",
-      ctaDetails: "SEE DETAILS",
+      p2: "See you in the next round — a new game is coming soon.",
       ctaBack: "BACK TO HOME",
-      ctaJump: "JUMP TO THE GAME",
     },
   };
 
@@ -55,9 +51,6 @@ export default function WinnersPage() {
           <p>{t.p2}</p>
 
           <div className="actions">
-            <a className="btn" href="/vivko">
-              {t.ctaDetails}
-            </a>
             <a className="btn ghost" href="/">
               {t.ctaBack}
             </a>
@@ -73,24 +66,18 @@ export default function WinnersPage() {
         </figure>
       </div>
 
-      {/* separate jump button, NOT on the plate with the others */}
-      <div className="jump-row">
-        <a className="btn jump" href="/vivko?slide=4">
-          {t.ctaJump}
-        </a>
-      </div>
-
       <style jsx>{`
         .page {
           position: relative;
           min-height: 100vh;
           padding: clamp(24px, 1.4vw, 28px);
-          isolation: isolate; /* so ::before stays behind */
+          isolation: isolate;
         }
+
         /* festive background placed behind content */
         .page::before {
           content: "";
-          position: fixed; /* stays put while scrolling */
+          position: fixed;
           inset: 0;
           background: url("/winners/bg-advent.jpg") center/cover no-repeat;
           z-index: -1;
@@ -127,6 +114,7 @@ export default function WinnersPage() {
           max-width: 1200px;
           margin: 0 auto;
         }
+
         .card {
           background: rgba(255, 255, 255, 0.94);
           backdrop-filter: saturate(1.02);
@@ -134,6 +122,7 @@ export default function WinnersPage() {
           padding: 22px 22px 20px;
           box-shadow: 0 14px 40px rgba(0, 0, 0, 0.13);
         }
+
         .badge {
           display: inline-block;
           background: #f7b940;
@@ -143,16 +132,19 @@ export default function WinnersPage() {
           padding: 8px 12px;
           margin-bottom: 10px;
         }
+
         .h1 {
           font-size: clamp(28px, 3.6vw, 40px);
           line-height: 1.1;
           margin: 4px 0 12px;
         }
+
         .actions {
           display: flex;
           gap: 12px;
           margin-top: 16px;
         }
+
         .btn {
           display: inline-block;
           padding: 12px 18px;
@@ -163,6 +155,7 @@ export default function WinnersPage() {
           text-decoration: none;
           white-space: nowrap;
         }
+
         .btn.ghost {
           background: #fff;
           color: #111;
@@ -179,27 +172,6 @@ export default function WinnersPage() {
           display: block;
           width: 100%;
           height: auto;
-        }
-
-        /* separate jump button row */
-        .jump-row {
-          margin-top: 24px;
-          display: flex;
-          justify-content: center;
-        }
-        .btn.jump {
-          background: #ffdca7;
-          color: #222;
-          border-radius: 999px;
-          padding: 14px 32px;
-          font-weight: 900;
-          text-transform: uppercase;
-          box-shadow: 0 14px 26px rgba(0, 0, 0, 0.16),
-            inset 0 2px 0 rgba(255, 255, 255, 0.4);
-          border: 3px solid #e79a2f;
-          font-size: clamp(13px, 1.25vw, 15px);
-          min-width: 260px;
-          text-align: center;
         }
 
         @media (max-width: 990px) {
@@ -220,36 +192,27 @@ export default function WinnersPage() {
 
           .photo {
             order: 2;
-            max-height: 40vh; /* keeps image visible but limits scroll */
+            max-height: 40vh;
           }
 
           .photo img {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* nice crop on mobile */
+            object-fit: cover;
           }
 
-          /* Center and stack buttons on mobile */
           .actions {
             flex-direction: column;
             gap: 10px;
-            align-items: center; /* center the button group */
+            align-items: center;
           }
 
           .btn,
           .btn.ghost {
             width: 100%;
-            max-width: 320px; /* keeps them nicely centered */
+            max-width: 320px;
             text-align: center;
-            white-space: normal; /* allow long HU text to wrap */
-          }
-
-          .jump-row {
-            margin-top: 20px;
-          }
-          .btn.jump {
-            width: 100%;
-            max-width: 340px;
+            white-space: normal;
           }
         }
       `}</style>
