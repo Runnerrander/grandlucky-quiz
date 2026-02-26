@@ -1,23 +1,52 @@
 // pages/winners.js
+import Head from "next/head";
+import Link from "next/link";
 import { useState } from "react";
 
 export default function WinnersPage() {
-  const [lang, setLang] = useState("hu"); // SSR-safe default
+  const [lang, setLang] = useState("hu"); // HU default
+
+  // Routes (easy to change later)
+  const PLAY_HREF = "/contest";
+  const LEADERBOARD_HREF = "/leaderboard";
+
+  // Assets (put these in /public)
+  // Background image (YOU HAVE): /public/winners-hero.jpg
+  // Videos:
+  //  - /public/winners/napsugar.mp4
+  //  - /public/winners/emma.mp4
+  const HERO_BG = "/winners-hero.jpg";
 
   const copy = {
     hu: {
-      badge: "AZ ELŐZŐ JÁTÉK NYERTESE:",
-      title: "Napsugár Budapestről",
-      p1: "Napsugár és a párja Vivkóval együtt fedezik fel New York adventi hangulatát.",
-      p2: "Találkozz velünk a következő fordulóban — hamarosan új játék indul.",
-      ctaBack: "VISSZA A KEZDŐLAPRA",
+      headTitle: "Korábbi nyerteseink — GrandLuckyTravel",
+      langBtnHU: "HU",
+      langBtnEN: "EN",
+
+      w1Name: "Napsugár",
+      w1City: "Budapest",
+
+      w2Name: "Emma",
+      w2City: "—",
+
+      watch: "Nézd meg a videót:",
+      primary: "TOVÁBB A JÁTÉKHOZ",
+      secondary: "EREDMÉNYTÁBLA MEGTEKINTÉSE",
     },
     en: {
-      badge: "WINNER OF THE PREVIOUS GAME:",
-      title: "Napsugár from Budapest",
-      p1: "Napsugár and her partner will explore New York’s Advent vibes with Vivko.",
-      p2: "See you in the next round — a new game is coming soon.",
-      ctaBack: "BACK TO HOME",
+      headTitle: "Previous Winners — GrandLuckyTravel",
+      langBtnHU: "HU",
+      langBtnEN: "EN",
+
+      w1Name: "Napsugár",
+      w1City: "Budapest",
+
+      w2Name: "Emma",
+      w2City: "—",
+
+      watch: "Watch the video:",
+      primary: "CONTINUE TO PLAY",
+      secondary: "VIEW LEADERBOARD",
     },
   };
 
@@ -25,194 +54,245 @@ export default function WinnersPage() {
 
   return (
     <main className="page">
-      {/* language toggle */}
+      <Head>
+        <title>{t.headTitle}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Montserrat:wght@500;700;900&display=swap"
+        />
+      </Head>
+
+      {/* Language toggle (simple like your original) */}
       <div className="lang">
         <button
           className={`chip ${lang === "hu" ? "active" : ""}`}
           onClick={() => setLang("hu")}
           aria-pressed={lang === "hu"}
         >
-          HU
+          {t.langBtnHU}
         </button>
         <button
           className={`chip ${lang === "en" ? "active" : ""}`}
           onClick={() => setLang("en")}
           aria-pressed={lang === "en"}
         >
-          EN
+          {t.langBtnEN}
         </button>
       </div>
 
-      <div className="wrap">
-        <section className="card">
-          <div className="badge">{t.badge}</div>
-          <h1 className="h1">{t.title}</h1>
-          <p>{t.p1}</p>
-          <p>{t.p2}</p>
+      {/* FULL SCREEN HERO (no text on it) */}
+      <section className="hero" aria-label="Winners hero image" />
 
-          <div className="actions">
-            <a className="btn ghost" href="/">
-              {t.ctaBack}
-            </a>
+      {/* Content starts BELOW the image */}
+      <section className="content">
+        {/* Winner 1 */}
+        <div className="block blockA">
+          <div className="inner">
+            <h2 className="name">
+              {t.w1Name} <span className="dash">—</span>{" "}
+              <span className="city">{t.w1City}</span>
+            </h2>
+
+            <p className="watch">{t.watch}</p>
+
+            <div className="videoWrap">
+              <video className="video" controls playsInline preload="metadata">
+                <source src="/winners/napsugar.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
           </div>
-        </section>
+        </div>
 
-        <figure className="photo">
-          <img
-            src="/winners/napsugar.jpg"
-            alt="Napsugár — GrandLucky Travel winner"
-            loading="eager"
-          />
-        </figure>
-      </div>
+        {/* Winner 2 */}
+        <div className="block blockB">
+          <div className="inner">
+            <h2 className="name">
+              {t.w2Name} <span className="dash">—</span>{" "}
+              <span className="city">{t.w2City}</span>
+            </h2>
+
+            <p className="watch">{t.watch}</p>
+
+            <div className="videoWrap">
+              <video className="video" controls playsInline preload="metadata">
+                <source src="/winners/emma.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom actions */}
+        <div className="actions">
+          <Link href={PLAY_HREF} legacyBehavior>
+            <a className="btn primary">{t.primary}</a>
+          </Link>
+
+          <Link href={LEADERBOARD_HREF} legacyBehavior>
+            <a className="btn secondary">{t.secondary}</a>
+          </Link>
+        </div>
+      </section>
 
       <style jsx>{`
+        :global(:root) {
+          --dark: #222;
+          --muted: rgba(0, 0, 0, 0.74);
+          --paper: #fffaf1;
+
+          --yellow: #faaf3b;
+          --yellow-border: #e79a2f;
+        }
+
         .page {
           position: relative;
-          min-height: 100vh;
-          padding: clamp(24px, 1.4vw, 28px);
-          isolation: isolate;
+          min-height: 100dvh;
+          font-family: "Montserrat", system-ui, sans-serif;
+          background: #f6a83b;
+          color: var(--dark);
+          overflow-x: hidden;
         }
 
-        /* festive background placed behind content */
-        .page::before {
-          content: "";
-          position: fixed;
-          inset: 0;
-          background: url("/winners/bg-advent.jpg") center/cover no-repeat;
-          z-index: -1;
-        }
-
+        /* top-right language chips */
         .lang {
-          position: sticky;
-          top: 16px;
+          position: fixed;
+          top: clamp(14px, 2.2vw, 24px);
+          right: clamp(14px, 2.2vw, 24px);
+          z-index: 50;
           display: flex;
           gap: 8px;
-          justify-content: flex-end;
-          margin-bottom: 16px;
-          z-index: 2;
         }
+
         .chip {
           border: 0;
-          padding: 6px 12px;
+          padding: 10px 14px;
           border-radius: 999px;
           background: #fff;
           box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06),
-            0 4px 18px rgba(0, 0, 0, 0.08);
+            0 10px 22px rgba(0, 0, 0, 0.12);
           cursor: pointer;
-          font-weight: 600;
+          font-weight: 900;
+          letter-spacing: 0.2px;
         }
+
         .chip.active {
-          background: #f7b940;
+          background: #ffdca7;
+          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.12),
+            inset 0 2px 0 rgba(255, 255, 255, 0.55);
         }
 
-        .wrap {
-          display: grid;
-          grid-template-columns: 1fr 680px;
-          gap: 20px;
-          align-items: start;
-          max-width: 1200px;
-          margin: 0 auto;
+        /* Fullscreen hero image (no overlay) */
+        .hero {
+          height: 100svh;
+          height: 100dvh;
+          background: url(${JSON.stringify(HERO_BG)}) center / cover no-repeat;
         }
 
-        .card {
-          background: rgba(255, 255, 255, 0.94);
-          backdrop-filter: saturate(1.02);
-          border-radius: 14px;
-          padding: 22px 22px 20px;
-          box-shadow: 0 14px 40px rgba(0, 0, 0, 0.13);
+        .content {
+          width: min(980px, 92vw);
+          margin: 18px auto 44px;
         }
 
-        .badge {
-          display: inline-block;
-          background: #f7b940;
-          color: #000;
+        .block {
+          border-radius: 18px;
+          overflow: hidden;
+          box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+          margin: 16px 0;
+          border: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .blockA {
+          background: var(--paper);
+        }
+
+        .blockB {
+          background: #ffe9c4;
+          border-color: #f1c27a;
+        }
+
+        .inner {
+          padding: clamp(16px, 2.8vw, 26px);
+        }
+
+        .name {
+          margin: 0 0 10px;
+          font-weight: 900;
+          font-size: clamp(22px, 2.6vw, 34px);
+          letter-spacing: -0.2px;
+        }
+
+        .dash {
+          opacity: 0.55;
+          font-weight: 900;
+        }
+
+        .city {
+          opacity: 0.9;
+        }
+
+        .watch {
+          margin: 0 0 10px;
           font-weight: 800;
-          border-radius: 999px;
-          padding: 8px 12px;
-          margin-bottom: 10px;
+          color: var(--muted);
         }
 
-        .h1 {
-          font-size: clamp(28px, 3.6vw, 40px);
-          line-height: 1.1;
-          margin: 4px 0 12px;
+        .videoWrap {
+          border-radius: 14px;
+          overflow: hidden;
+          background: #000;
+          border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .video {
+          width: 100%;
+          height: auto;
+          display: block;
         }
 
         .actions {
+          margin-top: 18px;
           display: flex;
           gap: 12px;
-          margin-top: 16px;
+          flex-wrap: wrap;
         }
 
         .btn {
-          display: inline-block;
-          padding: 12px 18px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
           border-radius: 999px;
-          background: #111;
-          color: #fff;
-          font-weight: 700;
+          font-weight: 900;
+          text-transform: uppercase;
           text-decoration: none;
-          white-space: nowrap;
+          padding: 14px 22px;
+          font-size: 13px;
+          letter-spacing: 0.3px;
         }
 
-        .btn.ghost {
+        .btn.primary {
+          background: var(--yellow);
+          color: #111;
+          border: 3px solid var(--yellow-border);
+          box-shadow: 0 14px 26px rgba(0, 0, 0, 0.16),
+            inset 0 2px 0 rgba(255, 255, 255, 0.55);
+        }
+
+        .btn.secondary {
           background: #fff;
           color: #111;
-          box-shadow: inset 0 0 0 2px #111;
+          border: 2px solid rgba(0, 0, 0, 0.14);
         }
 
-        .photo {
-          background: #fff;
-          border-radius: 12px;
-          box-shadow: 0 18px 46px rgba(0, 0, 0, 0.16);
-          overflow: hidden;
-        }
-        .photo img {
-          display: block;
-          width: 100%;
-          height: auto;
-        }
-
-        @media (max-width: 990px) {
-          .page {
-            padding: 16px;
-            min-height: 100vh;
+        @media (max-width: 900px) {
+          .content {
+            width: calc(100vw - 28px);
+            margin: 14px auto 28px;
           }
 
-          .wrap {
-            grid-template-columns: 1fr;
-            max-width: 100%;
-            margin: 0 auto;
-          }
-
-          .card {
-            margin-bottom: 12px;
-          }
-
-          .photo {
-            order: 2;
-            max-height: 40vh;
-          }
-
-          .photo img {
+          .actions .btn {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-          }
-
-          .actions {
-            flex-direction: column;
-            gap: 10px;
-            align-items: center;
-          }
-
-          .btn,
-          .btn.ghost {
-            width: 100%;
-            max-width: 320px;
-            text-align: center;
-            white-space: normal;
           }
         }
       `}</style>
