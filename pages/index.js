@@ -11,22 +11,24 @@ export default function Welcome() {
       script: "Üdvözlünk",
       strongTop: "a\u00A0GrandLuckyTravel",
       strongBottom: "weboldalán!",
-      subTop: "Fedezd fel New Yorkot és Washington DC-t",
-      subBottom: "Vivkóval februárban!",
+      subTop:
+        "Fedezd fel New Yorkot, Washington DC-t és a Niagara-vízesést (kanadai oldal is)",
+      subBottom: "Vivkóval júliusban!",
       cta: "KATTINTS A RÉSZLETEKÉRT!",
       tagTop: "Egy kis tudással és gyorsasággal",
-      tagBottom: "egy ebéd áráért velünk utazhatsz! $14.99",
+      tagBottom: "egy ebéd áráért velünk utazhatsz! $24.99",
       href: "/weekly",
     },
     en: {
       script: "Welcome",
       strongTop: "to\u00A0GrandLuckyTravel",
       strongBottom: "website!",
-      subTop: "Explore New York and Washington DC",
-      subBottom: "with Vivko in February!",
+      subTop:
+        "Explore New York and Washington DC and the Niagara Falls (Canadian Side Too)",
+      subBottom: "with Vivko in July!",
       cta: "CLICK FOR DETAILS",
       tagTop: "With a little knowledge and speed",
-      tagBottom: "you can travel with us for the price of a lunch! $14.99",
+      tagBottom: "you can travel with us for the price of a lunch! $24.99",
       href: "/weekly",
     },
   };
@@ -92,8 +94,8 @@ export default function Welcome() {
             </div>
           </div>
 
-          {/* tagline split */}
-          <p className="tagline">
+          {/* tagline split (blink BOTH languages) */}
+          <p className="tagline blink">
             <span className="block">{c.tagTop}</span>
             <span className="block">{c.tagBottom}</span>
           </p>
@@ -110,7 +112,6 @@ export default function Welcome() {
           --yellow: #ffbf3b;
           --yellow-border: #eaa21a;
 
-          /* Sharper background (moderate zoom) */
           --bg-zoom: 120%;
           --bg-pos-x: 8%;
           --bg-pos-y: 43%;
@@ -118,8 +119,8 @@ export default function Welcome() {
 
         .hero {
           min-height: 100dvh;
-          background: url("/BG-fooldal.png") no-repeat
-            var(--bg-pos-x) var(--bg-pos-y) / var(--bg-zoom) auto;
+          background: url("/BG-fooldal.png") no-repeat var(--bg-pos-x)
+            var(--bg-pos-y) / var(--bg-zoom) auto;
           color: var(--dark);
         }
 
@@ -139,7 +140,6 @@ export default function Welcome() {
           padding: clamp(18px, 4.4vw, 56px) clamp(22px, 4.8vw, 60px);
           max-width: 980px;
 
-          /* keep fonts crisp */
           -webkit-font-smoothing: auto;
           -moz-osx-font-smoothing: auto;
           text-rendering: geometricPrecision;
@@ -174,8 +174,7 @@ export default function Welcome() {
           z-index: 3;
           font: 700 clamp(56px, 5.2vw, 88px) "Caveat", cursive;
           color: var(--yellow);
-          text-shadow:
-            0 2px 0 rgba(255, 255, 255, 0.55),
+          text-shadow: 0 2px 0 rgba(255, 255, 255, 0.55),
             0 10px 18px rgba(0, 0, 0, 0.08),
             0 0 14px rgba(255, 191, 59, 0.45),
             0 0 1px rgba(255, 191, 59, 0.3);
@@ -207,7 +206,6 @@ export default function Welcome() {
           display: inline-block;
           margin-bottom: clamp(6px, 0.8vw, 10px);
           isolation: isolate;
-          /* default: no side shift for EN */
           margin-right: 0;
         }
         .cta-wrap::before {
@@ -229,53 +227,70 @@ export default function Welcome() {
           justify-content: center;
           padding: clamp(14px, 1.2vw, 16px) clamp(24px, 2.2vw, 32px);
           border-radius: 999px;
-          font: 900 clamp(12px, 0.95vw, 14px)/1 "Montserrat";
+          font: 900 clamp(12px, 0.95vw, 14px) / 1 "Montserrat";
           text-transform: uppercase;
           background: linear-gradient(180deg, #ffd767 0%, #ffbf3b 100%);
           color: #1b1b1b;
           border: 3px solid var(--yellow-border);
           text-decoration: none;
-          box-shadow:
-            0 10px 20px rgba(0, 0, 0, 0.14),
+          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.14),
             0 4px 10px rgba(0, 0, 0, 0.08),
             0 0 10px rgba(255, 191, 59, 0.28),
             inset 0 1.5px 0 rgba(255, 255, 255, 0.55);
-          transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+          transition: transform 0.2s ease, box-shadow 0.2s ease,
+            filter 0.2s ease;
         }
         .btn:hover {
           transform: translateY(-2px);
-          box-shadow:
-            0 16px 28px rgba(0, 0, 0, 0.2),
+          box-shadow: 0 16px 28px rgba(0, 0, 0, 0.2),
             0 7px 14px rgba(0, 0, 0, 0.12),
             0 0 14px rgba(255, 191, 59, 0.38),
             inset 0 2px 0 rgba(255, 255, 255, 0.62);
           filter: saturate(1.04);
         }
 
-        /* Tagline: same yellow, crisper glow */
         .tagline {
           margin-top: clamp(8px, 1vw, 12px);
           font: 700 clamp(22px, 2.1vw, 30px) "Caveat", cursive;
           color: var(--yellow);
-          text-shadow:
-            0 1px 0 rgba(255, 255, 255, 0.5),
+          text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5),
             0 0 8px rgba(255, 191, 59, 0.35);
+        }
+
+        /* Blink — between yellow and white */
+        @keyframes blinkYellowWhite {
+          0% {
+            color: var(--yellow);
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5),
+              0 0 8px rgba(255, 191, 59, 0.35);
+          }
+          50% {
+            color: #ffffff;
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18),
+              0 0 10px rgba(255, 255, 255, 0.55);
+          }
+          100% {
+            color: var(--yellow);
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5),
+              0 0 8px rgba(255, 191, 59, 0.35);
+          }
+        }
+
+        .tagline.blink {
+          animation: blinkYellowWhite 1.1s infinite ease-in-out;
         }
 
         /* --- HUNGARIAN-ONLY LEFT SHIFT --- */
         .is-hu .cta-wrap {
-          /* push button further left by adding bigger right margin */
           margin-right: clamp(56px, 8vw, 140px);
         }
         .is-hu .tagline {
           text-align: right;
           width: fit-content;
           margin-left: auto;
-          /* push tagline further left by adding bigger right margin */
           margin-right: clamp(56px, 8vw, 140px);
         }
 
-        /* Doodles */
         .decor {
           position: absolute;
           pointer-events: none;
@@ -312,7 +327,6 @@ export default function Welcome() {
           z-index: 1;
         }
 
-        /* Desktop crop */
         @media (min-width: 1280px) and (max-width: 1920px) {
           .hero {
             background-size: 125% auto;
@@ -320,7 +334,6 @@ export default function Welcome() {
           }
         }
 
-        /* Mobile */
         @media (max-width: 900px) {
           .overlay {
             grid-template-columns: 1fr;
@@ -333,7 +346,6 @@ export default function Welcome() {
               clamp(16px, 6vw, 36px) clamp(24px, 8vw, 40px);
           }
 
-          /* MOBILE-ONLY: HU/EN chip in yellow */
           .lang {
             justify-content: center;
             gap: 10px;
@@ -344,8 +356,7 @@ export default function Welcome() {
             color: #1b1b1b;
             border: 3px solid var(--yellow-border);
             padding: 10px 16px;
-            box-shadow:
-              0 8px 16px rgba(0, 0, 0, 0.12),
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12),
               inset 0 1.5px 0 rgba(255, 255, 255, 0.65);
           }
           .lang .active {
@@ -366,7 +377,7 @@ export default function Welcome() {
             justify-content: center;
           }
           .cta-wrap {
-            margin-right: 0; /* centered on mobile */
+            margin-right: 0;
           }
           .decor {
             display: none;
