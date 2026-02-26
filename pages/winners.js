@@ -11,7 +11,7 @@ export default function WinnersPage() {
   const LEADERBOARD_HREF = "/leaderboard";
 
   // Assets (put these in /public)
-  // Background image (YOU HAVE): /public/winners-hero.jpg
+  // Background image: /public/winners-hero.jpg
   // Videos:
   //  - /public/winners/napsugar.mp4
   //  - /public/winners/emma.mp4
@@ -23,11 +23,17 @@ export default function WinnersPage() {
       langBtnHU: "HU",
       langBtnEN: "EN",
 
+      sectionTitle: "Korábbi nyerteseink",
+
       w1Name: "Napsugár",
       w1City: "Budapest",
+      w1Text:
+        "Napsugár Budapestről érkezett, és fantasztikus teljesítménnyel nyerte meg a játékot.",
 
       w2Name: "Emma",
-      w2City: "—",
+      w2City: "Seregélyes",
+      w2Text:
+        "Emma anyukájával Seregélyesről érkezett, és fantasztikus teljesítménnyel nyerte meg a játékot.",
 
       watch: "Nézd meg a videót:",
       primary: "TOVÁBB A JÁTÉKHOZ",
@@ -38,11 +44,17 @@ export default function WinnersPage() {
       langBtnHU: "HU",
       langBtnEN: "EN",
 
+      sectionTitle: "Previous winners",
+
       w1Name: "Napsugár",
       w1City: "Budapest",
+      w1Text:
+        "Napsugár came from Budapest and won the game with an outstanding performance.",
 
       w2Name: "Emma",
-      w2City: "—",
+      w2City: "Seregélyes",
+      w2Text:
+        "Emma came from Seregélyes with her mom and won the game with an outstanding performance.",
 
       watch: "Watch the video:",
       primary: "CONTINUE TO PLAY",
@@ -63,7 +75,7 @@ export default function WinnersPage() {
         />
       </Head>
 
-      {/* Language toggle (simple like your original) */}
+      {/* Language toggle */}
       <div className="lang">
         <button
           className={`chip ${lang === "hu" ? "active" : ""}`}
@@ -81,11 +93,13 @@ export default function WinnersPage() {
         </button>
       </div>
 
-      {/* FULL SCREEN HERO (no text on it) */}
+      {/* FULL SCREEN HERO */}
       <section className="hero" aria-label="Winners hero image" />
 
       {/* Content starts BELOW the image */}
       <section className="content">
+        <h1 className="pageTitle">{t.sectionTitle}</h1>
+
         {/* Winner 1 */}
         <div className="block blockA">
           <div className="inner">
@@ -93,6 +107,8 @@ export default function WinnersPage() {
               {t.w1Name} <span className="dash">—</span>{" "}
               <span className="city">{t.w1City}</span>
             </h2>
+
+            <p className="desc">{t.w1Text}</p>
 
             <p className="watch">{t.watch}</p>
 
@@ -112,6 +128,8 @@ export default function WinnersPage() {
               {t.w2Name} <span className="dash">—</span>{" "}
               <span className="city">{t.w2City}</span>
             </h2>
+
+            <p className="desc">{t.w2Text}</p>
 
             <p className="watch">{t.watch}</p>
 
@@ -141,7 +159,6 @@ export default function WinnersPage() {
           --dark: #222;
           --muted: rgba(0, 0, 0, 0.74);
           --paper: #fffaf1;
-
           --yellow: #faaf3b;
           --yellow-border: #e79a2f;
         }
@@ -195,6 +212,13 @@ export default function WinnersPage() {
           margin: 18px auto 44px;
         }
 
+        .pageTitle {
+          margin: 6px 0 12px;
+          font-weight: 900;
+          font-size: clamp(22px, 2.6vw, 32px);
+          letter-spacing: -0.2px;
+        }
+
         .block {
           border-radius: 18px;
           overflow: hidden;
@@ -217,7 +241,7 @@ export default function WinnersPage() {
         }
 
         .name {
-          margin: 0 0 10px;
+          margin: 0 0 8px;
           font-weight: 900;
           font-size: clamp(22px, 2.6vw, 34px);
           letter-spacing: -0.2px;
@@ -230,6 +254,14 @@ export default function WinnersPage() {
 
         .city {
           opacity: 0.9;
+        }
+
+        .desc {
+          margin: 0 0 10px;
+          font-weight: 600;
+          font-size: clamp(15px, 1.55vw, 18px);
+          color: rgba(0, 0, 0, 0.78);
+          line-height: 1.45;
         }
 
         .watch {
