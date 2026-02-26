@@ -18,16 +18,24 @@ export default function UserAgreement() {
         "A regisztrációhoz legalább 18 évesnek kell lenned.",
         "Nem lehetsz a GrandLucky Travel, a Vivko vagy a Grand Slam Travel családtagja.",
 
-        // ★★★ Rule 3 (HU) — final ★★★
+        "Nevezési díj: $24.99 (USD). A nevezési díj egy sikeres fizetéshez egy (1) hivatalos részvételt biztosít.",
+
+        "A kvalifikáció (1. forduló) online kvíz formájában zajlik. A kvalifikáció vége: 2026. május 29. 23:59 (magyar idő szerint). A kvalifikáció során a leggyorsabb 10 versenyző kerül be a 2. fordulóba (az élő döntőbe). A Top 10 lista folyamatosan frissül a határidőig — még bárki átveheti a Top 10-ben szereplők helyét.",
+
+        "A 2. forduló (ÉLŐ döntő) időpontja: 2026. május 30. — 18:00 (magyar idő szerint).",
+
+        "ÚJDONSÁG: az utazás része egy egynapos Niagara-vízesés kirándulás is, amely során a kanadai oldalra történő átlépés útlevél/engedély és aktuális határszabályok függvénye.",
+
+        // ★★★ Rule (HU) — passport / ESTA / visa process ★★★
         "Amennyiben a verseny nyertese és kísérője nem rendelkezik érvényes útlevéllel, ESTA-val vagy turista vízummal, kötelesek az igénylési folyamatot a 2. forduló élő versenyét követő első munkanapon megkezdeni (a Grand Slam Travel segítséget nyújt az igénylésben).",
 
-        "A Grand Slam Travel, a Vivko és a GrandLucky Travel nem felelős, ha a verseny nyertese vagy kísérője ESTA/VÍZUM igénylése elutasításra kerül. Ilyen esetben a soron következő helyezett utazik.",
+        "A Grand Slam Travel, a Vivko és a GrandLucky Travel nem felelős, ha a verseny nyertese vagy kísérője ESTA/VÍZUM igénylése elutasításra kerül. Ilyen esetben a soron következő helyezett kap lehetőséget.",
         "Az Egyesült Államokban tartózkodás során a nyertesnek és kísérőjének be kell tartania az Egyesült Államok törvényeit és szabályait.",
         "A verseny második fordulója élőben közvetített esemény lesz különböző digitális platformokon. A versenyzők vállalják, hogy részt vesznek ezen az élő eseményen.",
         "Médiahozzájárulás: a nyertes és kísérője hozzájárul, hogy a hitelesítésről és az utazásról készült fotók/videók megjelenjenek a Vivko és a Grand Slam Travel közösségi média felületein, valamint a GrandLucky Travel weboldalán.",
 
-        // ★★★ Rule 8 (HU) — final ★★★
-        "A 2. forduló élő versenyéhez való csatlakozás határideje: a versenyzőnek a 2. forduló élő eseménye előtt 30 perccel be kell jelentkeznie a Zoom platformra a hitelesítési folyamat elvégzéséhez; ellenkező esetben egy másik, az első fordulót teljesítő versenyző kap lehetőséget a részvételre. A versenyzők egy várakozó chat szobába kerülnek, ahol a hitelesítés megtörténik."
+        // ★★★ Zoom verification rule (HU) — kept, with updated wording clarity ★★★
+        "A 2. forduló élő versenyéhez való csatlakozás határideje: a versenyzőnek a 2. forduló élő eseménye előtt 30 perccel be kell jelentkeznie a Zoom platformra a hitelesítési folyamat elvégzéséhez; ellenkező esetben egy másik, a kvalifikációt sikeresen teljesítő versenyző kap lehetőséget a részvételre. A versenyzők egy várakozó chat szobába kerülnek, ahol a hitelesítés megtörténik.",
       ],
       note:
         "Megjegyzés: Kérjük, győződj meg róla a fenti Zoom linken, hogy a Zoom telepítve van az eszközödre a hitelesítési folyamat előtt.",
@@ -40,7 +48,6 @@ export default function UserAgreement() {
       paymentsC: " és a ",
       paymentsD: "Felhasználói megállapodást",
 
-      // ★★★ Refund (HU) — final ★★★
       refund:
         "Visszatérítési szabályzat: A nevezési díj normál körülmények között nem visszatéríthető. Amennyiben bármilyen előre nem látható okból a GrandLucky Travel versenye vagy az utazás megrendezésére vagy teljesítésére nem kerülhet sor, minden fizető résztvevő teljes visszatérítést kap 14 napon belül, a hivatalos lemondási bejelentéstől számítva. Nem jár visszatérítés abban az esetben, ha a versenyző vagy kísérője személyes okok miatt, illetve az utazáshoz vagy hitelesítéshez szükséges feltételek elmulasztása miatt nem tud részt venni az utazáson, vagy ha emiatt a GrandLucky Travel már nem tud egy másik jogosult versenyzőt és kísérőjét időben felkészíteni az utazásra.",
 
@@ -58,16 +65,23 @@ export default function UserAgreement() {
         "You must be at least 18 years old to register.",
         "You cannot be a family member of GrandLucky Travel, Vivko, or Grand Slam Travel.",
 
-        // ★★★ Rule 3 (EN) — final ★★★
+        "Entry fee: $24.99 (USD). One successful payment provides one (1) official entry.",
+
+        "Round 1 (Qualification) is an online trivia quiz. Qualification closes: May 29, 2026 — 23:59 (Hungary time). The fastest 10 contestants qualify for Round 2 (the LIVE Final). The Top 10 list updates continuously until the deadline — anyone can still take a spot in the Top 10.",
+
+        "Round 2 (LIVE Final) date/time: May 30, 2026 — 18:00 (Hungary time).",
+
+        "NEW: The trip includes a one-day Niagara Falls experience. Crossing into Canada depends on passport/authorization and current border regulations.",
+
+        // ★★★ Rule (EN) — passport / ESTA / visa process ★★★
         "If the winner and their companion do not already have a valid passport, ESTA, or tourist visa, they must start the application process (Grand Slam Travel assists with the application) on the first workday after the live contest day.",
 
-        "Grand Slam Travel, Vivko, and GrandLucky Travel are not responsible if the contest winner’s or companion’s ESTA/VISA is denied. In such a case, the next place winner will travel.",
+        "Grand Slam Travel, Vivko, and GrandLucky Travel are not responsible if the contest winner’s or companion’s ESTA/VISA is denied. In such a case, the next eligible contestant will be offered the opportunity.",
         "While in the United States, the winner and companion must follow all US laws and regulations.",
         "The second round of the contest will be a live-streamed event on various digital platforms. Contestants agree to attend this live event.",
         "Media consent: the Winner and companion consent that photos/videos from verification and the trip may be shared on Vivko’s and Grand Slam Travel’s social media and the GrandLucky Travel webpage.",
 
-        // ★★★ Rule 8 (EN) — final ★★★
-        "Deadline to enter Round 2 Live contest: a contestant has to sign in to the Zoom platform 30 minutes before the Round 2 live contest event starts for a verification process; otherwise another contestant who completed the first round will get a chance to compete. Contestants will be placed in a waiting chat room where the verification takes place."
+        "Deadline to enter Round 2 LIVE Final: a contestant must sign in to the Zoom platform 30 minutes before the Round 2 live contest event starts for a verification process; otherwise another contestant who successfully completed qualification may be offered a chance to compete. Contestants will be placed in a waiting chat room where the verification takes place.",
       ],
       note:
         "Note: Please ensure Zoom is installed on your device via the link above before verification.",
@@ -80,7 +94,6 @@ export default function UserAgreement() {
       paymentsC: " and ",
       paymentsD: "User Agreement",
 
-      // ★★★ Refund (EN) — final ★★★
       refund:
         "Refund policy: The entry fee is non-refundable under normal circumstances. However, if for any unexpected reason the GrandLucky Travel contest or the trip cannot be held or fulfilled, all participants who paid the entry fee will receive a full refund within 14 days from the official cancellation announcement. No refund will be issued if a contestant or their companion is unable to travel due to personal circumstances, failure to meet the required travel or verification conditions, or if GrandLucky Travel cannot prepare another eligible contestant and companion in time as a result of such circumstances.",
 
@@ -115,7 +128,10 @@ export default function UserAgreement() {
       </Head>
 
       {/* language chip */}
-      <button className="lang" onClick={() => setLang(lang === "hu" ? "en" : "hu")}>
+      <button
+        className="lang"
+        onClick={() => setLang(lang === "hu" ? "en" : "hu")}
+      >
         {c.langBtn}
       </button>
 
@@ -201,7 +217,8 @@ export default function UserAgreement() {
       </section>
 
       <style jsx>{`
-        :global(html), :global(body) {
+        :global(html),
+        :global(body) {
           height: auto !important;
           overflow-y: auto !important;
         }
@@ -254,7 +271,7 @@ export default function UserAgreement() {
           display: grid;
           gap: 6px;
           font-size: clamp(16px, 1.6vw, 18px);
-          color: rgba(0,0,0,0.76);
+          color: rgba(0, 0, 0, 0.76);
         }
 
         .note {
@@ -302,7 +319,7 @@ export default function UserAgreement() {
         .camera {
           position: absolute;
           pointer-events: none;
-          filter: drop-shadow(0 4px 0 rgba(0,0,0,0.12));
+          filter: drop-shadow(0 4px 0 rgba(0, 0, 0, 0.12));
         }
 
         .plane {

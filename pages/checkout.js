@@ -15,6 +15,9 @@ export default function CheckoutPage() {
       titleScript: "Biztonságos fizetés",
       introStrong: "Fontos — Kérjük, olvasd el!",
       bullets: [
+        "Nevezési díj: $24.99 (USD).",
+        "ÚJDONSÁG: +1 nap Niagara-vízesés — átkelés a kanadai oldalra is (onnan a legszebb a panoráma).",
+        "Fontos: a kanadai átlépés útlevél/engedély és aktuális határszabályok függvénye.",
         "A sikeres fizetés után a Felhasználónevet és a Jelszót a rendszer automatikusan létrehozza, majd a fizetés utáni összegző oldalon megjelenítjük. Kérjük, mentsd el vagy nyomtasd ki, mert szükséged lesz rá a versenyhez.",
         "A felhasználónév és jelszó nélkül nem tudsz részt venni a tudásalapú versenyben, ezért kérjük, őrizd meg ezeket az adatokat.",
         "A fizetés a PayPal rendszerén keresztül történik, biztonságos bankkártyás fizetéssel.",
@@ -39,6 +42,9 @@ export default function CheckoutPage() {
       titleScript: "Secure Payment",
       introStrong: "Important — Please read before paying!",
       bullets: [
+        "Entry fee: $24.99 (USD).",
+        "NEW: +1 day Niagara Falls — we’ll also cross to the Canadian side (the view is best from there).",
+        "Note: crossing into Canada depends on passport/authorization and current border regulations.",
         "After a successful payment, your Username and Password will be created automatically by the system and displayed on the thank-you page. Please save or print them, as you will need them to participate in the contest.",
         "Without your username and password, you will not be able to join the knowledge-based contest, so please keep these details safe.",
         "Payment is processed securely via PayPal using your debit or credit card.",
@@ -65,9 +71,7 @@ export default function CheckoutPage() {
       setError("");
       if (!agree) {
         alert(
-          c.alertTerms +
-            " / " +
-            copy[lang === "hu" ? "en" : "hu"].alertTerms
+          c.alertTerms + " / " + copy[lang === "hu" ? "en" : "hu"].alertTerms
         );
         return;
       }

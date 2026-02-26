@@ -11,23 +11,29 @@ export default function Welcome() {
       script: "Üdvözlünk",
       strongTop: "a\u00A0GrandLuckyTravel",
       strongBottom: "weboldalán!",
-      subTop: "Fedezd fel New Yorkot és Washington DC-t",
-      subBottom: "Vivkóval februárban!",
+      subTop: "Kvalifikáció indul: ma",
+      subBottom: "Kvalifikáció vége: 2026. május 29. (HU idő)",
       cta: "KATTINTS A RÉSZLETEKÉRT!",
-      tagTop: "Egy kis tudással és gyorsasággal",
-      tagBottom: "egy ebéd áráért velünk utazhatsz! $14.99",
-      href: "/weekly",
+      cta2: "TOP 10 RANGLISTA",
+      tagTop: "Élő döntő: 2026. május 30. — 18:00 (magyar idő)",
+      tagBottom:
+        "8 nap / 6 éjszaka: 2026. július 31 – augusztus 7. + Niagara-vízesés (kanadai oldal) • Nevezési díj: $24.99",
+      href: "/vivko",
+      href2: "/leaderboard",
     },
     en: {
       script: "Welcome",
       strongTop: "to\u00A0GrandLuckyTravel",
       strongBottom: "website!",
-      subTop: "Explore New York and Washington DC",
-      subBottom: "with Vivko in February!",
+      subTop: "Qualification opens: today",
+      subBottom: "Qualification closes: May 29, 2026 (Hungary time)",
       cta: "CLICK FOR DETAILS",
-      tagTop: "With a little knowledge and speed",
-      tagBottom: "you can travel with us for the price of a lunch! $14.99",
-      href: "/weekly",
+      cta2: "TOP 10 LEADERBOARD",
+      tagTop: "LIVE Final: May 30, 2026 — 6:00 PM (Hungary time)",
+      tagBottom:
+        "8 days / 6 nights: Jul 31 – Aug 7, 2026 + Niagara Falls (Canadian side) • Entry fee: $24.99",
+      href: "/vivko",
+      href2: "/leaderboard",
     },
   };
 
@@ -92,6 +98,15 @@ export default function Welcome() {
             </div>
           </div>
 
+          {/* Secondary CTA */}
+          <div className="cta-row secondary">
+            <div className="cta-wrap secondary">
+              <Link href={c.href2} legacyBehavior>
+                <a className="btn ghost">{c.cta2}</a>
+              </Link>
+            </div>
+          </div>
+
           {/* tagline split */}
           <p className="tagline">
             <span className="block">{c.tagTop}</span>
@@ -118,8 +133,8 @@ export default function Welcome() {
 
         .hero {
           min-height: 100dvh;
-          background: url("/BG-fooldal.png") no-repeat
-            var(--bg-pos-x) var(--bg-pos-y) / var(--bg-zoom) auto;
+          background: url("/BG-fooldal.png") no-repeat var(--bg-pos-x)
+            var(--bg-pos-y) / var(--bg-zoom) auto;
           color: var(--dark);
         }
 
@@ -174,8 +189,7 @@ export default function Welcome() {
           z-index: 3;
           font: 700 clamp(56px, 5.2vw, 88px) "Caveat", cursive;
           color: var(--yellow);
-          text-shadow:
-            0 2px 0 rgba(255, 255, 255, 0.55),
+          text-shadow: 0 2px 0 rgba(255, 255, 255, 0.55),
             0 10px 18px rgba(0, 0, 0, 0.08),
             0 0 14px rgba(255, 191, 59, 0.45),
             0 0 1px rgba(255, 191, 59, 0.3);
@@ -190,7 +204,7 @@ export default function Welcome() {
         }
 
         .subline {
-          margin: clamp(12px, 1.2vw, 16px) 0 clamp(18px, 1.6vw, 22px);
+          margin: clamp(12px, 1.2vw, 16px) 0 clamp(14px, 1.3vw, 18px);
           font: 500 clamp(18px, 1.6vw, 24px) "Montserrat", system-ui, sans-serif;
           color: var(--muted);
         }
@@ -202,12 +216,15 @@ export default function Welcome() {
           display: flex;
           justify-content: flex-end;
         }
+        .cta-row.secondary {
+          margin-top: 10px;
+        }
+
         .cta-wrap {
           position: relative;
           display: inline-block;
           margin-bottom: clamp(6px, 0.8vw, 10px);
           isolation: isolate;
-          /* default: no side shift for EN */
           margin-right: 0;
         }
         .cta-wrap::before {
@@ -223,55 +240,62 @@ export default function Welcome() {
           filter: blur(1.2px);
           z-index: -1;
         }
+
         .btn {
           display: inline-flex;
           align-items: center;
           justify-content: center;
           padding: clamp(14px, 1.2vw, 16px) clamp(24px, 2.2vw, 32px);
           border-radius: 999px;
-          font: 900 clamp(12px, 0.95vw, 14px)/1 "Montserrat";
+          font: 900 clamp(12px, 0.95vw, 14px) / 1 "Montserrat";
           text-transform: uppercase;
           background: linear-gradient(180deg, #ffd767 0%, #ffbf3b 100%);
           color: #1b1b1b;
           border: 3px solid var(--yellow-border);
           text-decoration: none;
-          box-shadow:
-            0 10px 20px rgba(0, 0, 0, 0.14),
+          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.14),
             0 4px 10px rgba(0, 0, 0, 0.08),
             0 0 10px rgba(255, 191, 59, 0.28),
             inset 0 1.5px 0 rgba(255, 255, 255, 0.55);
-          transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+          transition: transform 0.2s ease, box-shadow 0.2s ease,
+            filter 0.2s ease;
         }
         .btn:hover {
           transform: translateY(-2px);
-          box-shadow:
-            0 16px 28px rgba(0, 0, 0, 0.2),
+          box-shadow: 0 16px 28px rgba(0, 0, 0, 0.2),
             0 7px 14px rgba(0, 0, 0, 0.12),
             0 0 14px rgba(255, 191, 59, 0.38),
             inset 0 2px 0 rgba(255, 255, 255, 0.62);
           filter: saturate(1.04);
         }
 
-        /* Tagline: same yellow, crisper glow */
+        .btn.ghost {
+          background: #fff;
+          border-color: #e8e8e8;
+          box-shadow: 0 10px 18px rgba(0, 0, 0, 0.12),
+            inset 0 1.5px 0 rgba(255, 255, 255, 0.75);
+        }
+
+        /* Tagline */
         .tagline {
-          margin-top: clamp(8px, 1vw, 12px);
+          margin-top: clamp(10px, 1.2vw, 14px);
           font: 700 clamp(22px, 2.1vw, 30px) "Caveat", cursive;
           color: var(--yellow);
-          text-shadow:
-            0 1px 0 rgba(255, 255, 255, 0.5),
+          text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5),
             0 0 8px rgba(255, 191, 59, 0.35);
         }
 
-        /* --- HUNGARIAN-ONLY LEFT SHIFT --- */
+        /* --- HUNGARIAN-ONLY LEFT SHIFT (keep your original behavior) --- */
         .is-hu .cta-wrap {
-          /* push button further left by adding bigger right margin */
+          margin-right: clamp(56px, 8vw, 140px);
+        }
+        .is-hu .cta-wrap.secondary {
           margin-right: clamp(56px, 8vw, 140px);
         }
         .is-hu .tagline {
           text-align: right;
           width: fit-content;
           margin-left: auto;
-          /* push tagline further left by adding bigger right margin */
           margin-right: clamp(56px, 8vw, 140px);
         }
 
@@ -333,7 +357,6 @@ export default function Welcome() {
               clamp(16px, 6vw, 36px) clamp(24px, 8vw, 40px);
           }
 
-          /* MOBILE-ONLY: HU/EN chip in yellow */
           .lang {
             justify-content: center;
             gap: 10px;
@@ -344,8 +367,7 @@ export default function Welcome() {
             color: #1b1b1b;
             border: 3px solid var(--yellow-border);
             padding: 10px 16px;
-            box-shadow:
-              0 8px 16px rgba(0, 0, 0, 0.12),
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12),
               inset 0 1.5px 0 rgba(255, 255, 255, 0.65);
           }
           .lang .active {
@@ -366,7 +388,7 @@ export default function Welcome() {
             justify-content: center;
           }
           .cta-wrap {
-            margin-right: 0; /* centered on mobile */
+            margin-right: 0;
           }
           .decor {
             display: none;
