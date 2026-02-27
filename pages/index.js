@@ -18,6 +18,12 @@ export default function Welcome() {
       tagTop: "Egy kis tudással és gyorsasággal",
       tagBottom: "egy ebéd áráért velünk utazhatsz! $24.99",
       href: "/winners",
+
+      // footer
+      contact: "Ha kérdésed vagy észrevételed van, kérjük, írj nekünk: ",
+      rights1: "Minden jog fenntartva – GrandLucky Travel",
+      rights2: "3495 US Highway 1 STE34#1217 Princeton, NJ 08540",
+      phoneLabel: "Telefon:",
     },
     en: {
       script: "Welcome",
@@ -30,6 +36,12 @@ export default function Welcome() {
       tagTop: "With a little knowledge and speed",
       tagBottom: "you can travel with us for the price of a lunch! $24.99",
       href: "/winners",
+
+      // footer
+      contact: "If you have any questions or concerns please contact us at: ",
+      rights1: "All rights reserved to GrandLucky Travel",
+      rights2: "3495 US Highway 1 STE34#1217 Princeton, NJ 08540",
+      phoneLabel: "Phone:",
     },
   };
 
@@ -99,6 +111,24 @@ export default function Welcome() {
             <span className="block">{c.tagTop}</span>
             <span className="block">{c.tagBottom}</span>
           </p>
+
+          {/* Footer (company info) */}
+          <footer className="company">
+            <p className="contact">
+              {c.contact}
+              <a href="mailto:support@grandluckytravel.com">
+                support@grandluckytravel.com
+              </a>
+              <span> &nbsp;|&nbsp; </span>
+              <strong>{c.phoneLabel}</strong>&nbsp;
+              <a href="tel:+18553047263">+1 855-304-7263</a>
+            </p>
+            <p className="rights">
+              <span>{c.rights1}</span>
+              <br />
+              <span>{c.rights2}</span>
+            </p>
+          </footer>
         </div>
 
         {/* camera */}
@@ -176,8 +206,7 @@ export default function Welcome() {
           z-index: 3;
           font: 700 clamp(56px, 5.2vw, 88px) "Caveat", cursive;
           color: var(--yellow);
-          text-shadow:
-            0 2px 0 rgba(255, 255, 255, 0.55),
+          text-shadow: 0 2px 0 rgba(255, 255, 255, 0.55),
             0 10px 18px rgba(0, 0, 0, 0.08),
             0 0 14px rgba(255, 191, 59, 0.45),
             0 0 1px rgba(255, 191, 59, 0.3);
@@ -237,8 +266,7 @@ export default function Welcome() {
           color: #1b1b1b;
           border: 3px solid var(--yellow-border);
           text-decoration: none;
-          box-shadow:
-            0 10px 20px rgba(0, 0, 0, 0.14),
+          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.14),
             0 4px 10px rgba(0, 0, 0, 0.08),
             0 0 10px rgba(255, 191, 59, 0.28),
             inset 0 1.5px 0 rgba(255, 255, 255, 0.55);
@@ -247,8 +275,7 @@ export default function Welcome() {
         }
         .btn:hover {
           transform: translateY(-2px);
-          box-shadow:
-            0 16px 28px rgba(0, 0, 0, 0.2),
+          box-shadow: 0 16px 28px rgba(0, 0, 0, 0.2),
             0 7px 14px rgba(0, 0, 0, 0.12),
             0 0 14px rgba(255, 191, 59, 0.38),
             inset 0 2px 0 rgba(255, 255, 255, 0.62);
@@ -260,8 +287,7 @@ export default function Welcome() {
           margin-top: clamp(8px, 1vw, 12px);
           font: 700 clamp(22px, 2.1vw, 30px) "Caveat", cursive;
           color: var(--yellow);
-          text-shadow:
-            0 1px 0 rgba(255, 255, 255, 0.5),
+          text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5),
             0 0 8px rgba(255, 191, 59, 0.35);
         }
 
@@ -273,14 +299,12 @@ export default function Welcome() {
           0%,
           100% {
             color: var(--yellow);
-            text-shadow:
-              0 1px 0 rgba(255, 255, 255, 0.5),
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5),
               0 0 8px rgba(255, 191, 59, 0.35);
           }
           50% {
             color: #ffffff;
-            text-shadow:
-              0 1px 0 rgba(0, 0, 0, 0.18),
+            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18),
               0 0 10px rgba(255, 255, 255, 0.7);
           }
         }
@@ -294,6 +318,33 @@ export default function Welcome() {
           width: fit-content;
           margin-left: auto;
           margin-right: clamp(56px, 8vw, 140px);
+        }
+
+        /* Company footer */
+        .company {
+          margin-top: clamp(16px, 2vw, 22px);
+          padding-top: 10px;
+          border-top: 1px solid rgba(0, 0, 0, 0.12);
+          text-align: left;
+          color: var(--dark);
+          font-family: "Montserrat", system-ui, sans-serif;
+        }
+        .company .contact {
+          margin: 0 0 6px 0;
+          font-size: 12px;
+          font-weight: 700;
+          opacity: 0.9;
+        }
+        .company .rights {
+          margin: 0;
+          font-size: 12px;
+          font-weight: 700;
+          opacity: 0.9;
+          line-height: 1.35;
+        }
+        .company a {
+          color: var(--dark);
+          text-decoration: underline;
         }
 
         /* Doodles */
@@ -364,8 +415,7 @@ export default function Welcome() {
             color: #1b1b1b;
             border: 3px solid var(--yellow-border);
             padding: 10px 16px;
-            box-shadow:
-              0 8px 16px rgba(0, 0, 0, 0.12),
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12),
               inset 0 1.5px 0 rgba(255, 255, 255, 0.65);
           }
           .lang .active {
@@ -398,6 +448,10 @@ export default function Welcome() {
           .is-hu .tagline {
             margin-left: 0;
             margin-right: 0;
+            text-align: center;
+          }
+
+          .company {
             text-align: center;
           }
         }
