@@ -68,6 +68,10 @@ export default function WinnersPage() {
       <Head>
         <title>{t.headTitle}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&display=swap"
+        />
       </Head>
 
       <div className="lang">
@@ -85,7 +89,7 @@ export default function WinnersPage() {
         </button>
       </div>
 
-      <section className="hero" />
+      <section className="hero" aria-label="Winners hero" />
 
       <section className="content">
         <header className="top">
@@ -93,7 +97,6 @@ export default function WinnersPage() {
           <p className="intro">{t.sectionIntro}</p>
         </header>
 
-        {/* Winner 1 */}
         <div className="block blockA">
           <h2 className="name">
             {t.w1Name} — {t.w1City}
@@ -107,7 +110,6 @@ export default function WinnersPage() {
           </div>
         </div>
 
-        {/* Winner 2 */}
         <div className="block blockB">
           <h2 className="name">
             {t.w2Name} — {t.w2City}
@@ -122,21 +124,26 @@ export default function WinnersPage() {
         </div>
 
         <div className="actions">
-          <Link href={PLAY_HREF}>
+          <Link href={PLAY_HREF} legacyBehavior>
             <a className="btn primary">{t.primary}</a>
           </Link>
 
-          <Link href={LEADERBOARD_HREF}>
+          <Link href={LEADERBOARD_HREF} legacyBehavior>
             <a className="btn secondary">{t.secondary}</a>
           </Link>
         </div>
       </section>
 
       <style jsx>{`
+        :global(*) {
+          box-sizing: border-box;
+        }
+
         .page {
           min-height: 100vh;
           background: #f6a83b;
-          font-family: "Montserrat", sans-serif;
+          font-family: "Montserrat", system-ui, sans-serif;
+          overflow-x: hidden;
         }
 
         .lang {
@@ -151,9 +158,10 @@ export default function WinnersPage() {
         .chip {
           padding: 8px 14px;
           border-radius: 999px;
-          background: white;
+          background: #fff;
           font-weight: 900;
           border: none;
+          cursor: pointer;
         }
 
         .chip.active {
@@ -178,8 +186,15 @@ export default function WinnersPage() {
         }
 
         .title {
+          margin: 0 0 6px;
           font-size: 28px;
           font-weight: 900;
+        }
+
+        .intro {
+          margin: 0;
+          font-weight: 600;
+          color: rgba(0, 0, 0, 0.75);
         }
 
         .block {
@@ -195,19 +210,27 @@ export default function WinnersPage() {
         }
 
         .name {
+          margin: 0;
           font-size: 22px;
           font-weight: 900;
         }
 
         .desc {
-          margin: 8px 0;
+          margin: 10px 0 10px;
           font-weight: 600;
+          color: rgba(0, 0, 0, 0.8);
+        }
+
+        .watch {
+          margin: 0 0 10px;
+          font-weight: 800;
+          color: rgba(0, 0, 0, 0.7);
         }
 
         .videoWrap {
           border-radius: 14px;
           overflow: hidden;
-          background: black;
+          background: #000;
         }
 
         video {
@@ -215,40 +238,62 @@ export default function WinnersPage() {
           display: block;
         }
 
+        /* === Buttons === */
         .actions {
-          display: flex;
-          gap: 14px;
           margin-top: 20px;
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 14px;
+          width: 100%;
         }
 
         .btn {
-          flex: 1;
-          text-align: center;
-          padding: 14px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 100%;
+          max-width: 100%;
+          padding: 14px 16px;
           border-radius: 999px;
           font-weight: 900;
           text-decoration: none;
+          text-transform: uppercase;
+          text-align: center;
+
+          /* Critical for long HU text */
+          white-space: normal;
+          overflow-wrap: anywhere;
+          word-break: normal;
+
+          /* Prevent spill */
+          min-width: 0;
         }
 
         .primary {
           background: #faaf3b;
-          color: black;
+          color: #111;
+          border: 3px solid #e79a2f;
         }
 
         .secondary {
-          background: white;
+          background: #fff;
+          color: #111;
           border: 2px solid rgba(0, 0, 0, 0.15);
-          color: black;
         }
 
-        /* MOBILE FIX */
+        /* MOBILE: stack + slightly smaller */
         @media (max-width: 768px) {
+          .content {
+            width: calc(100vw - 28px);
+          }
+
           .actions {
-            flex-direction: column;
+            grid-template-columns: 1fr;
           }
 
           .btn {
-            width: 100%;
+            font-size: 12px;
+            padding: 13px 14px;
           }
         }
       `}</style>
