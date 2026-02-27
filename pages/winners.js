@@ -4,16 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 
 export default function WinnersPage() {
-  const [lang, setLang] = useState("hu"); // HU default
+  const [lang, setLang] = useState("hu");
 
-  // ✅ PLAY BUTTON NOW GOES TO SLIDE 1
   const PLAY_HREF = "/vivko";
   const LEADERBOARD_HREF = "/leaderboard";
 
-  // Assets in /public
-  // - /public/winners-hero.jpg
-  // - /public/napsugar.mp4
-  // - /public/emma.mp4
   const HERO_BG = "/winners-hero.jpg";
 
   const copy = {
@@ -29,7 +24,7 @@ export default function WinnersPage() {
       w1Name: "Napsugár",
       w1City: "Budapest",
       w1Text:
-        "Napsugár Budapestről érkezett, és fantasztikus teljesítménnyel nyerte meg a játékot.",
+        "Napsugár és a párja Vivkóval együtt fedezik fel New York adventi hangulatát.",
 
       w2Name: "Emma",
       w2City: "Seregélyes",
@@ -53,7 +48,7 @@ export default function WinnersPage() {
       w1Name: "Napsugár",
       w1City: "Budapest",
       w1Text:
-        "Napsugár came from Budapest and won the game with an outstanding performance.",
+        "Napsugár and her partner explore the magical Advent atmosphere of New York with Vivko.",
 
       w2Name: "Emma",
       w2City: "Seregélyes",
@@ -73,13 +68,8 @@ export default function WinnersPage() {
       <Head>
         <title>{t.headTitle}</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Montserrat:wght@500;700;900&display=swap"
-        />
       </Head>
 
-      {/* Language toggle */}
       <div className="lang">
         <button
           className={`chip ${lang === "hu" ? "active" : ""}`}
@@ -95,10 +85,8 @@ export default function WinnersPage() {
         </button>
       </div>
 
-      {/* FULLSCREEN HERO */}
       <section className="hero" />
 
-      {/* CONTENT BELOW HERO */}
       <section className="content">
         <header className="top">
           <h1 className="title">{t.sectionTitle}</h1>
@@ -107,43 +95,32 @@ export default function WinnersPage() {
 
         {/* Winner 1 */}
         <div className="block blockA">
-          <div className="inner">
-            <h2 className="name">
-              {t.w1Name} — {t.w1City}
-            </h2>
-
-            <p className="desc">{t.w1Text}</p>
-
-            <p className="watch">{t.watch}</p>
-
-            <div className="videoWrap">
-              <video className="video" controls playsInline preload="metadata">
-                <source src="/napsugar.mp4" type="video/mp4" />
-              </video>
-            </div>
+          <h2 className="name">
+            {t.w1Name} — {t.w1City}
+          </h2>
+          <p className="desc">{t.w1Text}</p>
+          <p className="watch">{t.watch}</p>
+          <div className="videoWrap">
+            <video controls playsInline preload="metadata">
+              <source src="/napsugar.mp4" type="video/mp4" />
+            </video>
           </div>
         </div>
 
         {/* Winner 2 */}
         <div className="block blockB">
-          <div className="inner">
-            <h2 className="name">
-              {t.w2Name} — {t.w2City}
-            </h2>
-
-            <p className="desc">{t.w2Text}</p>
-
-            <p className="watch">{t.watch}</p>
-
-            <div className="videoWrap">
-              <video className="video" controls playsInline preload="metadata">
-                <source src="/emma.mp4" type="video/mp4" />
-              </video>
-            </div>
+          <h2 className="name">
+            {t.w2Name} — {t.w2City}
+          </h2>
+          <p className="desc">{t.w2Text}</p>
+          <p className="watch">{t.watch}</p>
+          <div className="videoWrap">
+            <video controls playsInline preload="metadata">
+              <source src="/emma.mp4" type="video/mp4" />
+            </video>
           </div>
         </div>
 
-        {/* ACTION BUTTONS */}
         <div className="actions">
           <Link href={PLAY_HREF}>
             <a className="btn primary">{t.primary}</a>
@@ -158,8 +135,8 @@ export default function WinnersPage() {
       <style jsx>{`
         .page {
           min-height: 100vh;
-          font-family: "Montserrat", sans-serif;
           background: #f6a83b;
+          font-family: "Montserrat", sans-serif;
         }
 
         .lang {
@@ -172,12 +149,11 @@ export default function WinnersPage() {
         }
 
         .chip {
-          border: none;
           padding: 8px 14px;
           border-radius: 999px;
           background: white;
           font-weight: 900;
-          cursor: pointer;
+          border: none;
         }
 
         .chip.active {
@@ -202,14 +178,8 @@ export default function WinnersPage() {
         }
 
         .title {
-          margin: 0 0 6px;
           font-size: 28px;
           font-weight: 900;
-        }
-
-        .intro {
-          margin: 0;
-          font-weight: 600;
         }
 
         .block {
@@ -225,19 +195,13 @@ export default function WinnersPage() {
         }
 
         .name {
-          font-size: 24px;
+          font-size: 22px;
           font-weight: 900;
-          margin-bottom: 8px;
         }
 
         .desc {
-          margin-bottom: 12px;
+          margin: 8px 0;
           font-weight: 600;
-        }
-
-        .watch {
-          font-weight: 800;
-          margin-bottom: 8px;
         }
 
         .videoWrap {
@@ -246,19 +210,21 @@ export default function WinnersPage() {
           background: black;
         }
 
-        .video {
+        video {
           width: 100%;
           display: block;
         }
 
         .actions {
           display: flex;
-          gap: 12px;
-          flex-wrap: wrap;
+          gap: 14px;
+          margin-top: 20px;
         }
 
         .btn {
-          padding: 14px 22px;
+          flex: 1;
+          text-align: center;
+          padding: 14px;
           border-radius: 999px;
           font-weight: 900;
           text-decoration: none;
@@ -275,10 +241,14 @@ export default function WinnersPage() {
           color: black;
         }
 
-        @media (max-width: 900px) {
-          .actions .btn {
+        /* MOBILE FIX */
+        @media (max-width: 768px) {
+          .actions {
+            flex-direction: column;
+          }
+
+          .btn {
             width: 100%;
-            text-align: center;
           }
         }
       `}</style>
