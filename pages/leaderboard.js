@@ -270,7 +270,7 @@ export default function LeaderboardPage() {
             </button>
 
             <button
-              onClick={() => router.push("/trivia")}
+              onClick={() => router.push("/vivko")}
               style={{
                 padding: "12px 22px",
                 borderRadius: 999,
