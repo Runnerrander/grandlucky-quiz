@@ -12,7 +12,8 @@ export default function Welcome() {
       strongTop: "a\u00A0GrandLuckyTravel",
       strongBottom: "weboldalán!",
       subTop: "Fedezd fel New Yorkot, Washington DC-t",
-      subBottom: "és a Niagara-vízesést (kanadai oldal is) Vivkóval 2026 nyarán!",
+      subBottom:
+        "és a Niagara-vízesést (Kanadai oldal is) Vivkóval 2026 nyarán!",
       cta: "KATTINTS A RÉSZLETEKÉRT!",
       tagTop: "Egy kis tudással és gyorsasággal",
       tagBottom: "egy ebéd áráért velünk utazhatsz! $24.99",
@@ -22,7 +23,8 @@ export default function Welcome() {
       script: "Welcome",
       strongTop: "to\u00A0GrandLuckyTravel",
       strongBottom: "website!",
-      subTop: "Explore New York, Washington DC and the Niagara Falls (Canadian Side Too)",
+      subTop:
+        "Explore New York, Washington DC and the Niagara Falls (Canadian Side Too)",
       subBottom: "with Vivko in Summer 2026!",
       cta: "CLICK FOR DETAILS",
       tagTop: "With a little knowledge and speed",
@@ -92,8 +94,8 @@ export default function Welcome() {
             </div>
           </div>
 
-          {/* tagline split */}
-          <p className="tagline">
+          {/* tagline split (BLINKING) */}
+          <p className="tagline blink">
             <span className="block">{c.tagTop}</span>
             <span className="block">{c.tagBottom}</span>
           </p>
@@ -240,7 +242,8 @@ export default function Welcome() {
             0 4px 10px rgba(0, 0, 0, 0.08),
             0 0 10px rgba(255, 191, 59, 0.28),
             inset 0 1.5px 0 rgba(255, 255, 255, 0.55);
-          transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+          transition: transform 0.2s ease, box-shadow 0.2s ease,
+            filter 0.2s ease;
         }
         .btn:hover {
           transform: translateY(-2px);
@@ -260,6 +263,26 @@ export default function Welcome() {
           text-shadow:
             0 1px 0 rgba(255, 255, 255, 0.5),
             0 0 8px rgba(255, 191, 59, 0.35);
+        }
+
+        /* BLINK between yellow and white */
+        .blink {
+          animation: blinkY 1.15s infinite ease-in-out;
+        }
+        @keyframes blinkY {
+          0%,
+          100% {
+            color: var(--yellow);
+            text-shadow:
+              0 1px 0 rgba(255, 255, 255, 0.5),
+              0 0 8px rgba(255, 191, 59, 0.35);
+          }
+          50% {
+            color: #ffffff;
+            text-shadow:
+              0 1px 0 rgba(0, 0, 0, 0.18),
+              0 0 10px rgba(255, 255, 255, 0.7);
+          }
         }
 
         /* --- HUNGARIAN-ONLY LEFT SHIFT --- */
