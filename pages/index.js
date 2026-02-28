@@ -171,6 +171,16 @@ export default function Welcome() {
           padding: clamp(18px, 4.4vw, 56px) clamp(22px, 4.8vw, 60px);
           max-width: 980px;
 
+          /* NEW: soft glass panel for readability (desktop) */
+          background: rgba(255, 255, 255, 0.68);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          border-radius: 24px;
+
+          /* subtle border/shadow so it looks intentional */
+          border: 1px solid rgba(255, 255, 255, 0.35);
+          box-shadow: 0 18px 38px rgba(0, 0, 0, 0.12);
+
           /* keep fonts crisp */
           -webkit-font-smoothing: auto;
           -moz-osx-font-smoothing: auto;
@@ -403,6 +413,14 @@ export default function Welcome() {
             text-align: center;
             padding: max(16px, env(safe-area-inset-top))
               clamp(16px, 6vw, 36px) clamp(24px, 8vw, 40px);
+
+            /* disable glass panel on mobile */
+            background: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            border: none;
+            box-shadow: none;
+            border-radius: 0;
           }
 
           .lang {
