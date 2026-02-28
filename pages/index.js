@@ -171,17 +171,15 @@ export default function Welcome() {
           padding: clamp(18px, 4.4vw, 56px) clamp(22px, 4.8vw, 60px);
           max-width: 980px;
 
-          /* NEW: soft glass panel for readability (desktop) */
+          /* Glass panel for readability (desktop + mobile) */
           background: rgba(255, 255, 255, 0.68);
           backdrop-filter: blur(6px);
           -webkit-backdrop-filter: blur(6px);
           border-radius: 24px;
 
-          /* subtle border/shadow so it looks intentional */
           border: 1px solid rgba(255, 255, 255, 0.35);
           box-shadow: 0 18px 38px rgba(0, 0, 0, 0.12);
 
-          /* keep fonts crisp */
           -webkit-font-smoothing: auto;
           -moz-osx-font-smoothing: auto;
           text-rendering: geometricPrecision;
@@ -248,7 +246,6 @@ export default function Welcome() {
           display: inline-block;
           margin-bottom: clamp(6px, 0.8vw, 10px);
           isolation: isolate;
-          /* default: no side shift for EN */
           margin-right: 0;
         }
         .cta-wrap::before {
@@ -301,7 +298,7 @@ export default function Welcome() {
             0 0 8px rgba(255, 191, 59, 0.35);
         }
 
-        /* BLINK between yellow and white */
+        /* BLINK between yellow and WHITE with BLACK shadow */
         .blink {
           animation: blinkY 1.15s infinite ease-in-out;
         }
@@ -314,8 +311,9 @@ export default function Welcome() {
           }
           50% {
             color: #ffffff;
-            text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18),
-              0 0 10px rgba(255, 255, 255, 0.7);
+            text-shadow: 0 2px 0 rgba(0, 0, 0, 0.55),
+              0 8px 18px rgba(0, 0, 0, 0.45),
+              0 0 10px rgba(255, 255, 255, 0.45);
           }
         }
 
@@ -414,13 +412,13 @@ export default function Welcome() {
             padding: max(16px, env(safe-area-inset-top))
               clamp(16px, 6vw, 36px) clamp(24px, 8vw, 40px);
 
-            /* disable glass panel on mobile */
-            background: none;
-            backdrop-filter: none;
-            -webkit-backdrop-filter: none;
-            border: none;
-            box-shadow: none;
-            border-radius: 0;
+            /* keep glass panel on mobile too (slightly stronger) */
+            background: rgba(255, 255, 255, 0.78);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            border-radius: 22px;
+            border: 1px solid rgba(255, 255, 255, 0.38);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.14);
           }
 
           .lang {
