@@ -3,7 +3,8 @@
 // pages/api/leaderboard.js
 const { createClient } = require("@supabase/supabase-js");
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 const supabase =
@@ -12,7 +13,6 @@ const supabase =
     : null;
 
 async function getActiveRoundId() {
-  // Try to auto-detect the active open round (if you didn't set ROUND_ID)
   const { data, error } = await supabase
     .from("trivia_rounds")
     .select("id, status, is_active, start_at")
@@ -65,7 +65,10 @@ module.exports = async function handler(req, res) {
         return res.status(500).json({
           ok: false,
           message: "Failed to auto-detect active round",
-          details: { code: err.code || "DB", message: err.message || "Unknown DB error" },
+          details: {
+            code: err.code || "DB",
+            message: err.message || "Unknown DB error",
+          },
         });
       }
       round_id = autoId;
@@ -80,14 +83,17 @@ module.exports = async function handler(req, res) {
       });
     }
 
-    // Pull top 10 for this round_id from quiz_results_plus
-    // Only perfect (5) results
+    // ✅ Use trivia_submissions because it stores the real completion time in total_time_ms
+    // Only perfect results: correct_count == total_questions == 5
     const { data, error } = await supabase
-      .from("quiz_results_plus")
-      .select("username, time_ms, correct, created_at, round_id")
+      .from("trivia_submissions")
+      .select(
+        "username, total_time_ms, correct_count, total_questions, created_at, round_id"
+      )
       .eq("round_id", round_id)
-      .eq("correct", 5)
-      .order("time_ms", { ascending: true })
+      .eq("correct_count", 5)
+      .eq("total_questions", 5)
+      .order("total_time_ms", { ascending: true })
       .order("created_at", { ascending: true })
       .limit(10);
 
@@ -95,14 +101,16 @@ module.exports = async function handler(req, res) {
       return res.status(500).json({
         ok: false,
         message: "DB error",
-        details: { code: error.code || "DB", message: error.message || "Unknown DB error" },
+        details: {
+          code: error.code || "DB",
+          message: error.message || "Unknown DB error",
+        },
       });
     }
 
-    // Ranking ONLY (rank + username). time_ms is optional via include_time=1
     const leaderboard = (data || []).map((row, i) => {
       const base = { rank: i + 1, username: row.username };
-      if (includeTime) base.time_ms = row.time_ms;
+      if (includeTime) base.time_ms = row.total_time_ms;
       return base;
     });
 
@@ -110,7 +118,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       round_id,
-      source: "quiz_results_plus",
+      source: "trivia_submissions",
       ...(roundMeta ? { round_meta: roundMeta } : {}),
       leaderboard,
     });
