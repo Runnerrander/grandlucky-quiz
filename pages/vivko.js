@@ -222,6 +222,10 @@ export default function Vivko() {
           overflow: hidden;
           font-family: "Montserrat", system-ui, sans-serif;
           color: var(--dark);
+
+          /* NEW: prevent any accidental horizontal scroll/crop on older desktops */
+          max-width: 100vw;
+          overflow-x: hidden;
         }
 
         .bg {
@@ -289,9 +293,13 @@ export default function Vivko() {
           background: rgba(0, 0, 0, 0.82);
           padding: clamp(18px, 2.4vw, 26px);
           border-radius: 18px;
-          max-width: none;
-          margin-left: clamp(16px, 4vw, 40px);
-          margin-right: clamp(16px, 4vw, 40px);
+
+          /* NEW: keep the panel fully inside the viewport on older/smaller desktops */
+          width: min(100%, calc(100vw - 32px));
+          max-width: calc(100vw - 32px);
+          margin-left: auto;
+          margin-right: auto;
+          box-sizing: border-box;
         }
 
         .title {
@@ -304,7 +312,10 @@ export default function Vivko() {
           font-weight: 900;
           font-size: clamp(20px, 2.4vw, 32px);
           letter-spacing: -0.2px;
-          white-space: nowrap;
+
+          /* NEW: allow wrapping on older desktops so no right-crop */
+          white-space: normal;
+          overflow-wrap: anywhere;
         }
 
         .sub {
@@ -375,6 +386,7 @@ export default function Vivko() {
           padding-top: 0;
         }
 
+        /* MOBILE — DO NOT CHANGE (kept exactly as you had it) */
         @media (max-width: 900px) {
           .hero::before,
           .blur-left::before {
