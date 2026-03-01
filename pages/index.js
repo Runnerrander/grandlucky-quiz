@@ -21,6 +21,7 @@ export default function Welcome() {
 
       // footer
       contact: "Ha kérdésed vagy észrevételed van, kérjük, írj nekünk: ",
+      messengerText: " vagy írj nekünk a Grand Slam Travel Facebook Messengerén: ",
       rights1: "Minden jog fenntartva – GrandLucky Travel",
       rights2: "3495 US Highway 1 STE34#1217 Princeton, NJ 08540",
       phoneLabel: "Telefon:",
@@ -39,6 +40,8 @@ export default function Welcome() {
 
       // footer
       contact: "If you have any questions or concerns please contact us at: ",
+      messengerText:
+        " or you can message to us on the Grand Slam Travel Facebook Messenger: ",
       rights1: "All rights reserved to GrandLucky Travel",
       rights2: "3495 US Highway 1 STE34#1217 Princeton, NJ 08540",
       phoneLabel: "Phone:",
@@ -118,6 +121,14 @@ export default function Welcome() {
               {c.contact}
               <a href="mailto:support@grandluckytravel.com">
                 support@grandluckytravel.com
+              </a>
+              {c.messengerText}
+              <a
+                href="https://www.facebook.com/share/17iJHP2Hyr/?mibextid=wwXIfr"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Messenger
               </a>
               <span> &nbsp;|&nbsp; </span>
               <strong>{c.phoneLabel}</strong>&nbsp;
